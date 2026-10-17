@@ -643,16 +643,21 @@ function vDrawing() {
 }
 
 // ---------- daily work allocation, crew sections and site manager review ----------
-// Roles per project: sm signs the diary, worker fills in, viewer only looks, pm (office) sees all and the KPIs.
+// Roles per project: sm signs the diary, worker fills in, observer is on site to learn (fills in his own diary and forms only, signs off no technical work), pm (office) sees all and the KPIs.
 const isAdmin = u => !!(PEOPLE.find(x => x.name === u) || {}).admin;
 const roleIn = (u, p = S.project) => (p && p.team && p.team[u]) || (isAdmin(u) ? "pm" : null);
-const roleLabel = r => ({ sm: "Site manager", worker: "Fill in and sign", viewer: "View only", pm: "Project manager" })[r] || "";
+const roleLabel = r => ({ sm: "Site manager", worker: "Fill in and sign", observer: "Observer, learning on site", viewer: "Observer, learning on site", pm: "Project manager" })[r] || "";
 const isSM = u => roleIn(u) === "sm";
-const isMgr = u => ["sm", "pm", "viewer"].includes(roleIn(u));
+const isMgr = u => ["sm", "pm"].includes(roleIn(u));
 const isPM = u => roleIn(u) === "pm";
-const canWrite = u => roleIn(u) !== "viewer";
+const canWrite = u => !!roleIn(u);
+const isObserver = u => ["observer", "viewer"].includes(roleIn(u));
+// technical sign-offs (splice box, patch panel, tests, checklist) only by the people doing the work
+const canSignWork = u => canWrite(u) && !isObserver(u) && !isPM(u);
 S.siteDone = {};
 const TEAM_OF = () => Object.keys(S.project.team || {}).filter(n => ["worker", "sm"].includes(S.project.team[n]));
+// everyone on site can be given work for the day, observers included (for example assisting)
+const CREW_OF = () => Object.keys(S.project.team || {}).filter(n => ["worker", "sm", "observer", "viewer"].includes(S.project.team[n]));
 const smName = (p = S.project) => Object.keys(p.team || {}).find(n => p.team[n] === "sm") || "the site manager";
 const dayKey = () => S.project.id + "|" + ymd(S.date);
 S.alloc = {}; S.sections = {}; S.final = {}; S.client = {};
@@ -929,7 +934,7 @@ function vLink() {
     ...l.faults.map(f => sheet("", h("div", { class: "band", style: `background:${f.status === "closed" ? "#3a9d23" : f.status === "retest" ? "#f2b400" : "#c8102e"};color:${f.status === "retest" ? "#15191e" : "#fff"}` }, `${f.id}  ${f.status === "closed" ? "Closed" : f.status === "retest" ? "Repaired, waiting for retest" : "Open fault"}`),
       h("table", {}, h("tbody", {}, ...[["Found at", stageLab(l, f.stage)], ["Core", f.core], ["Where", f.where], ["Fault", `${f.type}, ${f.reading}`], ["Found by", `${f.found}, ${dayLab(f.foundOn)}`], ["Repair by", f.resp], f.repairNote ? ["Repair done", f.repairNote] : null].filter(Boolean)
         .map(([a, b]) => h("tr", {}, h("td", { class: "lab" }, a), h("td", { class: "ro" }, b))))))),
-    next && canWrite(S.user) && !isPM(S.user) ? h("button", { class: "submit", type: "button", onclick: () => { S.testStage = next[0]; go("logtest"); } }, `${next[2] === "test" ? "Log" : "Sign off"} ${next[1].toLowerCase()}`) : null,
+    next && canSignWork(S.user) ? h("button", { class: "submit", type: "button", onclick: () => { S.testStage = next[0]; go("logtest"); } }, `${next[2] === "test" ? "Log" : "Sign off"} ${next[1].toLowerCase()}`) : null,
     t ? h("button", { class: "mbtn", style: "margin-top:12px", onclick: () => go("biocheck") }, `${(S.project.checklist || {}).name || "Installation checklist"}`, h("small", {}, `${bc.done} of ${BIO_TOTAL()} checked${bc.fail ? `, ${bc.fail} failed` : ""}`)) : null,
     t ? coreTable(t) : null,
     h("p", { class: "hint", style: "margin-top:14px" }, l.tpl === "opgw" ? "Every step is signed with a name, a photo and the time, in order. A fault found at the tests goes back to whoever re-spliced. A fault at acceptance after clean tests goes to the site manager to investigate." : l.tpl === "cores" ? "Who repairs: a control test fault at the turbine end goes back to whoever did the splice box. At the control room end it goes to whoever did the patch panel. A witness test fault after a clean control test goes to the site manager to investigate." : "Who repairs: drum test fault goes to the supplier. DIT fault goes to the duct installer. After install fault goes to whoever blew the cable in. Control test fault goes to whoever spliced it. Witness fault after a clean control test goes to the site manager to investigate.")];
@@ -1020,7 +1025,7 @@ let BIO_CHECK = [];
 function vBioCheck() {
   const l = S.link, n = l.wtg.name, pid = S.project.id;
   const B = S.bio[pid][n] || (S.bio[pid][n] = { items: {}, by: {}, ips: "", photos: [] });
-  const viewOnly = !canWrite(S.user) || isPM(S.user);
+  const viewOnly = !canSignWork(S.user);
   const openIssue = id => (S.issues[pid] || []).find(x => x.wtg === n && x.item === id && x.status !== "closed");
   const CK = S.project.checklist || {};
   return [topbar(CK.short || "Checklist", `${n}  |  ${CK.doc || ""}`, true),
@@ -1099,7 +1104,7 @@ function vAllocate() {
     return sheet("", h("div", { class: "band", style: "display:flex;justify-content:space-between;align-items:center" }, h("span", {}, `Task ${i + 1}`),
         h("button", { type: "button", style: "background:none;border:0;color:#fff;font-weight:800;font-size:12px", onclick: () => { list.splice(i, 1); draw(); } }, "Remove")),
       h("table", {}, h("tbody", {},
-        h("tr", {}, h("td", { class: "lab" }, "Person"), h("td", {}, sel(TEAM_OF(), r.who, v => r.who = v, "Who"))),
+        h("tr", {}, h("td", { class: "lab" }, "Person"), h("td", {}, sel(CREW_OF(), r.who, v => r.who = v, "Who"))),
         h("tr", {}, h("td", { class: "lab" }, "Activity"), h("td", {}, sel(acts.map(a => a.act), r.act, v => { r.act = v; r.unit = (acts.find(a => a.act === v) || {}).unit || ""; unit.textContent = r.unit; }, "What"))),
         h("tr", {}, h("td", { class: "lab" }, "Where"), h("td", {}, inp("text", r.loc, v => r.loc = v, S.project.kind === "turbines" ? "e.g. WTG 07" : "e.g. RMU 4"))),
         h("tr", {}, h("td", { class: "lab" }, "Target"), h("td", {}, h("div", { style: "display:flex;align-items:center" }, inp("number", r.target, v => r.target = v, "0"), unit))))));
@@ -1344,7 +1349,7 @@ let render = function () {
 }
 
 // ---------- live layer: identity, PIN, saving, sync, feedback ----------
-const CONF = { url: "https://ahbcixfknqgqvmauhnyo.supabase.co", anon: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFoYmNpeGZrbnFncXZtYXVobnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIxNzI0NDMsImV4cCI6MjEwNzc0ODQ0M30.n58qy_PcGFoi9-JGzUecra9ggxUn_Yprsg9kO_2M02c" };
+const CONF = { url: "https://ahbcixfknqgqvmauhnyo.supabase.co", anon: "testanon" };
 const PHOTO_CACHE = new Map();
 const lastSaved = new Map();
 const strip = (k, v) => k === "url" ? undefined : (k === "project" && v && typeof v === "object") ? v.id : v;
