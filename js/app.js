@@ -384,10 +384,8 @@ function vDone() {
     h("div", { class: "tick", "aria-hidden": "true" }, "✓"),
     h("h1", { class: "big", style: "margin-bottom:6px" }, "Submitted"),
     h("p", { class: "note", style: "margin-top:0" }, Store.online() ? "Saved and sent to the office." : "Saved on this phone. It sends by itself as soon as the phone has signal."),
-    h("div", { class: "files" }, h("b", {}, "What lands on your computer"),
-      h("div", { class: "f" }, h("span", { class: "tag " + names[3] }, names[2].toUpperCase()), h("div", {}, `${base}.${names[2]}`, h("div", { class: "path" }, root + " \\ Word and Excel"))),
-      h("div", { class: "f" }, h("span", { class: "tag p" }, "PDF"), h("div", {}, `${base}.pdf`, h("div", { class: "path" }, root + " \\ PDF"))),
-      f.type !== "inspection" && f.photos.length ? h("div", { class: "f" }, h("span", { class: "tag x", style: "background:#555" }, "IMG"), h("div", {}, `${f.photos.length} photo(s)`, h("div", { class: "path" }, `Fibraco App \\ 2. Completed Forms \\ ${proj} \\ 12. Site Photos`))) : null),
+    h("div", { class: "files" }, h("b", {}, "Where it is kept"), h("div", { style: "font-size:13px;margin-top:4px" }, `Safely in the app, under ${short} on ${dmy(f.date)}. The office sees it straight away.`)),
+    f.type === "diary" && f.project && S.final[f.project.id + "|" + ymd(f.date)] ? h("button", { class: "mbtn", style: "margin-top:12px", onclick: () => printDiary(f.project.id + "|" + ymd(f.date), f.project, f.date) }, "Save diary as PDF", h("small", {}, "To print for the client's signature, or to email")) : null,
     h("div", { class: "stack" },
       f.type === "diary" && f.project && S.final[f.project.id + "|" + ymd(f.date)] ? h("button", { class: "mbtn", onclick: () => { S.hist = ["projects", "calendar", "menu"]; S.view = "review"; render(); window.scrollTo(0, 0); } }, "Back to diary review", h("small", {}, "Client sign-off and KPIs")) : null,
       f.project ? h("button", { class: "mbtn", onclick: () => { S.hist = ["projects", "calendar"]; S.view = "menu"; render(); window.scrollTo(0, 0); } }, "Back to project") : null,
@@ -1201,6 +1199,7 @@ function vReview() {
     h("div", {}, `Tasks on target: ${rows.filter(x => x.r.done !== undefined && x.r.done !== "" && +x.r.done >= +x.t.target).length} of ${rows.length}`)));
   const after = h("div", { class: "stack" },
     final || viewOnly ? h("button", { class: "mbtn", onclick: () => go("client") }, S.client[k] ? "Client signed. View the client copy" : "What the client sees", h("small", {}, S.client[k] ? `Signed by ${S.client[k].name} at ${S.client[k].at}` : "The page the client gets with the diary")) : null,
+    final ? h("button", { class: "mbtn", onclick: () => printDiary(k, S.project, S.date) }, "Save diary as PDF", h("small", {}, "To print for the client's signature, or to email")) : null,
     isPM(S.user) ? h("button", { class: "mbtn", onclick: () => go("kpi") }, "KPIs for the day", h("small", {}, "Only you see this")) : null);
   if (viewOnly) {
     const sub = people.filter(p => ["submitted", "approved"].includes((secs[p] || {}).status)).length;
@@ -1219,6 +1218,46 @@ function vReview() {
     final ? after : h("div", {},
       h("button", { class: "mbtn", style: `margin-bottom:12px;${s1 ? "" : "opacity:.45"}`, onclick: () => { if (s1) openCombined(); } }, s2 ? "✓ My part of the diary (open again)" : "2. My part of the diary", h("small", {}, "Weather, plant, site instructions and materials. Team and work fill in by themselves.")),
       h("button", { class: "submit", type: "button", style: s1 && s2 ? "" : "opacity:.45", onclick: () => { if (!(s1 && s2)) return; openSig("Site manager signature", v => { if (!v) return; S.final[k] = new Date().toLocaleTimeString("en-ZA", { hour: "2-digit", minute: "2-digit" }).replace(":", "h"); S.done[k] = true; persist(); Store.put("final|" + k, { at: S.final[k], by: S.user, sig: v, date: ymd(S.date) }); S.form = { type: "diary", project: S.project, date: S.date, user: S.user, photos: [] }; go("done"); }); } }, "3. Sign and make final"))];
+}
+// ---------- daily diary as PDF (print or save from the phone or laptop) ----------
+function printDiary(k, project, date) {
+  const site = Store.get("site|" + k) || {}, fin = Store.get("final|" + k) || {};
+  const alloc = S.alloc[k] || [], secs = S.sections[k] || {};
+  const people = [...new Set(alloc.map(a => a.who))];
+  const esc = x => String(x == null ? "" : x).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+  const row = (a, b) => `<tr><th>${esc(a)}</th><td>${esc(b) || "-"}</td></tr>`;
+  const w = site.w || {};
+  const team = (site.team && site.team.some(r => r.name) ? site.team : people.map(p => ({ name: p, hrs: (secs[p] || {}).hrs })) ).filter(r => r.name);
+  const acts = (site.acts && site.acts.some(r => r.act) ? site.acts : alloc.map((t, i) => { const idx = alloc.filter((a, j) => a.who === t.who && j < i).length; const r = ((secs[t.who] || {}).rows || [])[idx] || {}; return { area: project.area, act: t.act, unit: t.unit, loc: t.loc, qty: r.done }; })).filter(r => r.act);
+  // client copy: Fibraco-side delays stay internal
+  const delays = (site.delays || []).filter(d => d.c && !INTERNAL.some(x => d.c.startsWith(x)));
+  const noName = x => String(x || "").replace(/\s*\([A-Z][a-z]+\)\s*$/, ""); // the client copy shows no names against work
+  const nz = o => Object.entries(o || {}).filter(([, v]) => +v > 0);
+  const tbl = (head, rows) => rows.length ? `<table class="g"><thead><tr>${head.map(x => `<th>${esc(x)}</th>`).join("")}</tr></thead><tbody>${rows.map(r => `<tr>${r.map(c => `<td>${esc(c)}</td>`).join("")}</tr>`).join("")}</tbody></table>` : `<p class="none">None</p>`;
+  const totHrs = team.reduce((x, r) => x + (+r.hrs || 0), 0);
+  const html = `
+  <div class="pd-head"><img src="${LOGO}" alt="Fibraco"><div><h1>DAILY DIARY</h1><div>${esc(project.name)}</div><div>${esc(nice(date))}</div></div></div>
+  <table class="kv">${row("Client", project.client)}${row("Diary completed by", fin.by || smName())}${row("Applicable to", site.applicable || project.area)}${row("Time started", site.start)}${row("Time ended", site.end)}${row("Weather", [site.weather, w.tmin || w.tmax ? `${w.tmin || "?"} to ${w.tmax || "?"} °C` : "", w.wdmin || w.wdmax ? `wind ${w.wdmin || "?"} to ${w.wdmax || "?"} m/s` : "", w.rain ? `rain ${w.rain} mm` : ""].filter(Boolean).join(", "))}</table>
+  <h2>Project team</h2>${tbl(["No", "Name", "Hrs"], team.map((r, i) => [i + 1, r.name, r.hrs || "-"]).concat(team.length ? [["", "Total hours", totHrs]] : []))}
+  ${nz(site.desig).length ? `<h2>Designation</h2>${tbl(["Designation", "Qty"], nz(site.desig))}` : ""}
+  ${nz(site.plant).length || nz(site.equip).length ? `<h2>Plant and equipment on site</h2>${tbl(["Item", "Qty"], nz(site.plant).concat(nz(site.equip)))}` : ""}
+  <h2>Work done</h2>${tbl(["No", "Work area", "Activity", "Location", "Qty"], acts.map((r, i) => [i + 1, r.area || "", nice2(r.act), noName(r.loc), `${r.qty || 0} ${r.unit || ""}`]))}
+  ${site.sched ? `<h2>Schedule</h2><p>${esc(site.sched)}. ${esc(site.schedWhy || "")}</p>` : ""}
+  <h2>Site instructions</h2><table class="kv">${row("Written", site.written || "None")}${row("Verbal", site.verbal || "None")}</table>
+  <h2>Material delivered to site</h2>${tbl(["No", "Material"], (site.mats || []).filter(r => r.m).map((r, i) => [i + 1, r.m]))}
+  <h2>Delays</h2>${tbl(["No", "Cause", "Time lost"], delays.map((d, i) => [i + 1, noName(d.c), d.t ? `${d.t} hrs` : ""]))}
+  <div class="sigs">
+    <div><h3>Fibraco site manager</h3><div class="sigline">${fin.sig ? `<img src="${fin.sig}" alt="Signature">` : ""}</div><div>${esc(fin.by || smName())}</div><div>Signed ${esc(fin.at || "")}</div></div>
+    <div><h3>Client representative</h3><div class="sigline"></div><div>Name: ______________________</div><div>Date: ______________________</div></div>
+  </div>
+  <p class="foot">Fibraco (Pty) Ltd. Daily diary from Fibraco Field, printed ${esc(new Date().toLocaleString("en-ZA"))}. Photos are kept in the app.</p>`;
+  let root = document.getElementById("print-root"); if (!root) { root = h("div", { id: "print-root" }); document.body.append(root); }
+  root.innerHTML = html;
+  const t = document.title; document.title = `FIBRACO - Daily Diary - ${project.short} (${dmy(date)})`;
+  const done = () => { document.title = t; root.innerHTML = ""; removeEventListener("afterprint", done); };
+  addEventListener("afterprint", done);
+  const imgs = [...root.querySelectorAll("img")];
+  Promise.all(imgs.map(i => i.complete ? 1 : new Promise(r => { i.onload = i.onerror = r; }))).then(() => setTimeout(() => window.print(), 150));
 }
 function sendBack(p, sec) {
   const t = h("textarea", { id: "backnote", placeholder: "What must he fix?", style: "width:100%;min-height:90px;border-radius:6px;border:1px solid #c9ced6;padding:8px;color:#15191e" });
@@ -1375,14 +1414,14 @@ function shrinkPhoto(file) {
   return new Promise((res, rej) => {
     const u = URL.createObjectURL(file), im = new Image();
     im.onload = () => {
-      const max = 1600, r = Math.min(1, max / Math.max(im.width, im.height));
+      const max = 1280, r = Math.min(1, max / Math.max(im.width, im.height));
       const c = document.createElement("canvas"); c.width = Math.round(im.width * r); c.height = Math.round(im.height * r);
       const x = c.getContext("2d"); x.drawImage(im, 0, 0, c.width, c.height);
       // stamp who, when and which project on the photo itself
       const stamp = `${S.user || ""}  |  ${S.project ? S.project.short : ""}  |  ${new Date().toLocaleString("en-ZA")}`;
       x.font = `${Math.max(14, Math.round(c.width / 45))}px sans-serif`; const th = Math.max(22, Math.round(c.width / 30));
       x.fillStyle = "rgba(0,0,0,.55)"; x.fillRect(0, c.height - th, c.width, th); x.fillStyle = "#fff"; x.fillText(stamp, 8, c.height - th / 3);
-      URL.revokeObjectURL(u); res(c.toDataURL("image/jpeg", 0.72));
+      URL.revokeObjectURL(u); res(c.toDataURL("image/jpeg", 0.62));
     };
     im.onerror = () => { URL.revokeObjectURL(u); rej(new Error("not an image")); };
     im.src = u;
@@ -1600,10 +1639,11 @@ async function boot() {
     return ask("Choose a 4 digit PIN", `Welcome. You will type this PIN every time the app opens.`);
   }
   if (await Store.hasSaved()) {
-    let tries = 0;
-    return pinPad("Type your PIN", "", (pin, say) => Store.unlock(pin).then(ok => {
-      if (ok) return startApp();
-      tries++; say(tries >= 5 ? "Forgot your PIN? Open your personal link from WhatsApp again to set a new one." : "Wrong PIN. Try again.");
+    return pinPad("Type your PIN", "", (pin, say) => Store.unlock(pin).then(async ok => {
+      if (ok === true) return startApp();
+      const left = 10 - ok;
+      if (left <= 0) { await Store.wipe(true); return screen(h("h1", { class: "big", style: "text-align:center" }, "App cleared"), centre("The PIN was wrong 10 times, so the app cleared itself on this phone."), centre("Open your personal link again to set it up with a new PIN.")); }
+      say(left <= 3 ? `Wrong PIN. ${left} ${left === 1 ? "try" : "tries"} left before the app clears itself on this phone.` : ok >= 3 ? "Wrong PIN. Forgot it? Open your personal link again to set a new one." : "Wrong PIN. Try again.");
     }));
   }
   screen(h("h1", { class: "big", style: "text-align:center" }, "Fibraco Field"), h("p", { style: "text-align:center;padding:0 20px" }, "Open the app with your personal link from WhatsApp. It only works for you."));

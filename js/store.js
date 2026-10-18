@@ -107,7 +107,8 @@ const Store = (() => {
     async unlock(pin) {
       const w = await metaGet("wrapped");
       let secret;
-      try { secret = await unwrap(pin, w); } catch (e) { return false; }
+      try { secret = await unwrap(pin, w); } catch (e) { const n = ((await metaGet("fails")) || 0) + 1; await metaSet("fails", n); return n; }
+      await metaSet("fails", 0);
       if (!secret.d) { secret.d = (await metaGet("dev")) || newDevice(); await metaSet("dev", secret.d); await metaSet("wrapped", await wrap(pin, secret)); }
       return api.unlockWith(secret);
     },
@@ -154,11 +155,13 @@ const Store = (() => {
       return ME;
     },
     // wipe everything this app kept on the device (used when the office removes a device)
-    async wipe() {
+    async wipe(keepDevice) {
+      const dev = keepDevice ? await metaGet("dev").catch(() => null) : null;
       mem.clear(); K = HK = FK = TOKEN = DEV = ME = null;
       try { if (db) db.close(); db = null; } catch (e) {}
       await new Promise(res => { const r = indexedDB.deleteDatabase("fibraco-field"); r.onsuccess = r.onerror = r.onblocked = () => res(); });
       try { for (const k of await caches.keys()) await caches.delete(k); } catch (e) {}
+      if (dev) await metaSet("dev", dev); // same phone stays approved when the man sets it up again
     },
     // office only
     listDevices: () => rpc("list_devices", {}),

@@ -210,3 +210,27 @@ h1.big { font-family: var(--display); font-weight: 900; color: var(--head); text
 .pin-pad { display: grid; grid-template-columns: repeat(3, 76px); gap: 14px; }
 .pin-pad button { height: 64px; border-radius: 50%; border: 1px solid #c9ced6; background: #fff; font-size: 24px; font-weight: 700; color: #15191e; }
 .pin-pad button:active { background: #e6f0f7; }
+
+/* daily diary PDF: only the print layout shows when printing or saving as PDF */
+@media screen { #print-root { display: none; } }
+@media print {
+  @page { size: A4; margin: 14mm 12mm; }
+  html, body { background: #fff !important; height: auto !important; min-height: 0 !important; padding: 0 !important; margin: 0 !important; }
+  body > *:not(#print-root) { display: none !important; }
+  #print-root { display: block; color: #111; font-family: Aptos, Archivo, Arial, sans-serif; font-size: 10.5pt; line-height: 1.35; }
+  #print-root .pd-head { display: flex; align-items: center; gap: 16px; border-bottom: 2.5pt solid #0069aa; padding-bottom: 8px; margin-bottom: 10px; }
+  #print-root .pd-head img { width: 150px; }
+  #print-root h1 { color: #0069aa; font-size: 16pt; margin: 0 0 2px; letter-spacing: .04em; }
+  #print-root h2 { color: #0069aa; font-size: 11pt; text-transform: uppercase; letter-spacing: .04em; margin: 12px 0 4px; break-after: avoid; }
+  #print-root h3 { font-size: 10pt; margin: 0 0 4px; color: #0069aa; text-transform: uppercase; }
+  #print-root table { width: 100%; border-collapse: collapse; break-inside: auto; }
+  #print-root tr { break-inside: avoid; }
+  #print-root th, #print-root td { border: 0.6pt solid #9aa5b1; padding: 3px 6px; text-align: left; vertical-align: top; font-size: 10pt; }
+  #print-root table.g thead th { background: #0069aa; color: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  #print-root table.kv th { width: 30%; background: #eef3f8; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  #print-root .none { margin: 2px 0; color: #555; }
+  #print-root .sigs { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 16px; break-inside: avoid; }
+  #print-root .sigline { height: 60px; border-bottom: 0.8pt solid #111; margin-bottom: 4px; }
+  #print-root .sigline img { height: 58px; }
+  #print-root .foot { margin-top: 14px; font-size: 8.5pt; color: #555; }
+}
