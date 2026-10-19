@@ -338,3 +338,8 @@ html, body { overscroll-behavior-y: none; }
 
 .mbtn.tz-btn{background:#0b1a2b;color:#00e5ff;border:2px solid #00e5ff;box-shadow:0 0 12px rgba(0,229,255,.35);margin-bottom:12px;letter-spacing:.12em}
 .mbtn.tz-btn small{color:#9fdcea;letter-spacing:0}
+
+.sheet .other-card .who-btn{flex:1;min-height:44px;border-radius:8px;border:2px solid #c9d0d8;background:#fff;color:#15191e;font:inherit;font-weight:800;font-size:15px}
+.sheet .other-card .who-btn.on{background:#0069aa;border-color:#0069aa;color:#fff}
+
+.help-note{background:#fff8e1;border:2px solid #f29900;border-radius:10px;padding:10px 12px;margin:0 0 12px;font-size:13.5px;color:#5a3b00}
