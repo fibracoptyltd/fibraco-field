@@ -276,7 +276,7 @@ function vProjects() {
     h("div", { style: "text-align:center;margin-top:14px" }, h("button", { class: "btn-g", type: "button", style: "padding:8px 14px;font-size:13px", onclick: changePin }, "Change my PIN")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1792440208";
+const APPV = "1792441271";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -349,7 +349,7 @@ async function sendRegister(p, d, days) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792440208"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792440208"); await loadJs("./js/pdf.js?v=1792440208");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792441271"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792441271"); await loadJs("./js/pdf.js?v=1792441271");
     const { html, title } = attDoc(p, d, days); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
@@ -453,7 +453,7 @@ async function timeZone() {
   try {
     try { Store.kick(); await refreshDevices(true); } catch (e) {}
     await new Promise(r => setTimeout(r, 1800));
-    await loadJs("./js/lib/html2canvas.min.js?v=1792440208"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792440208"); await loadJs("./js/pdf.js?v=1792440208");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792441271"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792441271"); await loadJs("./js/pdf.js?v=1792441271");
     const D = tzData(), stamp = `${dmy(new Date())} ${hhmm()}`, name = `FIBRACO - Time Zone (${stamp})`;
     const pdf = await window.FibPdf.diaryPdf(tzHtml(D), name);
     const json = new File([JSON.stringify(D, null, 1)], name.replace(/[\\/:*?"<>|]+/g, "-") + ".json", { type: "application/json" });
@@ -970,11 +970,11 @@ const allocOf = k => Store.get("alloc|" + k) || planFor(k);
 const keyOf = t => t.key || (t.act + "|Site");
 const totCache = {};
 function grandTotal(p, key) {
-  if (!totCache[p.id]) { const m = {}; for (const rows of Object.values(p.plan || {})) for (const r of rows) m[r.key] = (m[r.key] || 0) + (+r.target || 0); for (const [kk, n] of Object.entries(p.before || {})) m[kk] = (m[kk] || 0) + n; totCache[p.id] = m; }
+  if (!totCache[p.id]) { const m = {}; for (const rows of Object.values(p.plan || {})) for (const r of rows) if (!r.carry) m[r.key] = (m[r.key] || 0) + (+r.target || 0); for (const [kk, n] of Object.entries(p.before || {})) m[kk] = (m[kk] || 0) + n; totCache[p.id] = m; }
   return totCache[p.id][key];
 }
 function doneToDate(p, key, ds, me, live) {
-  let n = (p.before || {})[key] || 0;
+  let n = ((p.before || {})[key] || 0) + ((p.adjust || {})[key] || 0);
   for (const [id, o] of Store.list(`prog|${p.id}|`)) { const x = id.split("|"); if (x[2] > ds || (x[2] === ds && x[3] === me)) continue; n += +((o.k || {})[key] || 0); }
   return n + (+live || 0);
 }
@@ -982,9 +982,10 @@ function doneToDate(p, key, ds, me, live) {
 const PER_NODE = ["SPLICE FOC IN SPLICE BOX", "FIT BOX IN DB (COMMS SPACE)", "PREP DIN RAIL OR WALL BOX", "PREP AND ROUTE FOC TO BOX", "GLANDING (M20)", "48F PATCH PANEL TERMINATIONS"];
 function nodeOf(loc) { const m = /RMU \d/i.exec(loc || ""); if (m) return m[0].toUpperCase(); if (/Diesel Generator|DG panel/i.test(loc || "")) return "DG panel"; if (/Control Room/i.test(loc || "")) return "Control Room"; return "Site"; }
 const otherKey = o => o.act + "|" + (PER_NODE.includes(o.act) ? nodeOf(o.loc) : "Site");
-const otherList = sec => ((sec || {}).other || []).filter(o => o.act && +o.qty > 0);
+// A team job is booked once: the man who books it counts the quantity, the others only note that they helped.
+const otherList = sec => ((sec || {}).other || []).filter(o => o.act && +o.qty > 0 && !o.by);
 // what one man did today, per activity and spot, so the whole crew sees the running totals (other work included)
-function progOf(tasks, rows, other) { const k = {}; tasks.forEach((t, i) => { const q = +((rows[i] || {}).done || 0); if (q) k[keyOf(t)] = (k[keyOf(t)] || 0) + q; }); (other || []).forEach(o => { if (o.act && +o.qty > 0) k[otherKey(o)] = (k[otherKey(o)] || 0) + +o.qty; }); return k; }
+function progOf(tasks, rows, other) { const k = {}; tasks.forEach((t, i) => { const q = +((rows[i] || {}).done || 0); if (q) k[keyOf(t)] = (k[keyOf(t)] || 0) + q; }); (other || []).forEach(o => { if (o.act && +o.qty > 0 && !o.by) k[otherKey(o)] = (k[otherKey(o)] || 0) + +o.qty; }); return k; }
 function putProg(pid, ds, who, tasks, rows, other) { Store.put(`prog|${pid}|${ds}|${who}`, { k: progOf(tasks, rows, other), at: new Date().toISOString() }); }
 // A task counts at most its target for the day. Extra on one job never hides a job that was not done.
 const capped = (t, r) => Math.min(+((r || {}).done) || 0, +t.target || 0);
@@ -1472,14 +1473,16 @@ function otherBox(sec, locked) {
   const acts = projActs(), box = h("div");
   const card = (o, i) => {
     const unit = h("span", { style: "font-weight:800;color:#0069aa;padding:0 8px" }, o.unit || "");
-    if (locked) return h("div", { class: "other-card" }, h("div", { style: "font-weight:800" }, o.act ? nice2(o.act) : o.what || ""), h("div", { style: "font-size:12.5px;color:#5b6470" }, [o.loc, o.qty ? `${o.qty} ${o.unit || ""}` : "", o.what && o.act ? o.what : ""].filter(Boolean).join("  |  ")));
+    if (locked) return h("div", { class: "other-card" }, h("div", { style: "font-weight:800" }, o.act ? nice2(o.act) : o.what || ""), h("div", { style: "font-size:12.5px;color:#5b6470" }, [o.loc, o.qty ? `${o.qty} ${o.unit || ""}` : "", o.what && o.act ? o.what : "", o.by ? `helped, booked by ${o.by}` : ""].filter(Boolean).join("  |  ")));
     return h("div", { class: "other-card" },
       h("div", { style: "display:flex;justify-content:space-between;align-items:center;margin-bottom:6px" }, h("b", {}, `Other work ${i + 1}`),
         h("button", { type: "button", class: "btn-g", style: "padding:4px 10px;font-size:12px", onclick: () => { sec.other.splice(i, 1); draw(); } }, "Remove")),
       sel(acts.map(a => a.act), o.act, v => { o.act = v; o.unit = (acts.find(a => a.act === v) || {}).unit || ""; unit.textContent = o.unit; }, "What did you do?"),
       h("div", { style: "margin-top:6px" }, inp("text", o.loc, v => o.loc = v, "Where, e.g. Battery 1 to PCS")),
       h("div", { style: "display:flex;align-items:center;margin-top:6px" }, inp("number", o.qty, v => o.qty = v, "How many"), unit),
-      h("div", { style: "margin-top:6px" }, inp("text", o.what, v => o.what = v, "Why, or more detail (optional)")));
+      h("div", { style: "margin-top:6px" }, inp("text", o.what, v => o.what = v, "Why, or more detail (optional)")),
+      h("div", { style: "margin-top:6px;font-size:12.5px;font-weight:800;color:#0069aa" }, "Did others work on this with you? Only ONE man books the quantity."),
+      sel(["I book the quantity"].concat(CREW_OF().filter(n => n !== S.user).map(n => `${n} books it`)), o.by ? `${o.by} books it` : "I book the quantity", v => { o.by = v === "I book the quantity" ? "" : v.replace(/ books it$/, ""); }, "Who books it"));
   };
   const draw = () => box.replaceChildren(...sec.other.map(card), ...(sec.other.length ? [] : [h("div", { style: "padding:4px 12px 8px;font-size:13px;color:#5b6470" }, locked ? "None" : "Did work that is not in your list above? Add it here so it counts.")]));
   draw();
@@ -1555,7 +1558,9 @@ function vMySection() {
     locked ? h("div", { style: "text-align:center;margin:10px 0" }, statusPill(sec.status),
       canReopen(sec) ? h("div", { style: "margin-top:12px" },
         h("button", { class: "mbtn", type: "button", onclick: () => askYesNo("Change my section?", `You can change your section until ${editUntil()} today. Then sign and submit it again.${sec.status === "approved" ? " The site manager approves it again after." : ""}`, "Change it", () => { sec.status = "draft"; sec.sig = ""; delete sec.at; persist(); render(); window.scrollTo(0, 0); }) }, "Change my section", h("small", {}, `Open until ${editUntil()} today, then it locks`))) : null) :
-      submitBtn(() => { const e = []; if (tasks.some((t, i) => (sec.rows[i] || {}).done === undefined || (sec.rows[i] || {}).done === "")) e.push("Fill in what you did for every task, even if it is 0."); if (tasks.some((t, i) => /SPLICE|DOME JOINT/.test(t.act) && +((sec.rows[i] || {}).done || 0) > 0 && !(sec.rows[i] || {}).eq)) e.push("Choose the splice machine you used."); if (behind() && !sec.delays.some(d => d.cause && d.hrs)) e.push("You are behind the target. Add the delay cause and the hours lost."); if ((sec.other || []).some(o => (o.act || o.loc || o.qty || o.what) && (!o.act || !(+o.qty > 0) || !o.loc))) e.push("Other work: choose what you did, where, and how many. Remove a line you do not need."); if (!sec.hrs) e.push("Choose your hours worked."); if (!sec.sig) e.push("Sign your section."); return e; },
+      submitBtn(() => { const e = []; if (tasks.some((t, i) => (sec.rows[i] || {}).done === undefined || (sec.rows[i] || {}).done === "")) e.push("Fill in what you did for every task, even if it is 0."); if (tasks.some((t, i) => /SPLICE|DOME JOINT/.test(t.act) && +((sec.rows[i] || {}).done || 0) > 0 && !(sec.rows[i] || {}).eq)) e.push("Choose the splice machine you used."); if (behind() && !sec.delays.some(d => d.cause && d.hrs)) e.push("You are behind the target. Add the delay cause and the hours lost."); if ((sec.other || []).some(o => (o.act || o.loc || o.qty || o.what) && (!o.act || !(+o.qty > 0) || !o.loc))) e.push("Other work: choose what you did, where, and how many. Remove a line you do not need."); tasks.forEach((t, i) => { const r = sec.rows[i] || {}; if (r.done !== undefined && r.done !== "" && +r.done === 0 && !(r.note || "").trim()) e.push(`${nice2(t.act)} is 0. Write in its note why it was not done.`); });
+        if (sec.delays.some(d => d.cause && !(+d.hrs > 0))) e.push("Every delay needs its hours lost.");
+        if (!sec.hrs) e.push("Choose your hours worked."); if (!sec.sig) e.push("Sign your section."); return e; },
         { label: "Submit my section", onDone: () => { putProg(S.project.id, ymd(S.date), S.user, tasks, sec.rows, sec.other); sec.status = "submitted"; sec.at = new Date().toLocaleTimeString("en-ZA", { hour: "2-digit", minute: "2-digit" }).replace(":", "h"); showInfo("Submitted", "Your section is with the site manager for review."); goBack(); } })];
 }
 
@@ -1577,7 +1582,7 @@ function vReview() {
         h("td", { style: "padding:8px;font-size:12.5px;font-weight:700" }, nice2(t.act), h("div", { style: "font-weight:500;color:#5b6470" }, t.loc + (r.note ? `. ${r.note}` : ""))),
         h("td", { style: "width:74px;text-align:center;font-size:12.5px" }, "Target", h("div", { style: "font-weight:800" }, `${t.target}`)),
         h("td", { style: "width:84px" }, sec.status === "draft" || final || viewOnly ? h("div", { style: "text-align:center;font-weight:800;padding:8px" }, r.done ?? "-") : inp("number", r.done, v => { r.done = v; r.edited = true; }, "Done")))),
-        (sec.other || []).filter(o => o.act || o.what).map(o => h("tr", {}, h("td", { colspan: 3, style: "padding:8px;font-size:12.5px" }, h("b", {}, "Other work: "), o.act ? `${nice2(o.act)}, ${o.loc || "-"}, ${o.qty || 0} ${o.unit || ""}${o.what ? ". " + o.what : ""}` : `${o.what} (${o.qty || 0})`))),
+        (sec.other || []).filter(o => o.act || o.what).map(o => h("tr", {}, h("td", { colspan: 3, style: "padding:8px;font-size:12.5px" }, h("b", {}, "Other work: "), o.act ? `${nice2(o.act)}, ${o.loc || "-"}, ${o.qty || 0} ${o.unit || ""}${o.what ? ". " + o.what : ""}${o.by ? ` (helped, booked by ${o.by})` : ""}` : `${o.what} (${o.qty || 0})`))),
         h("tr", {}, h("td", { colspan: 3, style: "padding:0" }, (() => { const sc = ["submitted", "approved"].includes(sec.status) && schedFor(p); return sc ? hbar("Total on project to date", sc.done, sc.plan, { unit: sc.unit, perDay: sc.perDay }) : ""; })())),
         h("tr", {}, h("td", { colspan: 3, style: "padding:8px;font-size:12.5px;color:#5b6470" }, `Hours ${sec.hrs || "-"}${delayText(sec) ? "  |  Delay: " + delayText(sec) : ""}${sec.at ? "  |  Submitted " + sec.at : ""}`)))),
       sec.status === "submitted" && !final && !viewOnly ? h("div", { style: "display:flex;gap:8px;padding:10px 12px" },
@@ -1667,7 +1672,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792440208"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792440208"); await loadJs("./js/pdf.js?v=1792440208");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792441271"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792441271"); await loadJs("./js/pdf.js?v=1792441271");
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
     // Phones only open the share menu straight after a tap, so the last step is one tap on Share.
@@ -2279,7 +2284,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792440208"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792440208"); await loadJs("./js/pdf.js?v=1792440208");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792441271"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792441271"); await loadJs("./js/pdf.js?v=1792441271");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
