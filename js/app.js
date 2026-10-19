@@ -275,7 +275,7 @@ function vProjects() {
     h("div", { style: "text-align:center;margin-top:14px" }, h("button", { class: "btn-g", type: "button", style: "padding:8px 14px;font-size:13px", onclick: changePin }, "Change my PIN")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1792427853";
+const APPV = "1792429870";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -305,13 +305,78 @@ function vCalendar() {
     h("div", { class: "cal" }, ["S", "M", "T", "W", "T", "F", "S"].map((d, i) => h("div", { class: "dow" + (i === 0 ? " sun" : "") }, d)), cells),
     h("div", { class: "legend" }, h("span", {}, h("i"), "Forms submitted that day"))];
 }
+// ---------- attendance register: each man signs in (and out) with his PIN, the register makes itself ----------
+const attId = (p, d, who) => `att|${p.id}|${ymd(d)}|${who}`;
+const attGet = (p, d, who) => Store.get(attId(p, d, who));
+const hhmm = (t = new Date()) => `${String(t.getHours()).padStart(2, "0")}h${String(t.getMinutes()).padStart(2, "0")}`;
+const attPeople = p => Object.keys(p.team || {}).filter(n => p.team[n] && p.team[n] !== "pm");
+function attSummary(p, d) { const ppl = attPeople(p), n = ppl.filter(x => (attGet(p, d, x) || {}).in).length; return `${n} of ${ppl.length} signed in`; }
+function gpsNow() {
+  return new Promise(res => { if (!navigator.geolocation) return res(null);
+    navigator.geolocation.getCurrentPosition(g => res({ lat: +g.coords.latitude.toFixed(6), lng: +g.coords.longitude.toFixed(6), acc: Math.round(g.coords.accuracy) }), () => res(null), { enableHighAccuracy: true, timeout: 7000, maximumAge: 60000 }); });
+}
+function attButton() {
+  if (!S.project || !roleIn(S.user) || roleIn(S.user) === "pm") return null;
+  const isToday = ymd(S.date) === ymd(new Date()), a = attGet(S.project, S.date, S.user) || {};
+  if (a.in && a.out) return h("button", { class: "mbtn att-done", type: "button", onclick: () => showInfo("Attendance register", `You signed in at ${a.in} and out at ${a.out}.`) }, `REGISTER SIGNED  |  IN ${a.in}  |  OUT ${a.out}`);
+  if (!isToday) return a.in ? h("button", { class: "mbtn att-done", type: "button" }, `REGISTER  |  IN ${a.in}`) : null;
+  const sign = out => mySig(async v => { if (!v) return;
+    toast("Saving..."); const gps = await gpsNow(), now = new Date();
+    const rec = Object.assign({ who: S.user, date: ymd(S.date) }, attGet(S.project, S.date, S.user) || {});
+    if (out) Object.assign(rec, { out: hhmm(now), outAt: now.toISOString(), outSig: v, outGps: gps });
+    else Object.assign(rec, { in: hhmm(now), inAt: now.toISOString(), sig: v, gps });
+    Store.put(attId(S.project, S.date, S.user), rec); render(); showInfo(out ? "Signed out" : "Signed in", out ? `You signed out at ${rec.out}. Safe travels.` : `You are on the register at ${rec.in}. Sign out here when you leave site.`); });
+  return a.in
+    ? h("button", { class: "mbtn att-out", type: "button", onclick: () => sign(true) }, `SIGNED IN ${a.in}. TAP TO SIGN OUT`, h("small", {}, "When you leave site. Type your PIN."))
+    : h("button", { class: "mbtn att-in", type: "button", onclick: () => sign(false) }, "SIGN THE ATTENDANCE REGISTER", h("small", {}, "Tap when you get to site and type your PIN. Time and place are recorded."));
+}
+function attDoc(p, d) {
+  const esc = x => String(x == null ? "" : x).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+  const rows = attPeople(p).map((n, i) => { const a = attGet(p, d, n) || {}; const pr = PEOPLE.find(x => x.name === n) || {};
+    return `<tr><td>${i + 1}</td><td>${esc(n)}</td><td>${esc(p.team[n] === "sm" ? "Site manager" : pr.role || "")}</td><td>${esc(a.in || "Absent")}</td><td>${a.sig ? `<img src="${a.sig}" style="height:34px">` : ""}</td><td>${esc(a.out || "")}</td><td>${a.outSig ? `<img src="${a.outSig}" style="height:34px">` : ""}</td></tr>`; }).join("");
+  const n = attPeople(p).filter(x => (attGet(p, d, x) || {}).in).length;
+  const html = `<div class="pd-head"><img src="${LOGO}" alt="Fibraco"><div><h1>ATTENDANCE REGISTER</h1><div>${esc(p.name)}</div><div>${esc(nice(d))}</div></div></div>
+  <table class="kv"><tr><th>Client</th><td>${esc(p.client || "")}</td></tr><tr><th>Site manager</th><td>${esc(smName(p))}</td></tr><tr><th>On site</th><td>${n} of ${attPeople(p).length}</td></tr></table>
+  <h2>Register</h2><table class="g"><thead><tr><th>No</th><th>Name</th><th>Role</th><th>Time in</th><th>Signature in</th><th>Time out</th><th>Signature out</th></tr></thead><tbody>${rows}</tbody></table>
+  <p class="none">Each person signed in and out on his own phone with his own PIN. Times are from the phone at the moment of signing.</p>`;
+  return { html, title: `FIBRACO - Attendance Register - ${p.short} (${dmy(d)})` };
+}
+async function sendRegister(p, d) {
+  if (sending) return; sending = true;
+  const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
+  document.body.append(ov);
+  try {
+    await loadJs("./js/lib/html2canvas.min.js?v=1792429870"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792429870"); await loadJs("./js/pdf.js?v=1792429870");
+    const { html, title } = attDoc(p, d); const file = await window.FibPdf.diaryPdf(html, title);
+    const m = ov.querySelector(".modal"); m.innerHTML = "";
+    m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
+      h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
+        h("button", { class: "btn-w", type: "button", onclick: async () => { ov.remove(); await window.FibPdf.shareFile(file, `Fibraco attendance register, ${p.short}, ${nice(d)}`); } }, "Share")));
+  } catch (e) { ov.remove(); showInfo("Could not make the PDF", "This phone could not make the PDF. Try again with signal, or use another phone."); }
+  finally { sending = false; }
+}
+function vAttendance() {
+  const p = S.project, d = S.date, ppl = attPeople(p);
+  const row = n => { const a = attGet(p, d, n) || {}, col = a.in ? (a.out ? "#1e8e3e" : "#0069aa") : "#c8102e";
+    return h("div", { style: "display:flex;gap:10px;align-items:center;padding:10px 12px;border-top:1px solid var(--line)" },
+      h("div", { style: `width:7px;align-self:stretch;border-radius:4px;background:${col}` }),
+      h("div", { style: "flex:1;min-width:0" }, h("div", { style: "font-weight:800" }, n),
+        h("div", { style: "font-size:12.5px;color:#5b6470" }, a.in ? `In ${a.in}${a.out ? `  |  Out ${a.out}` : "  |  Still on site"}` : "Not signed in"),
+        a.gps ? h("a", { href: `https://maps.google.com/?q=${a.gps.lat},${a.gps.lng}`, target: "_blank", style: "font-size:12px" }, `Where he signed in (±${a.gps.acc} m)`) : null),
+      a.sig ? h("img", { src: a.sig, alt: "Signature", style: "height:38px;max-width:110px;background:#fff" }) : null); };
+  return [topbar("Attendance register", `${p.short}  |  ${dmy(d)}`, true),
+    h("p", { class: "form-sub" }, "Each man signs in on his own phone with his PIN when he gets to site, and out when he leaves. The register makes itself."),
+    sheet("", h("div", { class: "band" }, attSummary(p, d)), ...ppl.map(row)),
+    h("button", { class: "mbtn", type: "button", onclick: () => sendRegister(p, d) }, "Send register", h("small", {}, "Makes the PDF and opens WhatsApp, email and the rest"))];
+}
 function vMenu() {
   const d = S.date;
   const later = (name, what) => h("button", { class: "mbtn later", onclick: () => showInfo(name, what) }, name);
-  return [topbar(S.project.short, nice(d), true), projCard(S.project), todayCard(),
+  return [topbar(S.project.short, nice(d), true), attButton(), projCard(S.project), todayCard(),
     h("div", { class: "stack" },
       myRepairs(S.user).length ? (() => { const rp = myRepairs(S.user), t = rp.every(x => /^Splice failed/.test(x.title || "")) ? "SPLICE FAILED" : rp.every(x => /^QC failed/.test(x.title || "")) ? "QC FAILED" : "REPAIRS";
         return h("button", { class: "mbtn", style: "background:#c8102e;color:#fff;border-color:#c8102e", onclick: () => go("mysection") }, `${t}: ${rp.length} TO FIX`, h("small", { style: "color:#ffe1e1" }, "Fix it, then tap Repaired")); })() : null,
+      isMgr(S.user) ? h("button", { class: "mbtn", onclick: () => go("attendance") }, "Attendance register", h("small", {}, attSummary(S.project, S.date))) : null,
       isMgr(S.user) && myTasks(S.user).length ? h("button", { class: "mbtn", onclick: () => go("mysection") }, "My tasks today", h("small", {}, "Fill in what you did yourself")) : null,
       h("button", { class: "mbtn", onclick: () => isMgr(S.user) ? go("review") : go("mysection") }, "Daily diaries", h("small", {}, isSM(S.user) ? "Check the crew, add your part, sign" : isMgr(S.user) ? "See how the day is going" : "Fill in my section for today")),
       h("button", { class: "mbtn", onclick: () => startForm("dsti") }, "DSTI"),
@@ -1323,10 +1388,10 @@ function otherBox(sec, locked) {
     locked ? null : h("button", { class: "addrow", type: "button", onclick: () => { sec.other.push({}); draw(); } }, "+ Add other work"));
 }
 // A man may open his own section again and fix it, the same day until the cut-off time, as long as the diary is not signed final.
-const editUntil = () => (S.project.editUntil || "21:00").replace(":", "h");
+const editUntil = () => (S.project.editUntil || "23:00").replace(":", "h");
 function canReopen(sec) {
   if (!["submitted", "approved"].includes(sec.status) || S.final[dayKey()]) return false;
-  const now = new Date(), [hh, mm] = (S.project.editUntil || "21:00").split(":").map(Number);
+  const now = new Date(), [hh, mm] = (S.project.editUntil || "23:00").split(":").map(Number);
   return ymd(S.date) === ymd(now) && now.getHours() * 60 + now.getMinutes() < hh * 60 + mm;
 }
 function vMySection() {
@@ -1503,7 +1568,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792427853"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792427853"); await loadJs("./js/pdf.js?v=1792427853");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792429870"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792429870"); await loadJs("./js/pdf.js?v=1792429870");
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
     // Phones only open the share menu straight after a tap, so the last step is one tap on Share.
@@ -1641,7 +1706,7 @@ function openEmergency() {
 // ---------- render ----------
 let render = function () {
   const v = S.view;
-  const views = { users: vUsers, projects: vProjects, calendar: vCalendar, menu: vMenu, inspections: vInspections, client: vClient, tests: vTests, link: vLink, logtest: vLogTest, biocheck: vBioCheck, allocate: vAllocate, mysection: vMySection, review: vReview, kpi: vKpi, rams: vRams, ramsdoc: vRamsDoc, drawings: vDrawings, drawing: vDrawing, diary: vDiary, dsti: vDsti, inspection: vInspection, check: vCheck, toolbox: vToolbox, incident: vIncident, si: vSI, order: vOrder, done: vDone, feedback: vFeedback, devices: vDevices, dash: vDash, qc: vQc, qcspot: vQcSpot, tsheets: vTsheets, tsheet: vTsheet, treport: vTreport };
+  const views = { users: vUsers, projects: vProjects, calendar: vCalendar, menu: vMenu, inspections: vInspections, client: vClient, tests: vTests, link: vLink, logtest: vLogTest, biocheck: vBioCheck, allocate: vAllocate, mysection: vMySection, review: vReview, kpi: vKpi, rams: vRams, ramsdoc: vRamsDoc, drawings: vDrawings, drawing: vDrawing, diary: vDiary, dsti: vDsti, inspection: vInspection, check: vCheck, toolbox: vToolbox, incident: vIncident, si: vSI, order: vOrder, done: vDone, feedback: vFeedback, devices: vDevices, dash: vDash, qc: vQc, qcspot: vQcSpot, tsheets: vTsheets, tsheet: vTsheet, treport: vTreport, attendance: vAttendance };
   app.replaceChildren(...[].concat((views[v] || vProjects)()).filter(Boolean));
 }
 
@@ -1746,6 +1811,7 @@ Store.metaFor = (id, obj) => {
   if (kind === "sig") return { tags: [`user:${pid}`] };
   if (kind === "alloc" || kind === "prog") return { tags: [`proj:${pid}`] };
   if (kind === "sec") return { tags: [`user:${idOf(x.slice(3).join("|")) || me}`, `mgr:${pid}`] };
+  if (kind === "att") return { tags: [`user:${idOf(x.slice(3).join("|")) || me}`, `mgr:${pid}`] };
   if (kind === "final" || kind === "site" || kind === "qc") return { tags: [`mgr:${pid}`] };
   if (kind === "link" || kind === "issue" || kind === "bio") return { shared: true, tags: [`proj:${pid}`] };
   if (kind === "form") return { tags: pid && pid !== "none" ? [`user:${me}`, `mgr:${pid}`] : [`user:${me}`] };
@@ -2114,7 +2180,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792427853"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792427853"); await loadJs("./js/pdf.js?v=1792427853");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792429870"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792429870"); await loadJs("./js/pdf.js?v=1792429870");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
@@ -2282,6 +2348,7 @@ function dashProject(p, d) {
     const summary = h("div", { style: "display:flex;gap:8px;flex-wrap:wrap;padding:0 14px 12px" },
       h("span", { class: "dash-chip", style: `background:${sub === people.length ? "#1e8e3e" : new Date().getHours() >= 17 ? "#c8102e" : "#f29900"}` }, `${sub} of ${people.length} diaries in`),
       h("span", { class: "dash-chip", style: `background:${signed ? "#1e8e3e" : "#5b6470"}` }, signed ? `Signed ${signed}` : "Not signed yet"),
+      (() => { const ppl = attPeople(p), n = ppl.filter(x => (attGet(p, d, x) || {}).in).length; return h("span", { class: "dash-chip", style: `background:${n === ppl.length ? "#1e8e3e" : n ? "#f29900" : "#c8102e"}` }, `Register ${n} of ${ppl.length}`); })(),
       pctAll != null ? h("span", { class: "dash-chip", style: `background:${barColour(pctAll).bg};color:${barColour(pctAll).fg}` }, `Output ${pctAll}%`) : null,
       p.qcSpots ? (() => { const all = Object.keys(QC_SHEETS).flatMap(k => qcSpots(k).map(sp => qcCount(k, sp))), sg = all.filter(c => c.signed).length, fl = all.filter(c => c.fail).length;
         return h("span", { class: "dash-chip", style: `background:${fl ? "#c8102e" : sg ? "#1e8e3e" : "#5b6470"}` }, `QC ${sg} of ${all.length} spots signed${fl ? `, ${fl} with fails` : ""}`); })() : null);
@@ -2302,6 +2369,7 @@ function dashProject(p, d) {
           h("div", { style: "display:flex;justify-content:space-between;gap:8px;align-items:center" },
             h("div", { style: "font-weight:800;font-size:15px;color:#fff" }, n),
             h("span", { class: "dash-chip", style: `background:${st.c}` }, st.t)),
+          (() => { const a = attGet(p, d, n) || {}; return h("div", { style: `margin-top:4px;font-size:12px;font-weight:700;color:${a.in ? CH.soft : "#ff8a80"}` }, a.in ? `Register: in ${a.in}${a.out ? `, out ${a.out}` : ""}` : "Register: not signed in"); })(),
           bar("TODAY", tp, t.filled ? "No target" : "Not in yet"),
           bar("TO DATE", wp, "No history yet"),
           ...t.short.map(x => h("div", { style: `margin-top:6px;font-size:12.5px;font-weight:800;color:${x.t.crit ? "#ff5c5c" : "#ff8a80"}` }, `${x.t.crit ? "CRITICAL NOT DONE" : "Not done"}: ${nice2(x.t.act)}${where(x.t)}, ${x.d} of ${x.t.target} ${x.t.unit || ""}`)),

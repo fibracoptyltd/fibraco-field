@@ -324,3 +324,10 @@ html, body { overscroll-behavior-y: none; }
 .other-card{padding:10px 12px;border-top:1px solid var(--line)}
 .sheet .other-card input, .sheet .other-card select{border:1px solid #c9d0d8;border-radius:8px;background:#fff}
 .sheet .other-card input:focus, .sheet .other-card select:focus{outline:none;border:2px solid #39ff14;background:#f2ffe9}
+
+/* attendance register buttons */
+.mbtn.att-in{background:#1e8e3e;color:#fff;border-color:#1e8e3e}
+.mbtn.att-in small{color:#e3f6e8}
+.mbtn.att-out{background:#0069aa;color:#fff;border-color:#0069aa}
+.mbtn.att-out small{color:#dcecf7}
+.mbtn.att-done{background:#eef7f0;color:#1e6b33;border-color:#9fd3ad}
