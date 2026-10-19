@@ -1458,7 +1458,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792417114"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792417114"); await loadJs("./js/pdf.js?v=1792417114");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792417180"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792417180"); await loadJs("./js/pdf.js?v=1792417180");
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
     // Phones only open the share menu straight after a tap, so the last step is one tap on Share.
@@ -2063,7 +2063,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792417114"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792417114"); await loadJs("./js/pdf.js?v=1792417114");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792417180"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792417180"); await loadJs("./js/pdf.js?v=1792417180");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
