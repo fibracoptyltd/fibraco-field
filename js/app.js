@@ -447,7 +447,8 @@ function vDone() {
     h("h1", { class: "big", style: "margin-bottom:6px" }, "Submitted"),
     h("p", { class: "note", style: "margin-top:0" }, Store.online() ? "Saved and sent to the office." : "Saved on this phone. It sends by itself as soon as the phone has signal."),
     h("div", { class: "files" }, h("b", {}, "Where it is kept"), h("div", { style: "font-size:13px;margin-top:4px" }, `Safely in the app, under ${short} on ${dmy(f.date)}. The office sees it straight away.`)),
-    f.type === "diary" && f.project && S.final[f.project.id + "|" + ymd(f.date)] ? h("button", { class: "mbtn", style: "margin-top:12px", onclick: () => printDiary(f.project.id + "|" + ymd(f.date), f.project, f.date) }, "Save diary as PDF", h("small", {}, "To print for the client's signature, or to email")) : null,
+    f.type === "diary" && f.project && S.final[f.project.id + "|" + ymd(f.date)] ? h("button", { class: "submit", type: "button", style: "margin-top:12px", onclick: () => sendDiary(f.project.id + "|" + ymd(f.date), f.project, f.date) }, "Send diary") : null,
+    f.type === "diary" && f.project && S.final[f.project.id + "|" + ymd(f.date)] ? h("p", { class: "note", style: "margin-top:6px" }, "Makes the PDF and opens WhatsApp, email and the rest. Send it the way the client agreed.") : null,
     h("div", { class: "stack" },
       f.type === "diary" && f.project && S.final[f.project.id + "|" + ymd(f.date)] ? h("button", { class: "mbtn", onclick: () => { S.hist = ["projects", "calendar", "menu"]; S.view = "review"; render(); window.scrollTo(0, 0); } }, "Back to diary review", h("small", {}, "Client sign-off and KPIs")) : null,
       f.project ? h("button", { class: "mbtn", onclick: () => { S.hist = ["projects", "calendar"]; S.view = "menu"; render(); window.scrollTo(0, 0); } }, "Back to project") : null,
@@ -1261,7 +1262,7 @@ function vReview() {
     h("div", {}, `Tasks on target: ${rows.filter(x => x.r.done !== undefined && x.r.done !== "" && +x.r.done >= +x.t.target).length} of ${rows.length}`)));
   const after = h("div", { class: "stack" },
     final || viewOnly ? h("button", { class: "mbtn", onclick: () => go("client") }, S.client[k] ? "Client signed. View the client copy" : "What the client sees", h("small", {}, S.client[k] ? `Signed by ${S.client[k].name} at ${S.client[k].at}` : "The page the client gets with the diary")) : null,
-    final ? h("button", { class: "mbtn", onclick: () => printDiary(k, S.project, S.date) }, "Save diary as PDF", h("small", {}, "To print for the client's signature, or to email")) : null,
+    final ? h("button", { class: "mbtn", onclick: () => sendDiary(k, S.project, S.date) }, "Send diary", h("small", {}, "Makes the PDF and opens WhatsApp, email and the rest")) : null,
     isPM(S.user) ? h("button", { class: "mbtn", onclick: () => go("kpi") }, "KPIs for the day", h("small", {}, "Only you see this")) : null);
   if (viewOnly) {
     const sub = people.filter(p => ["submitted", "approved"].includes((secs[p] || {}).status)).length;
@@ -1281,8 +1282,8 @@ function vReview() {
       h("button", { class: "mbtn", style: `margin-bottom:12px;${s1 ? "" : "opacity:.45"}`, onclick: () => { if (s1) openCombined(); } }, s2 ? "✓ My part of the diary (open again)" : "2. My part of the diary", h("small", {}, "Weather, plant, site instructions and materials. Team and work fill in by themselves.")),
       h("button", { class: "submit", type: "button", style: s1 && s2 ? "" : "opacity:.45", onclick: () => { if (!(s1 && s2)) return; mySig(v => { if (!v) return; S.final[k] = new Date().toLocaleTimeString("en-ZA", { hour: "2-digit", minute: "2-digit" }).replace(":", "h"); S.done[k] = true; persist(); Store.put("final|" + k, { at: S.final[k], by: S.user, sig: v, date: ymd(S.date) }); Store.lock(["alloc|" + k, "site|" + k, "final|" + k, ...people.map(p => `sec|${k}|${p}`)]); S.form = { type: "diary", project: S.project, date: S.date, user: S.user, photos: [] }; go("done"); }); } }, "3. Sign and make final"))];
 }
-// ---------- daily diary as PDF (print or save from the phone or laptop) ----------
-function printDiary(k, project, date) {
+// ---------- daily diary as PDF (made on the phone, then shared) ----------
+function diaryDoc(k, project, date) {
   const site = Store.get("site|" + k) || {}, fin = Store.get("final|" + k) || {};
   const alloc = S.alloc[k] || [], secs = S.sections[k] || {};
   const people = [...new Set(alloc.map(a => a.who))];
@@ -1312,14 +1313,40 @@ function printDiary(k, project, date) {
     <div><h3>Fibraco site manager</h3><div class="sigline">${fin.sig ? `<img src="${fin.sig}" alt="Signature">` : ""}</div><div>${esc(fin.by || smName())}</div><div>Signed ${esc(fin.at || "")}</div></div>
     <div><h3>Client representative</h3><div class="sigline"></div><div>Name: ${project.sm ? esc(String(project.sm).split(",")[0]) : "______________________"}</div><div>Date: ______________________</div></div>
   </div>
-  <p class="foot">Fibraco (Pty) Ltd. Daily diary from Fibraco Field, printed ${esc(new Date().toLocaleString("en-ZA"))}. Photos are kept in the app.</p>`;
-  let root = document.getElementById("print-root"); if (!root) { root = h("div", { id: "print-root" }); document.body.append(root); }
+  <p class="foot">Fibraco (Pty) Ltd. Daily diary from Fibraco Field, made ${esc(new Date().toLocaleString("en-ZA"))}. Photos are kept in the app.</p>`;
+  return { html, title: `FIBRACO - Daily Diary - ${project.short} (${dmy(date)})` };
+}
+// Fallback when the PDF cannot be made on this device: the browser's own print or save as PDF.
+function printDiary(k, project, date) {
+  const { html, title } = diaryDoc(k, project, date);
+  let root = document.getElementById("print-root"); if (!root) { root = h("div", { id: "print-root", class: "pdoc" }); document.body.append(root); }
   root.innerHTML = html;
-  const t = document.title; document.title = `FIBRACO - Daily Diary - ${project.short} (${dmy(date)})`;
+  const t = document.title; document.title = title;
   const done = () => { document.title = t; root.innerHTML = ""; removeEventListener("afterprint", done); };
   addEventListener("afterprint", done);
   const imgs = [...root.querySelectorAll("img")];
   Promise.all(imgs.map(i => i.complete ? 1 : new Promise(r => { i.onload = i.onerror = r; }))).then(() => setTimeout(() => window.print(), 150));
+}
+const loadJs = src => new Promise((ok, bad) => { if (document.querySelector(`script[src="${src}"]`)) return ok(); const s = document.createElement("script"); s.src = src; s.onload = ok; s.onerror = bad; document.head.append(s); });
+let sending = false;
+async function sendDiary(k, project, date) {
+  if (sending) return; sending = true;
+  const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
+  document.body.append(ov);
+  try {
+    await loadJs("./js/lib/html2canvas.min.js?v=1792406993"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792406993"); await loadJs("./js/pdf.js?v=1792406993");
+    const { html, title } = diaryDoc(k, project, date);
+    const file = await window.FibPdf.diaryPdf(html, title);
+    // Phones only open the share menu straight after a tap, so the last step is one tap on Share.
+    const m = ov.querySelector(".modal"); m.innerHTML = "";
+    m.append(h("h2", {}, "Diary PDF ready"), h("p", {}, file.name),
+      h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
+        h("button", { class: "btn-w", type: "button", onclick: async () => { ov.remove(); const r = await window.FibPdf.shareFile(file, `Fibraco daily diary, ${project.short}, ${nice(date)}`); if (r === "downloaded") showInfo("PDF saved", `${file.name} is in your Downloads. Attach it to an email or WhatsApp to send it.`); } }, "Share")));
+  } catch (e) {
+    ov.remove();
+    showInfo("Could not make the PDF", "This phone could not make the PDF. The print screen opens instead. Choose Save as PDF there, then share it.");
+    printDiary(k, project, date);
+  } finally { sending = false; }
 }
 function sendBack(p, sec) {
   const t = h("textarea", { id: "backnote", placeholder: "What must he fix?", style: "width:100%;min-height:90px;border-radius:6px;border:1px solid #c9ced6;padding:8px;color:#15191e" });
