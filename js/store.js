@@ -57,8 +57,11 @@ const Store = (() => {
   const newDevice = () => b64url(crypto.getRandomValues(new Uint8Array(24)));
   async function deviceLabel() {
     const ua = navigator.userAgent; let model = "";
-    try { if (navigator.userAgentData && navigator.userAgentData.getHighEntropyValues) model = (await navigator.userAgentData.getHighEntropyValues(["model"])).model || ""; } catch (e) {}
-    const os = /Android/.test(ua) ? "Android" : /iPhone|iPad/.test(ua) ? "iPhone" : /Windows/.test(ua) ? "Windows" : /Mac OS/.test(ua) ? "Mac" : /Linux/.test(ua) ? "Linux" : "Device";
+    let osv = "";
+    try { if (navigator.userAgentData && navigator.userAgentData.getHighEntropyValues) { const v = await navigator.userAgentData.getHighEntropyValues(["model", "platformVersion"]); model = v.model || ""; osv = (v.platformVersion || "").split(".")[0]; } } catch (e) {}
+    if (!osv) { const m = ua.match(/Android ([\d]+)/) || ua.match(/OS (\d+)_/); if (m) osv = m[1]; }
+    let os = /Android/.test(ua) ? "Android" : /iPhone|iPad/.test(ua) ? "iPhone" : /Windows/.test(ua) ? "Windows" : /Mac OS/.test(ua) ? "Mac" : /Linux/.test(ua) ? "Linux" : "Device";
+    if (osv && (os === "Android" || os === "iPhone")) os += " " + osv;
     if (!model) { const m = ua.match(/Android [\d.]+; ([^;)]+)/); if (m && m[1] !== "K") model = m[1].replace(/ Build.*/, ""); }
     const br = /Edg\//.test(ua) ? "Edge" : /SamsungBrowser/.test(ua) ? "Samsung Internet" : /Firefox/.test(ua) ? "Firefox" : /Chrome/.test(ua) ? "Chrome" : /Safari/.test(ua) ? "Safari" : "Browser";
     return [os, model, br].filter(Boolean).join(", ").slice(0, 120);

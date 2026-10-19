@@ -1399,7 +1399,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792411722"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792411722"); await loadJs("./js/pdf.js?v=1792411722");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792412115"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792412115"); await loadJs("./js/pdf.js?v=1792412115");
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
     // Phones only open the share menu straight after a tap, so the last step is one tap on Share.
@@ -1707,6 +1707,23 @@ function askYesNo(title, text, yes, onYes, danger) {
       h("button", { class: "btn-w", type: "button", style: danger ? "background:#c8102e" : "", onclick: () => { ov.remove(); onYes(); } }, yes))));
   document.body.append(ov);
 }
+// Office phone register: the IMEI, cell number and asset number the office records when it hands out a phone.
+// A web app cannot read a phone's IMEI by itself, so the office types it once (dial *#06# on the phone to see it).
+function phoneReg(p, d) {
+  const id = `phreg|${p.id}|${d.dev}`, o = Store.get(id) || {};
+  const line = [o.imei && `IMEI ${o.imei}`, o.cell && `Cell ${o.cell}`, o.asset && `Asset ${o.asset}`, o.issued && `Issued ${o.issued}`].filter(Boolean).join("  |  ");
+  return h("div", { style: "font-size:12px;margin-top:4px;display:flex;gap:8px;align-items:center;flex-wrap:wrap" },
+    h("span", { style: line ? "font-weight:700" : "color:#c8102e;font-weight:700" }, line || "No IMEI recorded"),
+    h("button", { type: "button", style: "background:none;border:0;color:#0069aa;font-weight:800;font-size:12px;padding:2px", onclick: () => {
+      const f = { imei: o.imei || "", cell: o.cell || "", asset: o.asset || "", issued: o.issued || ymd(new Date()) };
+      const row = (lab, k, ph, type) => h("label", { style: "display:block;margin:8px 0 2px;font-size:13px;font-weight:700" }, lab, h("input", { type: type || "text", value: f[k], placeholder: ph, oninput: e => f[k] = e.target.value.trim(), style: "display:block;width:100%;margin-top:4px;padding:10px;border:1px solid #c9ced6;border-radius:6px;font-size:15px" }));
+      const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Phone register" }, h("div", { class: "modal" }, h("h2", {}, `${p.name.split(" ")[0]}'s phone`),
+        h("p", { style: "font-size:13px" }, `${d.label || "Device"}. Dial *#06# on that phone to see its IMEI.`),
+        row("IMEI", "imei", "15 digits", "tel"), row("Cell number in the phone", "cell", "e.g. 082 000 0000", "tel"), row("Fibraco asset number", "asset", "e.g. FIB-PH-03"), row("Date handed out", "issued", "", "date"),
+        h("div", { class: "row", style: "margin-top:12px" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Cancel"),
+          h("button", { class: "btn-w", type: "button", onclick: () => { if (f.imei && !/^\d{15}$/.test(f.imei.replace(/\s/g, ""))) return showInfo("Check the IMEI", "An IMEI is 15 digits. Dial *#06# on the phone to see it."); f.imei = f.imei.replace(/\s/g, ""); Store.put(id, { ...f, label: d.label, at: new Date().toISOString() }); ov.remove(); render(); } }, "Save"))));
+      document.body.append(ov); } }, line ? "Edit" : "Add IMEI"));
+}
 function vDevices() {
   if (!DEVS) { refreshDevices(true); return [topbar("Devices and access", "Office only", true), h("p", { class: "note" }, Store.online() ? "Loading..." : "This page needs signal.")]; }
   const act = (fn, msg) => fn().then(() => refreshDevices(true)).catch(e => showInfo("Not changed", Store.online() ? String(e.message || e).replace(/^\w+ \d+: /, "") : "This needs signal. Try again when you are connected."));
@@ -1719,10 +1736,16 @@ function vDevices() {
       ...(devs.length ? devs.map(d => h("div", { "data-label": d.label || "", style: "padding:10px 12px;border-top:1px solid var(--line);display:flex;gap:10px;align-items:center;flex-wrap:wrap" + (d.status === "pending" ? ";background:#fff8ec" : "") },
         h("div", { style: "flex:1 1 180px;min-width:0" },
           h("div", { style: "font-weight:700;font-size:14px" }, d.label || "Unknown device", d.mine ? h("span", { style: "color:var(--muted);font-weight:500" }, "  (this device)") : null),
-          h("div", { style: "font-size:12px;color:var(--muted)" }, `First opened ${when(d.first_seen)}  |  Last used ${when(d.last_seen)}`)),
+          h("div", { style: "font-size:12px;color:var(--muted)" }, `First opened ${when(d.first_seen)}  |  Last used ${when(d.last_seen)}`),
+          phoneReg(p, d)),
         chip(d.status),
         d.mine ? null : h("div", { style: "display:flex;gap:6px" },
-          d.status !== "active" ? h("button", { class: "btn-w", type: "button", style: "padding:8px 14px", onclick: () => askYesNo("Allow this device?", `${p.name} on ${d.label || "this device"} gets full access to his projects.`, "Allow", () => act(() => Store.setDevice(p.id, d.dev, "active"))) }, "Allow") : null,
+          d.status !== "active" ? h("button", { class: "btn-w", type: "button", style: "padding:8px 14px", onclick: () => {
+            // one phone per person: allowing a new phone cuts off and wipes his other devices (the office is the exception)
+            const others = p.admin ? [] : devs.filter(x => x.dev !== d.dev && x.status !== "blocked");
+            askYesNo(others.length ? `Move ${p.name.split(" ")[0]} to this phone?` : "Allow this device?",
+              others.length ? `${p.name} can only use one phone. ${d.label || "This phone"} gets his projects, and ${others.map(x => x.label || "his other device").join(" and ")} is cut off straight away and wiped next time it has signal.` : `${p.name} on ${d.label || "this device"} gets full access to his projects.`,
+              others.length ? "Move" : "Allow", () => act(async () => { await Store.setDevice(p.id, d.dev, "active"); for (const x of others) await Store.setDevice(p.id, x.dev, "blocked"); })); } }, "Allow") : null,
           d.status !== "blocked" ? h("button", { class: "btn-g", type: "button", style: "padding:8px 14px", onclick: () => askYesNo("Block this device?", `${d.label || "This device"} stops working for ${p.name} straight away. Next time it has signal, everything the app kept on it is wiped.`, "Block", () => act(() => Store.setDevice(p.id, d.dev, "blocked")), true) }, "Block") : null)))
         : [h("div", { style: "padding:10px 12px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)" }, "Link not opened yet.")]),
       h("div", { style: "padding:8px 12px;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap" },
@@ -1734,7 +1757,7 @@ function vDevices() {
           : askYesNo(`Switch ${p.name} on again?`, "His link works again. Devices you blocked stay blocked.", "Switch on", () => act(() => Store.setMember(p.id, true))) }, on ? `Switch ${p.name.split(" ")[0]} off` : `Switch ${p.name.split(" ")[0]} on again`)));
   };
   return [topbar("Devices and access", "Office only", true),
-    h("p", { class: "hint", style: "margin:4px 2px 12px" }, "Each personal link works on the first device that opens it. Any other phone or laptop waits here for you. Block a device and it is cut off and wiped. Switch a person off when he leaves."),
+    h("p", { class: "hint", style: "margin:4px 2px 12px" }, "Each person can use one phone only. His link works on the first phone that opens it. Any other phone or laptop waits here for you, with its make and model. Allow a new phone and his old one is cut off and wiped. Record each phone's IMEI so you can match it to the phone you handed out."),
     ...people.map(card),
     h("button", { class: "mbtn ghost", onclick: () => refreshDevices(true) }, "Refresh")];
 }
