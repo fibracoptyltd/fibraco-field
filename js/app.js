@@ -266,6 +266,7 @@ function vProjects() {
   return [topbar("Fibraco", S.user, false), h("div", { class: "who" }, h("span", {}, "Signed in as ", h("b", {}, S.user), ` (${ROLE[S.user]})`), null),
     installCard(),
     isAdmin(S.user) ? h("button", { class: "mbtn", style: `background:${CH.bg};color:#fff;border-color:${CH.bg};margin-bottom:12px`, onclick: () => go("dash") }, "MY DASHBOARD", h("small", { style: "color:#c9d0d8" }, "Who is in, who is behind, colour first")) : null,
+    isAdmin(S.user) ? h("button", { class: "mbtn tz-btn", onclick: timeZone }, "TIME ZONE", h("small", {}, "Snapshot of everything right now, for Claude to review")) : null,
     ...(alertsBanner() || []),
     h("h1", { class: "big" }, "Projects"),
     h("div", { class: "stack" },
@@ -275,7 +276,7 @@ function vProjects() {
     h("div", { style: "text-align:center;margin-top:14px" }, h("button", { class: "btn-g", type: "button", style: "padding:8px 14px;font-size:13px", onclick: changePin }, "Change my PIN")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1792430198";
+const APPV = "1792440208";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -348,7 +349,7 @@ async function sendRegister(p, d, days) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792430198"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792430198"); await loadJs("./js/pdf.js?v=1792430198");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792440208"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792440208"); await loadJs("./js/pdf.js?v=1792440208");
     const { html, title } = attDoc(p, d, days); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
@@ -383,6 +384,89 @@ function vAttendance() {
     sheet("", h("div", { class: "band" }, `${nice(d)}  |  ${attSummary(p, d)}${open ? "" : "  |  closed"}`), ...ppl.map(row)),
     h("button", { class: "mbtn", type: "button", onclick: () => sendRegister(p, d) }, `Send register for ${dmy(d)}`, h("small", {}, "One day as PDF. Opens WhatsApp, email and the rest")),
     week.length > 1 ? h("button", { class: "mbtn", type: "button", onclick: () => sendRegister(p, d, week) }, `Send the week (${dmy(week[0])} to ${dmy(week[week.length - 1])})`, h("small", {}, "Every day of that week in one PDF")) : null];
+}
+
+// ---------- TIME ZONE (office only): a snapshot of everything right now, for Claude to review ----------
+// Makes two files: a readable PDF and the full data (JSON). Wanro saves them to OneDrive with one tap, Claude reads them there.
+function tzStrip(o) { return JSON.parse(JSON.stringify(o == null ? null : o, (k, v) => typeof v === "string" && v.startsWith("data:") ? "(signature or photo on file)" : k === "photos" && Array.isArray(v) ? `${v.length} photo(s)` : v)); }
+function tzData(nDays = 7) {
+  const now = new Date(), out = { app: "Fibraco Field", made_by: S.user, made_at: now.toISOString(), local_time: `${dmy(now)} ${hhmm(now)}`, version: verLabel(), projects: [] };
+  const saveP = S.project, saveD = S.date;
+  try {
+    for (const p of PROJECTS) {
+      S.project = p; const pj = { id: p.id, name: p.name, client: p.client, site_manager: smName(p), days: [], tests: [], repairs: [], qc: [] };
+      for (let i = nDays - 1; i >= 0; i--) {
+        const d = new Date(now); d.setHours(12, 0, 0, 0); d.setDate(d.getDate() - i); S.date = d;
+        const ds = ymd(d), k = p.id + "|" + ds, alloc = allocOf(k) || [];
+        const secs = {}; for (const [id, o] of Store.list(`sec|${k}|`)) secs[id.slice(`sec|${k}|`.length)] = o;
+        const reg = attPeople(p).map(n => { const a = attGet(p, d, n) || {}; return { who: n, in: a.in || null, out: a.out || null, gps: a.gps || null }; });
+        if (!alloc.length && !Object.keys(secs).length && !reg.some(r => r.in)) continue;
+        const people = [...new Set(alloc.map(a => a.who).concat(Object.keys(secs)))];
+        const fin = Store.get("final|" + k);
+        pj.days.push({ date: ds, diary_signed: fin ? fin.at : null, people: people.map(n => { const mine = alloc.filter(a => a.who === n), sec = secs[n] || {};
+          return { who: n, status: sec.status || "not started", submitted_at: sec.at || null, hours: sec.hrs || null,
+            tasks: mine.map((t, j) => { const r = (sec.rows || [])[j] || {}; return { activity: t.act, where: t.loc, target: +t.target || 0, unit: t.unit || "", critical: !!t.crit, done: r.done === undefined || r.done === "" ? null : +r.done, note: r.note || "", splice_machine: r.eq || null }; }),
+            other_work: (sec.other || []).filter(o => o.act || o.what).map(o => ({ activity: o.act || "", where: o.loc || "", qty: +o.qty || 0, unit: o.unit || "", detail: o.what || "" })),
+            delays: (sec.delays || []).filter(x => x.cause).map(x => ({ cause: x.cause, detail: x.what || "", hours: +x.hrs || 0 })),
+            sent_back_note: sec.back || null }; }),
+          site_manager_part: tzStrip(Store.get("site|" + k)), register: reg });
+      }
+      if (p.routes) pj.tests = tsRoutes().map(r => { const sm = tsSummary(r); return { section: r.practice ? "PRACTICE" : `${r.a} to ${r.b}`, metres: +r.m || null, cores: sm.n, cores_fully_tested: sm.tested, cores_with_problem: sm.bad, wavelengths_with_data: sm.used, issues: sm.used.flatMap(w => tsAnalyse(r, w).issues.map(x => `${w} nm: ${x.text}`)) }; });
+      const byId = {}; Store.list(`issue|${p.id}|`).forEach(([, o]) => { byId[o.id] = o; }); (S.issues[p.id] || []).forEach(o => { byId[o.id] = o; });
+      pj.repairs = Object.values(byId).map(x => ({ title: x.title, detail: x.detail, for: x.resp, found_by: x.found, found_on: x.foundOn, status: x.status }));
+      if (p.qcSpots) pj.qc = Object.keys(QC_SHEETS).flatMap(sh => qcSpots(sh).map(sp => { const c = qcCount(sh, sp); return { sheet: sh, spot: sp, checked: c.done, of: c.total, fails: c.fail, signed: c.signed ? c.signed.at : null }; }));
+      out.projects.push(pj);
+    }
+  } finally { S.project = saveP; S.date = saveD; }
+  out.phones = (DEVS || []).filter(x => x.dev).map(x => ({ who: (PEOPLE.find(q => q.id === x.member_id) || {}).name || x.member_id, phone: x.label || "", status: x.status, first: x.first_seen || x.created_at || null, last: x.last_seen || null }));
+  out.feedback = Store.list("fb|").map(([, o]) => ({ who: o.who, screen: o.view, project: o.project, text: o.text, at: o.at })).slice(-30);
+  return out;
+}
+function tzHtml(D) {
+  const e = x => String(x == null ? "" : x).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+  const tbl = (head, rows) => rows.length ? `<table class="g"><thead><tr>${head.map(x => `<th>${e(x)}</th>`).join("")}</tr></thead><tbody>${rows.map(r => `<tr>${r.map(c => `<td>${e(c)}</td>`).join("")}</tr>`).join("")}</tbody></table>` : `<p class="none">None</p>`;
+  let h = `<div class="pd-head"><img src="${LOGO}" alt="Fibraco"><div><h1>TIME ZONE</h1><div>Snapshot of Fibraco Field</div><div>${e(D.local_time)}  |  app version ${e(D.version)}</div></div></div>`;
+  for (const p of D.projects) {
+    h += `<h2>${e(p.name.toUpperCase())}</h2>`;
+    if (!p.days.length) h += `<p class="none">No work loaded in the last 7 days.</p>`;
+    for (const d of p.days.slice().reverse()) {
+      h += `<h3>${e(d.date)}  |  diary ${d.diary_signed ? "signed " + e(d.diary_signed) : "not signed"}  |  register ${d.register.filter(r => r.in).length} of ${d.register.length}</h3>`;
+      h += tbl(["Man", "Status", "Task", "Where", "Target", "Done", "Note"], d.people.flatMap(m => m.tasks.length ? m.tasks.map((t, i) => [i ? "" : m.who, i ? "" : m.status, nice2(t.activity) + (t.critical ? " (critical)" : ""), t.where, `${t.target} ${t.unit}`, t.done == null ? "-" : t.done, t.note]) : [[m.who, m.status, "-", "", "", "", ""]]));
+      const ow = d.people.flatMap(m => m.other_work.map(o => [m.who, nice2(o.activity) || o.detail, o.where, `${o.qty} ${o.unit}`, o.detail]));
+      if (ow.length) h += `<p><b>Other work</b></p>` + tbl(["Man", "What", "Where", "Qty", "Detail"], ow);
+      const dl = d.people.flatMap(m => m.delays.map(x => [m.who, x.cause, x.detail, x.hours]));
+      if (dl.length) h += `<p><b>Delays</b></p>` + tbl(["Man", "Cause", "Detail", "Hrs"], dl);
+      h += `<p><b>Hours</b> ${e(d.people.map(m => `${m.who} ${m.hours || "-"}`).join("  |  "))}</p>`;
+      h += `<p><b>Register</b> ${e(d.register.map(r => `${r.who} ${r.in ? "in " + r.in + (r.out ? ", out " + r.out : "") : "not signed in"}`).join("  |  "))}</p>`;
+    }
+    if (p.tests.length) h += `<h3>Test sheets</h3>` + tbl(["Section", "Cores", "Tested", "Problem"], p.tests.map(t => [t.section, t.cores, t.cores_fully_tested, t.cores_with_problem]));
+    h += `<h3>Repairs</h3>` + tbl(["Repair", "For", "Found by", "Status"], p.repairs.map(r => [r.title, r.for, `${r.found_by} ${r.found_on}`, r.status]));
+    if (p.qc.length) h += `<h3>QC</h3>` + tbl(["Sheet", "Spot", "Checked", "Fails", "Signed"], p.qc.filter(q => q.checked).map(q => [q.sheet, q.spot, `${q.checked} of ${q.of}`, q.fails, q.signed || "-"]));
+  }
+  if (D.feedback.length) h += `<h2>FEEDBACK FROM THE TEAM</h2>` + tbl(["Who", "Screen", "Text"], D.feedback.map(f => [f.who, f.screen, f.text]));
+  return h;
+}
+async function timeZone() {
+  if (sending) return; sending = true;
+  const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Time zone" }, h("div", { class: "modal" }, h("h2", {}, "Taking the snapshot"), h("p", {}, "Getting the latest from the server first. One moment.")));
+  document.body.append(ov);
+  try {
+    try { Store.kick(); await refreshDevices(true); } catch (e) {}
+    await new Promise(r => setTimeout(r, 1800));
+    await loadJs("./js/lib/html2canvas.min.js?v=1792440208"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792440208"); await loadJs("./js/pdf.js?v=1792440208");
+    const D = tzData(), stamp = `${dmy(new Date())} ${hhmm()}`, name = `FIBRACO - Time Zone (${stamp})`;
+    const pdf = await window.FibPdf.diaryPdf(tzHtml(D), name);
+    const json = new File([JSON.stringify(D, null, 1)], name.replace(/[\\/:*?"<>|]+/g, "-") + ".json", { type: "application/json" });
+    const m = ov.querySelector(".modal"); m.innerHTML = "";
+    m.append(h("h2", {}, "Time zone ready"), h("p", {}, "Tap Share, choose OneDrive and save both files in the Time Zone folder. Then tell Claude \"Time zone\"."),
+      h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
+        h("button", { class: "btn-w", type: "button", onclick: async () => { ov.remove();
+          const files = [pdf, json];
+          if (navigator.canShare && navigator.canShare({ files })) { try { await navigator.share({ files, title: name }); return; } catch (e) { if (e && e.name === "AbortError") return; } }
+          for (const f of files) { const a = document.createElement("a"); a.href = URL.createObjectURL(f); a.download = f.name; document.body.append(a); a.click(); a.remove(); }
+          showInfo("Saved", "Both files are in your Downloads."); } }, "Share")));
+  } catch (e) { ov.remove(); showInfo("Could not make the snapshot", String(e && e.message || e)); }
+  finally { sending = false; }
 }
 function vMenu() {
   const d = S.date;
@@ -1583,7 +1667,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792430198"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792430198"); await loadJs("./js/pdf.js?v=1792430198");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792440208"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792440208"); await loadJs("./js/pdf.js?v=1792440208");
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
     // Phones only open the share menu straight after a tap, so the last step is one tap on Share.
@@ -2195,7 +2279,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792430198"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792430198"); await loadJs("./js/pdf.js?v=1792430198");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792440208"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792440208"); await loadJs("./js/pdf.js?v=1792440208");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
@@ -2443,6 +2527,7 @@ function vDash() {
   return [topbar("Dashboard", `Office only  |  ${dmy(d)}`, true),
     h("div", { style: "display:flex;gap:10px;flex-wrap:wrap;font-size:12px;color:#5b6470;margin:2px 2px 12px;align-items:center" },
       ...[["#c8102e", "Behind"], ["#f29900", "Slipping"], ["#e0c200", "Nearly"], ["#3a9d23", "On target or ahead"]].map(([c, t]) => h("span", { style: "display:inline-flex;gap:5px;align-items:center" }, h("span", { style: `width:12px;height:12px;border-radius:6px;background:${c};display:inline-block` }), t))),
+    h("button", { class: "mbtn tz-btn", onclick: timeZone }, "TIME ZONE", h("small", {}, "Snapshot of everything right now, for Claude to review")),
     ...PROJECTS.map(p => dashProject(p, d)),
     office,
     h("button", { class: "mbtn ghost", style: "margin-top:4px", onclick: () => { Store.kick && Store.kick(); refreshDevices(true).finally(() => render()); } }, "Refresh")];

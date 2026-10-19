@@ -335,3 +335,6 @@ html, body { overscroll-behavior-y: none; }
 .att-days{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 10px;margin-bottom:6px;-webkit-overflow-scrolling:touch}
 .att-day{flex:none;width:58px;padding:8px 4px;border-radius:10px;border:2px solid #c9d0d8;background:#fff;color:#15191e;text-align:center;font:inherit;cursor:pointer}
 .att-day.on{background:#0069aa;border-color:#0069aa;color:#fff}
+
+.mbtn.tz-btn{background:#0b1a2b;color:#00e5ff;border:2px solid #00e5ff;box-shadow:0 0 12px rgba(0,229,255,.35);margin-bottom:12px;letter-spacing:.12em}
+.mbtn.tz-btn small{color:#9fdcea;letter-spacing:0}
