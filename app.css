@@ -331,3 +331,7 @@ html, body { overscroll-behavior-y: none; }
 .mbtn.att-out{background:#0069aa;color:#fff;border-color:#0069aa}
 .mbtn.att-out small{color:#dcecf7}
 .mbtn.att-done{background:#eef7f0;color:#1e6b33;border-color:#9fd3ad}
+
+.att-days{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 10px;margin-bottom:6px;-webkit-overflow-scrolling:touch}
+.att-day{flex:none;width:58px;padding:8px 4px;border-radius:10px;border:2px solid #c9d0d8;background:#fff;color:#15191e;text-align:center;font:inherit;cursor:pointer}
+.att-day.on{background:#0069aa;border-color:#0069aa;color:#fff}

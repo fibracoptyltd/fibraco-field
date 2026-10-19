@@ -275,7 +275,7 @@ function vProjects() {
     h("div", { style: "text-align:center;margin-top:14px" }, h("button", { class: "btn-g", type: "button", style: "padding:8px 14px;font-size:13px", onclick: changePin }, "Change my PIN")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1792429870";
+const APPV = "1792430198";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -317,7 +317,8 @@ function gpsNow() {
 }
 function attButton() {
   if (!S.project || !roleIn(S.user) || roleIn(S.user) === "pm") return null;
-  const isToday = ymd(S.date) === ymd(new Date()), a = attGet(S.project, S.date, S.user) || {};
+  const now0 = new Date(), [ch, cm] = (S.project.editUntil || "23:00").split(":").map(Number);
+  const isToday = ymd(S.date) === ymd(now0) && now0.getHours() * 60 + now0.getMinutes() < ch * 60 + cm, a = attGet(S.project, S.date, S.user) || {};
   if (a.in && a.out) return h("button", { class: "mbtn att-done", type: "button", onclick: () => showInfo("Attendance register", `You signed in at ${a.in} and out at ${a.out}.`) }, `REGISTER SIGNED  |  IN ${a.in}  |  OUT ${a.out}`);
   if (!isToday) return a.in ? h("button", { class: "mbtn att-done", type: "button" }, `REGISTER  |  IN ${a.in}`) : null;
   const sign = out => mySig(async v => { if (!v) return;
@@ -330,10 +331,11 @@ function attButton() {
     ? h("button", { class: "mbtn att-out", type: "button", onclick: () => sign(true) }, `SIGNED IN ${a.in}. TAP TO SIGN OUT`, h("small", {}, "When you leave site. Type your PIN."))
     : h("button", { class: "mbtn att-in", type: "button", onclick: () => sign(false) }, "SIGN THE ATTENDANCE REGISTER", h("small", {}, "Tap when you get to site and type your PIN. Time and place are recorded."));
 }
-function attDoc(p, d) {
+function attDoc(p, d, days) {
+  if (days) { const parts = days.map(x => attDoc(p, x).html); return { html: parts.join('<div style="height:28px"></div>'), title: `FIBRACO - Attendance Register - ${p.short} (${dmy(days[0])} to ${dmy(days[days.length - 1])})` }; }
   const esc = x => String(x == null ? "" : x).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
   const rows = attPeople(p).map((n, i) => { const a = attGet(p, d, n) || {}; const pr = PEOPLE.find(x => x.name === n) || {};
-    return `<tr><td>${i + 1}</td><td>${esc(n)}</td><td>${esc(p.team[n] === "sm" ? "Site manager" : pr.role || "")}</td><td>${esc(a.in || "Absent")}</td><td>${a.sig ? `<img src="${a.sig}" style="height:34px">` : ""}</td><td>${esc(a.out || "")}</td><td>${a.outSig ? `<img src="${a.outSig}" style="height:34px">` : ""}</td></tr>`; }).join("");
+    return `<tr><td>${i + 1}</td><td>${esc(n)}</td><td>${esc(p.team[n] === "sm" ? "Site manager" : /site manager/i.test(pr.role || "") ? "Technician" : pr.role || "")}</td><td>${esc(a.in || "Absent")}</td><td>${a.sig ? `<img src="${a.sig}" style="height:34px">` : ""}</td><td>${esc(a.out || "")}</td><td>${a.outSig ? `<img src="${a.outSig}" style="height:34px">` : ""}</td></tr>`; }).join("");
   const n = attPeople(p).filter(x => (attGet(p, d, x) || {}).in).length;
   const html = `<div class="pd-head"><img src="${LOGO}" alt="Fibraco"><div><h1>ATTENDANCE REGISTER</h1><div>${esc(p.name)}</div><div>${esc(nice(d))}</div></div></div>
   <table class="kv"><tr><th>Client</th><td>${esc(p.client || "")}</td></tr><tr><th>Site manager</th><td>${esc(smName(p))}</td></tr><tr><th>On site</th><td>${n} of ${attPeople(p).length}</td></tr></table>
@@ -341,13 +343,13 @@ function attDoc(p, d) {
   <p class="none">Each person signed in and out on his own phone with his own PIN. Times are from the phone at the moment of signing.</p>`;
   return { html, title: `FIBRACO - Attendance Register - ${p.short} (${dmy(d)})` };
 }
-async function sendRegister(p, d) {
+async function sendRegister(p, d, days) {
   if (sending) return; sending = true;
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792429870"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792429870"); await loadJs("./js/pdf.js?v=1792429870");
-    const { html, title } = attDoc(p, d); const file = await window.FibPdf.diaryPdf(html, title);
+    await loadJs("./js/lib/html2canvas.min.js?v=1792430198"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792430198"); await loadJs("./js/pdf.js?v=1792430198");
+    const { html, title } = attDoc(p, d, days); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
       h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
@@ -356,18 +358,31 @@ async function sendRegister(p, d) {
   finally { sending = false; }
 }
 function vAttendance() {
-  const p = S.project, d = S.date, ppl = attPeople(p);
+  const p = S.project, d = S.attDate || S.date, ppl = attPeople(p);
+  // every day of the project so far: the last 21 days up to today, newest first
+  const days = []; for (let k = 0; k < 21; k++) { const x = new Date(); x.setHours(12, 0, 0, 0); x.setDate(x.getDate() - k); days.push(x); }
+  const dayChip = x => { const n = ppl.filter(m => (attGet(p, x, m) || {}).in).length, on = ymd(x) === ymd(d), col = n === ppl.length ? "#1e8e3e" : n ? "#f29900" : "#8a8f98";
+    return h("button", { type: "button", class: "att-day" + (on ? " on" : ""), onclick: () => { S.attDate = x; render(); } },
+      h("div", { style: "font-size:11px;font-weight:800;letter-spacing:.05em" }, x.toLocaleDateString("en-ZA", { weekday: "short" }).toUpperCase()),
+      h("div", { style: "font-size:18px;font-weight:900" }, String(x.getDate())),
+      h("div", { style: `font-size:11px;font-weight:800;color:${on ? "#fff" : col}` }, `${n}/${ppl.length}`)); };
   const row = n => { const a = attGet(p, d, n) || {}, col = a.in ? (a.out ? "#1e8e3e" : "#0069aa") : "#c8102e";
     return h("div", { style: "display:flex;gap:10px;align-items:center;padding:10px 12px;border-top:1px solid var(--line)" },
       h("div", { style: `width:7px;align-self:stretch;border-radius:4px;background:${col}` }),
       h("div", { style: "flex:1;min-width:0" }, h("div", { style: "font-weight:800" }, n),
-        h("div", { style: "font-size:12.5px;color:#5b6470" }, a.in ? `In ${a.in}${a.out ? `  |  Out ${a.out}` : "  |  Still on site"}` : "Not signed in"),
+        h("div", { style: "font-size:12.5px;color:#5b6470" }, a.in ? `In ${a.in}${a.out ? `  |  Out ${a.out}` : ymd(d) === ymd(new Date()) ? "  |  Still on site" : "  |  Did not sign out"}` : "Not signed in"),
         a.gps ? h("a", { href: `https://maps.google.com/?q=${a.gps.lat},${a.gps.lng}`, target: "_blank", style: "font-size:12px" }, `Where he signed in (±${a.gps.acc} m)`) : null),
       a.sig ? h("img", { src: a.sig, alt: "Signature", style: "height:38px;max-width:110px;background:#fff" }) : null); };
+  // the work week of the chosen day, Monday to Saturday, up to today
+  const mon = new Date(d); mon.setHours(12, 0, 0, 0); mon.setDate(mon.getDate() - ((mon.getDay() + 6) % 7));
+  const week = []; for (let k = 0; k < 6; k++) { const x = new Date(mon); x.setDate(mon.getDate() + k); if (ymd(x) <= ymd(new Date())) week.push(x); }
+  const open = ymd(d) === ymd(new Date());
   return [topbar("Attendance register", `${p.short}  |  ${dmy(d)}`, true),
-    h("p", { class: "form-sub" }, "Each man signs in on his own phone with his PIN when he gets to site, and out when he leaves. The register makes itself."),
-    sheet("", h("div", { class: "band" }, attSummary(p, d)), ...ppl.map(row)),
-    h("button", { class: "mbtn", type: "button", onclick: () => sendRegister(p, d) }, "Send register", h("small", {}, "Makes the PDF and opens WhatsApp, email and the rest"))];
+    h("p", { class: "form-sub" }, "Tap a day to see its register. Each man signs in on his own phone with his PIN when he gets to site, and out when he leaves. Signing closes at " + editUntil() + " each night."),
+    h("div", { class: "att-days" }, ...days.map(dayChip)),
+    sheet("", h("div", { class: "band" }, `${nice(d)}  |  ${attSummary(p, d)}${open ? "" : "  |  closed"}`), ...ppl.map(row)),
+    h("button", { class: "mbtn", type: "button", onclick: () => sendRegister(p, d) }, `Send register for ${dmy(d)}`, h("small", {}, "One day as PDF. Opens WhatsApp, email and the rest")),
+    week.length > 1 ? h("button", { class: "mbtn", type: "button", onclick: () => sendRegister(p, d, week) }, `Send the week (${dmy(week[0])} to ${dmy(week[week.length - 1])})`, h("small", {}, "Every day of that week in one PDF")) : null];
 }
 function vMenu() {
   const d = S.date;
@@ -376,7 +391,7 @@ function vMenu() {
     h("div", { class: "stack" },
       myRepairs(S.user).length ? (() => { const rp = myRepairs(S.user), t = rp.every(x => /^Splice failed/.test(x.title || "")) ? "SPLICE FAILED" : rp.every(x => /^QC failed/.test(x.title || "")) ? "QC FAILED" : "REPAIRS";
         return h("button", { class: "mbtn", style: "background:#c8102e;color:#fff;border-color:#c8102e", onclick: () => go("mysection") }, `${t}: ${rp.length} TO FIX`, h("small", { style: "color:#ffe1e1" }, "Fix it, then tap Repaired")); })() : null,
-      isMgr(S.user) ? h("button", { class: "mbtn", onclick: () => go("attendance") }, "Attendance register", h("small", {}, attSummary(S.project, S.date))) : null,
+      isMgr(S.user) ? h("button", { class: "mbtn", onclick: () => { S.attDate = S.date; go("attendance"); } }, "Attendance register", h("small", {}, attSummary(S.project, S.date))) : null,
       isMgr(S.user) && myTasks(S.user).length ? h("button", { class: "mbtn", onclick: () => go("mysection") }, "My tasks today", h("small", {}, "Fill in what you did yourself")) : null,
       h("button", { class: "mbtn", onclick: () => isMgr(S.user) ? go("review") : go("mysection") }, "Daily diaries", h("small", {}, isSM(S.user) ? "Check the crew, add your part, sign" : isMgr(S.user) ? "See how the day is going" : "Fill in my section for today")),
       h("button", { class: "mbtn", onclick: () => startForm("dsti") }, "DSTI"),
@@ -1568,7 +1583,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792429870"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792429870"); await loadJs("./js/pdf.js?v=1792429870");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792430198"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792430198"); await loadJs("./js/pdf.js?v=1792430198");
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
     // Phones only open the share menu straight after a tap, so the last step is one tap on Share.
@@ -2180,7 +2195,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792429870"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792429870"); await loadJs("./js/pdf.js?v=1792429870");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792430198"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792430198"); await loadJs("./js/pdf.js?v=1792430198");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
