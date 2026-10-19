@@ -1572,7 +1572,7 @@ function vFeedback() {
 
 // ---------- boot ----------
 let CFG = null;
-const PIN_WARN = "REMEMBER THIS PIN. You must type it every time you open the app. If you forget it, the office has to reset it for you.";
+const PIN_WARN = () => [h("b", { style: "color:#c8102e;font-weight:900;font-size:15px" }, "REMEMBER THIS PIN."), " You must type it every time you open the app. If you forget it, the office has to reset it for you."];
 const screen = (...kids) => { app.replaceChildren(h("div", { class: "lock" }, h("img", { src: LOGO, alt: "Fibraco", style: "width:220px;max-width:70%;margin:30px auto 18px;display:block" }), ...kids)); };
 function pinPad(title, sub, onDone, warn) {
   let v = ""; const dots = h("div", { class: "pin-dots" }); const msg = h("p", { class: "pin-msg" }, sub || "");
@@ -1580,7 +1580,7 @@ function pinPad(title, sub, onDone, warn) {
   const press = d => { if (d === "del") v = v.slice(0, -1); else if (v.length < 4) v += d; draw(); if (v.length === 4) { const x = v; v = ""; setTimeout(() => { draw(); onDone(x, m => { msg.textContent = m; }); }, 120); } };
   draw();
   screen(h("h1", { class: "big", style: "text-align:center" }, title), msg, dots,
-    warn ? h("div", { class: "pin-warn", role: "note" }, warn) : null,
+    warn ? h("div", { class: "pin-warn", role: "note" }, ...[].concat(typeof warn === "function" ? warn() : warn)) : null,
     h("div", { class: "pin-pad" }, ...["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "del"].map(d => d ? h("button", { type: "button", onclick: () => press(d), "aria-label": d === "del" ? "Delete" : d }, d === "del" ? "⌫" : d) : h("span"))));
 }
 const centre = t => h("p", { style: "text-align:center;padding:0 20px" }, t);

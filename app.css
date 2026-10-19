@@ -235,4 +235,4 @@ h1.big { font-family: var(--display); font-weight: 900; color: var(--head); text
   #print-root .foot { margin-top: 14px; font-size: 8.5pt; color: #555; }
 }
 
-.pin-warn { max-width: 300px; margin: 12px auto 4px; padding: 10px 12px; border-radius: 6px; background: #fff4e0; border: 1.5px solid #f29900; color: #6b3d00; font-size: 13.5px; font-weight: 600; line-height: 1.4; text-align: center; }
+.pin-warn { max-width: 300px; margin: 12px auto 4px; padding: 10px 12px; border-radius: 6px; background: #fff4e0; border: 1.5px solid #f29900; color: #6b3d00; font-size: 13.5px; font-weight: 500; line-height: 1.4; text-align: center; }
