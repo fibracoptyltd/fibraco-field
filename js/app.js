@@ -275,7 +275,7 @@ function vProjects() {
     h("div", { style: "text-align:center;margin-top:14px" }, h("button", { class: "btn-g", type: "button", style: "padding:8px 14px;font-size:13px", onclick: changePin }, "Change my PIN")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1792424712";
+const APPV = "1792427853";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -814,9 +814,16 @@ function doneToDate(p, key, ds, me, live) {
   for (const [id, o] of Store.list(`prog|${p.id}|`)) { const x = id.split("|"); if (x[2] > ds || (x[2] === ds && x[3] === me)) continue; n += +((o.k || {})[key] || 0); }
   return n + (+live || 0);
 }
-// what one man did today, per activity and spot, so the whole crew sees the running totals
-function progOf(tasks, rows) { const k = {}; tasks.forEach((t, i) => { const q = +((rows[i] || {}).done || 0); if (q) k[keyOf(t)] = (k[keyOf(t)] || 0) + q; }); return k; }
-function putProg(pid, ds, who, tasks, rows) { Store.put(`prog|${pid}|${ds}|${who}`, { k: progOf(tasks, rows), at: new Date().toISOString() }); }
+// Work done at one spot is counted per spot (RMU 4, RMU 5...), the rest for the whole site. Same rule as the programme.
+const PER_NODE = ["SPLICE FOC IN SPLICE BOX", "FIT BOX IN DB (COMMS SPACE)", "PREP DIN RAIL OR WALL BOX", "PREP AND ROUTE FOC TO BOX", "GLANDING (M20)", "48F PATCH PANEL TERMINATIONS"];
+function nodeOf(loc) { const m = /RMU \d/i.exec(loc || ""); if (m) return m[0].toUpperCase(); if (/Diesel Generator|DG panel/i.test(loc || "")) return "DG panel"; if (/Control Room/i.test(loc || "")) return "Control Room"; return "Site"; }
+const otherKey = o => o.act + "|" + (PER_NODE.includes(o.act) ? nodeOf(o.loc) : "Site");
+const otherList = sec => ((sec || {}).other || []).filter(o => o.act && +o.qty > 0);
+// what one man did today, per activity and spot, so the whole crew sees the running totals (other work included)
+function progOf(tasks, rows, other) { const k = {}; tasks.forEach((t, i) => { const q = +((rows[i] || {}).done || 0); if (q) k[keyOf(t)] = (k[keyOf(t)] || 0) + q; }); (other || []).forEach(o => { if (o.act && +o.qty > 0) k[otherKey(o)] = (k[otherKey(o)] || 0) + +o.qty; }); return k; }
+function putProg(pid, ds, who, tasks, rows, other) { Store.put(`prog|${pid}|${ds}|${who}`, { k: progOf(tasks, rows, other), at: new Date().toISOString() }); }
+// A task counts at most its target for the day. Extra on one job never hides a job that was not done.
+const capped = (t, r) => Math.min(+((r || {}).done) || 0, +t.target || 0);
 function blocks(t, todayInput, live, who) {
   const p = S.project, key = keyOf(t), g = grandTotal(p, key), ds = ymd(S.date);
   const tile = (label, kid, cls) => h("div", { class: "blk-tile " + cls }, h("div", { class: "blk-t" }, label), kid);
@@ -861,14 +868,17 @@ function todayFor(p) {
   const tasks = myTasks(p), sec = (S.sections[dayKey()] || {})[p] || {};
   const target = tasks.reduce((a, t) => a + (+t.target || 0), 0);
   const filled = tasks.length && tasks.every((t, i) => ((sec.rows || [])[i] || {}).done !== undefined && ((sec.rows || [])[i] || {}).done !== "");
-  const done = tasks.reduce((a, t, i) => a + (+(((sec.rows || [])[i] || {}).done) || 0), 0);
-  return { d: S.date, target, done, filled, why: delayText(sec) };
+  const rows = tasks.map((t, i) => (sec.rows || [])[i] || {});
+  const done = tasks.reduce((a, t, i) => a + capped(t, rows[i]), 0);
+  const short = filled ? tasks.map((t, i) => ({ t, d: +rows[i].done || 0 })).filter(x => x.d < +x.t.target) : [];
+  const extra = filled ? tasks.map((t, i) => ({ t, x: (+rows[i].done || 0) - (+t.target || 0) })).filter(x => x.x > 0) : [];
+  return { d: S.date, target, done, filled, why: delayText(sec), short, extra, other: otherList(sec) };
 }
 function dayFor(p, d) {
   const k = S.project.id + "|" + ymd(d), alloc = allocOf(k) || [], sec = Store.get("sec|" + k + "|" + p) || {};
   const mine = alloc.filter(t => t.who === p); if (!mine.length) return null;
   const target = mine.reduce((a, t) => a + (+t.target || 0), 0);
-  const done = mine.reduce((a, t, i) => a + (+(((sec.rows || [])[i] || {}).done) || 0), 0);
+  const done = mine.reduce((a, t, i) => a + capped(t, (sec.rows || [])[i]), 0);
   return { d, target, done, filled: ["submitted", "approved"].includes(sec.status), why: delayText(sec) };
 }
 function schedFor(p) {
@@ -1292,6 +1302,33 @@ function vAllocate() {
       list._plan = false; persist(); showInfo("Sent to the crew", Store.online() ? "Each person now sees their tasks under My work today." : "Saved. It goes to the crew as soon as your phone has signal."); goBack(); } }, "Send to crew")];
 }
 
+// Other work: anything he did that was not on his list. Picked from the activity list, so it counts in the totals.
+function otherBox(sec, locked) {
+  sec.other = sec.other || [];
+  const acts = projActs(), box = h("div");
+  const card = (o, i) => {
+    const unit = h("span", { style: "font-weight:800;color:#0069aa;padding:0 8px" }, o.unit || "");
+    if (locked) return h("div", { class: "other-card" }, h("div", { style: "font-weight:800" }, o.act ? nice2(o.act) : o.what || ""), h("div", { style: "font-size:12.5px;color:#5b6470" }, [o.loc, o.qty ? `${o.qty} ${o.unit || ""}` : "", o.what && o.act ? o.what : ""].filter(Boolean).join("  |  ")));
+    return h("div", { class: "other-card" },
+      h("div", { style: "display:flex;justify-content:space-between;align-items:center;margin-bottom:6px" }, h("b", {}, `Other work ${i + 1}`),
+        h("button", { type: "button", class: "btn-g", style: "padding:4px 10px;font-size:12px", onclick: () => { sec.other.splice(i, 1); draw(); } }, "Remove")),
+      sel(acts.map(a => a.act), o.act, v => { o.act = v; o.unit = (acts.find(a => a.act === v) || {}).unit || ""; unit.textContent = o.unit; }, "What did you do?"),
+      h("div", { style: "margin-top:6px" }, inp("text", o.loc, v => o.loc = v, "Where, e.g. Battery 1 to PCS")),
+      h("div", { style: "display:flex;align-items:center;margin-top:6px" }, inp("number", o.qty, v => o.qty = v, "How many"), unit),
+      h("div", { style: "margin-top:6px" }, inp("text", o.what, v => o.what = v, "Why, or more detail (optional)")));
+  };
+  const draw = () => box.replaceChildren(...sec.other.map(card), ...(sec.other.length ? [] : [h("div", { style: "padding:4px 12px 8px;font-size:13px;color:#5b6470" }, locked ? "None" : "Did work that is not in your list above? Add it here so it counts.")]));
+  draw();
+  return sheet("", h("div", { class: "band" }, "Other work (not on my list)"), box,
+    locked ? null : h("button", { class: "addrow", type: "button", onclick: () => { sec.other.push({}); draw(); } }, "+ Add other work"));
+}
+// A man may open his own section again and fix it, the same day until the cut-off time, as long as the diary is not signed final.
+const editUntil = () => (S.project.editUntil || "21:00").replace(":", "h");
+function canReopen(sec) {
+  if (!["submitted", "approved"].includes(sec.status) || S.final[dayKey()]) return false;
+  const now = new Date(), [hh, mm] = (S.project.editUntil || "21:00").split(":").map(Number);
+  return ymd(S.date) === ymd(now) && now.getHours() * 60 + now.getMinutes() < hh * 60 + mm;
+}
 function vMySection() {
   const k = dayKey(), tasks = myTasks(S.user), sec = sectionOf(S.user);
   if (!sec.delays) sec.delays = [];
@@ -1321,11 +1358,14 @@ function vMySection() {
               : h("select", { class: "ts-sel", onchange: ev => { r.eq = ev.target.value; draw(); } }, h("option", { value: "" }, "Choose the splice machine"), ...EQUIP().filter(x => x.type === "Splicer").map(x => h("option", { value: x.id, selected: r.eq === x.id }, `${x.name}, S/N ${x.serial}`))),
             e ? h("div", { style: `font-size:12.5px;font-weight:800;margin-top:4px;color:${cs.c}` }, `${e.cert ? "Cert " + e.cert + "  |  " : ""}${cs.t}`) : null].filter(Boolean)); };
         draw(); return box; })() : null;
+      // his own note: where exactly, or anything the site manager must know
+      const note = locked ? (r.note ? h("div", { class: "task-note-ro" }, `Note: ${r.note}`) : null)
+        : h("textarea", { class: "task-note", rows: 2, placeholder: "Note: where exactly, if not as planned, or why. The site manager and client see this.", "aria-label": `Note, ${nice2(t.act)}`, oninput: e => { r.note = e.target.value; } }, r.note || "");
       return h("div", { class: "task-card" + (t.crit ? " crit" : "") },
         t.crit ? h("div", { class: "task-crit" }, "CRITICAL, MUST BE DONE TODAY") : null,
         h("div", { class: "task-name" }, nice2(t.act)),
         h("div", { class: "task-loc" }, `${t.loc}  |  Target today ${t.target} ${t.unit}`),
-        eqBox, holder);
+        eqBox, holder, note);
     }));
     drawSched();
   };
@@ -1338,7 +1378,7 @@ function vMySection() {
     stdHeader({ project: S.project, date: S.date, user: S.user }, "Daily diary  |  my section"),
     sheet("", h("div", { class: "band" }, "My tasks today"), tb),
     schedBox,
-    rowsTable("", ["Other work (not planned)", "Qty"], sec.other, r => h("tr", {}, h("td", {}, locked ? ro(r.what) : inp("text", r.what, v => r.what = v, "What and why")), h("td", { style: "width:80px" }, locked ? ro(r.qty, 1) : inp("number", r.qty, v => r.qty = v, "0"))), locked ? null : "+ Add other work", () => ({})),
+    otherBox(sec, locked),
     delayHint,
     rowsTable("", ["Delays (why you are behind)", "Hrs lost"], sec.delays, r => h("tr", {},
       h("td", {}, locked ? ro(r.cause + (r.what ? `. ${r.what}` : "")) : h("div", {}, sel(DELAY_CAUSES, r.cause, v => { r.cause = v; delayHint.hidden = true; }, "Choose the cause"), inp("text", r.what, v => r.what = v, "Short detail, e.g. which WTG, who said what"))),
@@ -1348,9 +1388,11 @@ function vMySection() {
       h("tr", {}, h("td", { class: "lab" }, "Hours worked"), h("td", {}, locked ? h("div", { class: "ro" }, sec.hrs) : sel(hrsOpts, sec.hrs, v => sec.hrs = v, "Hrs")))))),
     locked ? null : sheet("", h("div", { class: "band" }, "Photos"), photoBlock(sec.photos || (sec.photos = []))),
     locked ? null : sheet("", h("table", {}, h("tbody", {}, h("tr", {}, h("td", { class: "lab" }, "My signature"), h("td", {}, sigCell(() => sec.sig, v => sec.sig = v, "Your signature", true)))))),
-    locked ? h("div", { style: "text-align:center;margin:10px 0" }, statusPill(sec.status)) :
-      submitBtn(() => { const e = []; if (tasks.some((t, i) => (sec.rows[i] || {}).done === undefined || (sec.rows[i] || {}).done === "")) e.push("Fill in what you did for every task, even if it is 0."); if (tasks.some((t, i) => /SPLICE|DOME JOINT/.test(t.act) && +((sec.rows[i] || {}).done || 0) > 0 && !(sec.rows[i] || {}).eq)) e.push("Choose the splice machine you used."); if (behind() && !sec.delays.some(d => d.cause && d.hrs)) e.push("You are behind the target. Add the delay cause and the hours lost."); if (!sec.hrs) e.push("Choose your hours worked."); if (!sec.sig) e.push("Sign your section."); return e; },
-        { label: "Submit my section", onDone: () => { putProg(S.project.id, ymd(S.date), S.user, tasks, sec.rows); sec.status = "submitted"; sec.at = new Date().toLocaleTimeString("en-ZA", { hour: "2-digit", minute: "2-digit" }).replace(":", "h"); showInfo("Submitted", "Your section is with the site manager for review."); goBack(); } })];
+    locked ? h("div", { style: "text-align:center;margin:10px 0" }, statusPill(sec.status),
+      canReopen(sec) ? h("div", { style: "margin-top:12px" },
+        h("button", { class: "mbtn", type: "button", onclick: () => askYesNo("Change my section?", `You can change your section until ${editUntil()} today. Then sign and submit it again.${sec.status === "approved" ? " The site manager approves it again after." : ""}`, "Change it", () => { sec.status = "draft"; sec.sig = ""; delete sec.at; persist(); render(); window.scrollTo(0, 0); }) }, "Change my section", h("small", {}, `Open until ${editUntil()} today, then it locks`))) : null) :
+      submitBtn(() => { const e = []; if (tasks.some((t, i) => (sec.rows[i] || {}).done === undefined || (sec.rows[i] || {}).done === "")) e.push("Fill in what you did for every task, even if it is 0."); if (tasks.some((t, i) => /SPLICE|DOME JOINT/.test(t.act) && +((sec.rows[i] || {}).done || 0) > 0 && !(sec.rows[i] || {}).eq)) e.push("Choose the splice machine you used."); if (behind() && !sec.delays.some(d => d.cause && d.hrs)) e.push("You are behind the target. Add the delay cause and the hours lost."); if ((sec.other || []).some(o => (o.act || o.loc || o.qty || o.what) && (!o.act || !(+o.qty > 0) || !o.loc))) e.push("Other work: choose what you did, where, and how many. Remove a line you do not need."); if (!sec.hrs) e.push("Choose your hours worked."); if (!sec.sig) e.push("Sign your section."); return e; },
+        { label: "Submit my section", onDone: () => { putProg(S.project.id, ymd(S.date), S.user, tasks, sec.rows, sec.other); sec.status = "submitted"; sec.at = new Date().toLocaleTimeString("en-ZA", { hour: "2-digit", minute: "2-digit" }).replace(":", "h"); showInfo("Submitted", "Your section is with the site manager for review."); goBack(); } })];
 }
 
 function vReview() {
@@ -1371,7 +1413,7 @@ function vReview() {
         h("td", { style: "padding:8px;font-size:12.5px;font-weight:700" }, nice2(t.act), h("div", { style: "font-weight:500;color:#5b6470" }, t.loc + (r.note ? `. ${r.note}` : ""))),
         h("td", { style: "width:74px;text-align:center;font-size:12.5px" }, "Target", h("div", { style: "font-weight:800" }, `${t.target}`)),
         h("td", { style: "width:84px" }, sec.status === "draft" || final || viewOnly ? h("div", { style: "text-align:center;font-weight:800;padding:8px" }, r.done ?? "-") : inp("number", r.done, v => { r.done = v; r.edited = true; }, "Done")))),
-        (sec.other || []).filter(o => o.what).map(o => h("tr", {}, h("td", { colspan: 3, style: "padding:8px;font-size:12.5px" }, `Other work: ${o.what} (${o.qty || 0})`))),
+        (sec.other || []).filter(o => o.act || o.what).map(o => h("tr", {}, h("td", { colspan: 3, style: "padding:8px;font-size:12.5px" }, h("b", {}, "Other work: "), o.act ? `${nice2(o.act)}, ${o.loc || "-"}, ${o.qty || 0} ${o.unit || ""}${o.what ? ". " + o.what : ""}` : `${o.what} (${o.qty || 0})`))),
         h("tr", {}, h("td", { colspan: 3, style: "padding:0" }, (() => { const sc = ["submitted", "approved"].includes(sec.status) && schedFor(p); return sc ? hbar("Total on project to date", sc.done, sc.plan, { unit: sc.unit, perDay: sc.perDay }) : ""; })())),
         h("tr", {}, h("td", { colspan: 3, style: "padding:8px;font-size:12.5px;color:#5b6470" }, `Hours ${sec.hrs || "-"}${delayText(sec) ? "  |  Delay: " + delayText(sec) : ""}${sec.at ? "  |  Submitted " + sec.at : ""}`)))),
       sec.status === "submitted" && !final && !viewOnly ? h("div", { style: "display:flex;gap:8px;padding:10px 12px" },
@@ -1405,7 +1447,7 @@ function vReview() {
     ...people.map(personBlock), totals,
     final ? after : h("div", {},
       h("button", { class: "mbtn", style: `margin-bottom:12px;${s1 ? "" : "opacity:.45"}`, onclick: () => { if (s1) openCombined(); } }, s2 ? "✓ My part of the diary (open again)" : "2. My part of the diary", h("small", {}, "Weather, plant, site instructions and materials. Team and work fill in by themselves.")),
-      h("button", { class: "submit", type: "button", style: s1 && s2 ? "" : "opacity:.45", onclick: () => { if (!(s1 && s2)) return; mySig(v => { if (!v) return; S.final[k] = new Date().toLocaleTimeString("en-ZA", { hour: "2-digit", minute: "2-digit" }).replace(":", "h"); S.done[k] = true; persist(); Store.put("final|" + k, { at: S.final[k], by: S.user, sig: v, date: ymd(S.date) }); people.forEach(pn => putProg(S.project.id, ymd(S.date), pn, myTasks(pn), ((S.sections[k] || {})[pn] || {}).rows || [])); Store.lock(["alloc|" + k, "site|" + k, "final|" + k, ...people.map(p => `sec|${k}|${p}`)]); S.form = { type: "diary", project: S.project, date: S.date, user: S.user, photos: [] }; go("done"); }); } }, "3. Sign and make final"))];
+      h("button", { class: "submit", type: "button", style: s1 && s2 ? "" : "opacity:.45", onclick: () => { if (!(s1 && s2)) return; mySig(v => { if (!v) return; S.final[k] = new Date().toLocaleTimeString("en-ZA", { hour: "2-digit", minute: "2-digit" }).replace(":", "h"); S.done[k] = true; persist(); Store.put("final|" + k, { at: S.final[k], by: S.user, sig: v, date: ymd(S.date) }); people.forEach(pn => putProg(S.project.id, ymd(S.date), pn, myTasks(pn), ((S.sections[k] || {})[pn] || {}).rows || [], ((S.sections[k] || {})[pn] || {}).other || [])); Store.lock(["alloc|" + k, "site|" + k, "final|" + k, ...people.map(p => `sec|${k}|${p}`)]); S.form = { type: "diary", project: S.project, date: S.date, user: S.user, photos: [] }; go("done"); }); } }, "3. Sign and make final"))];
 }
 // ---------- daily diary as PDF (made on the phone, then shared) ----------
 function diaryDoc(k, project, date) {
@@ -1416,7 +1458,7 @@ function diaryDoc(k, project, date) {
   const row = (a, b) => `<tr><th>${esc(a)}</th><td>${esc(b) || "-"}</td></tr>`;
   const w = site.w || {};
   const team = (site.team && site.team.some(r => r.name) ? site.team : people.map(p => ({ name: p, hrs: (secs[p] || {}).hrs })) ).filter(r => r.name);
-  const acts = (site.acts && site.acts.some(r => r.act) ? site.acts : alloc.map((t, i) => { const idx = alloc.filter((a, j) => a.who === t.who && j < i).length; const r = ((secs[t.who] || {}).rows || [])[idx] || {}; return { area: project.area, act: t.act, unit: t.unit, loc: t.loc, qty: r.done }; })).filter(r => r.act);
+  const acts = (site.acts && site.acts.some(r => r.act) ? site.acts : alloc.map((t, i) => { const idx = alloc.filter((a, j) => a.who === t.who && j < i).length; const r = ((secs[t.who] || {}).rows || [])[idx] || {}; return { area: project.area, act: t.act, unit: t.unit, loc: t.loc + (r.note ? ". " + r.note : ""), qty: r.done }; }).concat(people.flatMap(p => otherList(secs[p]).map(o => ({ area: project.area, act: o.act, unit: o.unit, loc: `${o.loc}${o.what ? ". " + o.what : ""}, not planned`, qty: o.qty }))))).filter(r => r.act);
   // client copy: Fibraco-side delays stay internal
   const delays = (site.delays || []).filter(d => d.c && !INTERNAL.some(x => d.c.startsWith(x)));
   const noName = x => String(x || "").replace(/\s*\([A-Z][a-z]+\)\s*$/, ""); // the client copy shows no names against work
@@ -1461,7 +1503,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792424712"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792424712"); await loadJs("./js/pdf.js?v=1792424712");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792427853"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792427853"); await loadJs("./js/pdf.js?v=1792427853");
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
     // Phones only open the share menu straight after a tap, so the last step is one tap on Share.
@@ -1488,7 +1530,7 @@ function openCombined() {
   const f = S.form;
   const people = [...new Set(alloc.map(a => a.who))];
   f.team = people.map(p => ({ name: p, hrs: (secs[p] || {}).hrs || "" }));
-  f.acts = alloc.map((t, i) => { const idx = alloc.filter((a, j) => a.who === t.who && j < i).length; const r = ((secs[t.who] || {}).rows || [])[idx] || {}; return { area: S.project.area || "", act: t.act, unit: t.unit, loc: `${t.loc} (${t.who.split(" ")[0]})`, qty: r.done || "" }; });
+  f.acts = alloc.map((t, i) => { const idx = alloc.filter((a, j) => a.who === t.who && j < i).length; const r = ((secs[t.who] || {}).rows || [])[idx] || {}; return { area: S.project.area || "", act: t.act, unit: t.unit, loc: `${t.loc}${r.note ? ". " + r.note : ""} (${t.who.split(" ")[0]})`, qty: r.done || "" }; }).concat(people.flatMap(p => otherList(secs[p]).map(o => ({ area: S.project.area || "", act: o.act, unit: o.unit, loc: `${o.loc}${o.what ? ". " + o.what : ""}, not planned (${p.split(" ")[0]})`, qty: o.qty }))));
   f.delays = alloc.map(t => t.who).filter((p, i, a) => a.indexOf(p) === i).flatMap(p => ((secs[p] || {}).delays || []).filter(d => d.cause).map(d => ({ c: `${d.cause}${d.what ? ". " + d.what : ""} (${p.split(" ")[0]})`, t: d.hrs }))); if (!f.delays.length) f.delays = [{}];
   const pt = projectTotals(); if (pt) { f.sched = pt.done === pt.plan ? "On" : pt.done > pt.plan ? "Ahead" : "Behind"; f.schedWhy = `Project ${pt.done}% done against ${pt.plan}% planned for today.` + (f.sched === "Behind" ? " See delays below." : ""); }
   f.combined = true;
@@ -2072,7 +2114,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792424712"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792424712"); await loadJs("./js/pdf.js?v=1792424712");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792427853"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792427853"); await loadJs("./js/pdf.js?v=1792427853");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
@@ -2249,7 +2291,7 @@ function dashProject(p, d) {
       // to date counts today only once he has filled it in, so a man is not shown behind before his day is over
       const planTD = sc ? sc.plan - (t.filled ? 0 : t.target) : 0;
       const tp = t.filled && t.target ? t.done / t.target * 100 : null, wp = sc && planTD > 0 ? sc.done / planTD * 100 : null;
-      const mine = alloc.filter(a => a.who === n), critOpen = mine.filter((a, i) => a.crit && t.filled && +(((sec.rows || [])[i] || {}).done || 0) < +a.target);
+      const where = x => x.loc ? ` at ${x.loc.split(",")[0]}` : "";
       const lead = tp != null ? barColour(tp).bg : wp != null ? barColour(wp).bg : st.c;
       const bar = (lab, pct, txt) => h("div", { style: "display:flex;gap:8px;align-items:center;margin-top:6px" },
         h("div", { style: `width:44px;font-size:11px;font-weight:800;color:${CH.soft};letter-spacing:.04em` }, lab),
@@ -2262,7 +2304,9 @@ function dashProject(p, d) {
             h("span", { class: "dash-chip", style: `background:${st.c}` }, st.t)),
           bar("TODAY", tp, t.filled ? "No target" : "Not in yet"),
           bar("TO DATE", wp, "No history yet"),
-          critOpen.length ? h("div", { style: "margin-top:6px;font-size:12.5px;color:#ff8a80;font-weight:700" }, `Critical not finished: ${critOpen.map(a => nice2(a.act)).join(", ")}`) : null,
+          ...t.short.map(x => h("div", { style: `margin-top:6px;font-size:12.5px;font-weight:800;color:${x.t.crit ? "#ff5c5c" : "#ff8a80"}` }, `${x.t.crit ? "CRITICAL NOT DONE" : "Not done"}: ${nice2(x.t.act)}${where(x.t)}, ${x.d} of ${x.t.target} ${x.t.unit || ""}`)),
+          t.extra.length ? h("div", { style: "margin-top:4px;font-size:12.5px;color:#9be59b;font-weight:700" }, `Extra: ${t.extra.map(x => `${nice2(x.t.act)} +${x.x}`).join(", ")}`) : null,
+          t.other.length ? h("div", { style: `margin-top:4px;font-size:12.5px;color:${CH.soft};font-weight:700` }, `Other work: ${t.other.map(o => `${nice2(o.act)} at ${o.loc}, ${o.qty} ${o.unit || ""}`).join(", ")}`) : null,
           t.why ? h("div", { style: `margin-top:4px;font-size:12px;color:${CH.soft}` }, `Reason given: ${t.why}`) : null));
     });
     return h("div", { class: "dash-block" }, head, summary, ...rows, ...testing);
