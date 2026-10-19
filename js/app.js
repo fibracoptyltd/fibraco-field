@@ -813,7 +813,7 @@ function putProg(pid, ds, who, tasks, rows) { Store.put(`prog|${pid}|${ds}|${who
 function blocks(t, todayInput, live, who) {
   const p = S.project, key = keyOf(t), g = grandTotal(p, key), ds = ymd(S.date);
   const tile = (label, kid, cls) => h("div", { class: "blk-tile " + cls }, h("div", { class: "blk-t" }, label), kid);
-  const nTd = h("div", { class: "blk-num" }), nRem = h("div", { class: "blk-num" }), bRem = tile("Remaining", nRem, "rem"), warn = h("div", { class: "blk-warn", hidden: true });
+  const nTd = h("div", { class: "blk-num" }), nRem = h("div", { class: "blk-num" }), bRem = tile("Remain", nRem, "rem"), warn = h("div", { class: "blk-warn", hidden: true });
   const update = v => {
     const td = doneToDate(p, key, ds, who || S.user, v), rem = g == null ? null : g - td;
     nTd.textContent = String(td); nRem.textContent = rem == null ? "-" : String(rem);
@@ -1443,7 +1443,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792415099"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792415099"); await loadJs("./js/pdf.js?v=1792415099");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792415297"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792415297"); await loadJs("./js/pdf.js?v=1792415297");
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
     // Phones only open the share menu straight after a tap, so the last step is one tap on Share.
