@@ -729,9 +729,20 @@ function workDaysBefore(d, n) { const out = []; const x = new Date(d); while (ou
 function projActs() { const a = S.project.area; return (a ? ACT[a] : ACT["SOLAR MV"]).map(x => ({ unit: x[0], act: x[1], area: a || "SOLAR MV" })); }
 const KEEP = { foc: "FOC", rmu: "RMU", db: "DB", cat6a: "CAT6a", rj45: "RJ45", otdr: "OTDR", odtr: "OTDR", olts: "OLTS", sfps: "SFPs", spd: "SPD", dit: "DIT", m20: "M20", "48f": "48F", "(m20)": "(M20)", "(bidirectional)": "(bidirectional)", hv: "HV", mv: "MV", lv: "LV", ups: "UPS", ip: "IP", scada: "SCADA", eskom: "Eskom", "(internal)": "(internal)", "(comms": "(comms", space: "space", "space)": "space)" };
 function nice2(s) { const t = s.toLowerCase().split(" ").map(w => KEEP[w] || w).join(" "); return t.charAt(0).toUpperCase() + t.slice(1); }
+// The week's work comes from the programme, so nobody has to type it on site.
+// A day the site manager has changed and sent is used instead of the programme.
+function planFor(k) {
+  const [pid, ds] = k.split("|"), p = PROJECTS.find(x => x.id === pid) || (S.project && S.project.id === pid ? S.project : null);
+  const rows = p && p.plan && p.plan[ds]; if (!rows) return null;
+  const acts = p.acts || [];
+  const out = rows.map(r => ({ who: r.who, act: r.act, loc: r.loc, target: String(r.target), unit: (acts.find(a => a[1] === r.act) || [])[0] || "ea", crit: !!r.crit, area: p.area }));
+  Object.defineProperty(out, "_plan", { value: true, writable: true, enumerable: false });
+  return out;
+}
+const allocOf = k => Store.get("alloc|" + k) || planFor(k);
 function ensureDay(k = dayKey()) {
   if (S.alloc[k]) return;
-  S.alloc[k] = Store.get("alloc|" + k) || [];
+  S.alloc[k] = allocOf(k) || [];
   S.sections[k] = {};
   for (const [id, o] of Store.list("sec|" + k + "|")) S.sections[k][id.slice(("sec|" + k + "|").length)] = o;
   const f = Store.get("final|" + k); if (f) S.final[k] = f.at;
@@ -759,7 +770,7 @@ function todayFor(p) {
   return { d: S.date, target, done, filled, why: delayText(sec) };
 }
 function dayFor(p, d) {
-  const k = S.project.id + "|" + ymd(d), alloc = Store.get("alloc|" + k) || [], sec = Store.get("sec|" + k + "|" + p) || {};
+  const k = S.project.id + "|" + ymd(d), alloc = allocOf(k) || [], sec = Store.get("sec|" + k + "|" + p) || {};
   const mine = alloc.filter(t => t.who === p); if (!mine.length) return null;
   const target = mine.reduce((a, t) => a + (+t.target || 0), 0);
   const done = mine.reduce((a, t, i) => a + (+(((sec.rows || [])[i] || {}).done) || 0), 0);
@@ -771,7 +782,9 @@ function schedFor(p) {
   const days = [...past, t].filter(x => x.target > 0);
   if (!days.length) return null;
   let plan = 0, done = 0;
-  for (const [id, alloc] of Store.list("alloc|" + S.project.id + "|")) {
+  const ids = new Map(Store.list("alloc|" + S.project.id + "|"));
+  for (const ds of Object.keys(S.project.plan || {})) if (!ids.has(`alloc|${S.project.id}|${ds}`)) ids.set(`alloc|${S.project.id}|${ds}`, planFor(S.project.id + "|" + ds));
+  for (const [id, alloc] of ids) {
     const ds = id.split("|")[2]; if (ds > ymd(S.date)) continue;
     if (ds === ymd(S.date)) { plan += t.target; done += t.done; continue; }
     const x = dayFor(p, new Date(ds + "T12:00:00")); if (x) { plan += x.target; done += x.filled ? x.done : 0; }
@@ -1165,6 +1178,7 @@ function vAllocate() {
     return sheet("", h("div", { class: "band", style: "display:flex;justify-content:space-between;align-items:center" }, h("span", {}, `Task ${i + 1}`),
         h("button", { type: "button", style: "background:none;border:0;color:#fff;font-weight:800;font-size:12px", onclick: () => { list.splice(i, 1); draw(); } }, "Remove")),
       h("table", {}, h("tbody", {},
+        r.crit ? h("tr", {}, h("td", { colspan: 2, style: "color:#c8102e;font-weight:800;font-size:12px;padding:6px 10px" }, "CRITICAL, must be finished today")) : null,
         h("tr", {}, h("td", { class: "lab" }, "Person"), h("td", {}, sel(CREW_OF(), r.who, v => r.who = v, "Who"))),
         h("tr", {}, h("td", { class: "lab" }, "Activity"), h("td", {}, sel(acts.map(a => a.act), r.act, v => { r.act = v; r.unit = (acts.find(a => a.act === v) || {}).unit || ""; unit.textContent = r.unit; }, "What"))),
         h("tr", {}, h("td", { class: "lab" }, "Where"), h("td", {}, inp("text", r.loc, v => r.loc = v, S.project.kind === "turbines" ? "e.g. WTG 07" : "e.g. RMU 4"))),
@@ -1173,14 +1187,14 @@ function vAllocate() {
   const draw = () => box.replaceChildren(...list.map(card), ...(list.length ? [] : [h("p", { class: "note" }, "No tasks yet. Tap Add task.")]));
   draw();
   return [topbar("Allocate work", `${S.project.short}  |  ${dmy(S.date)}`, true),
-    h("p", { class: "form-sub" }, "Give each person their tasks for the day. They see them on their phone, and it carries into their diary section."),
+    h("p", { class: "form-sub" }, list._plan ? "Today's work is already loaded from the programme and every man already sees his tasks. Only change something if the site changed, then tap Send to crew." : "Give each person their tasks for the day. They see them on their phone, and it carries into their diary section."),
     box,
     h("button", { class: "mbtn ghost", style: "margin-bottom:12px", onclick: () => { list.push({}); draw(); } }, "+ Add task"),
     h("p", { class: "hint" }, "Two people on one task each get their own task with their own target."),
     h("button", { class: "submit", type: "button", onclick: () => {
       const bad = list.filter(r => !r.who || !r.act || !r.target);
       if (bad.length) return showInfo("Not finished", "Every task needs a person, an activity and a target.");
-      persist(); showInfo("Sent to the crew", Store.online() ? "Each person now sees their tasks under My work today." : "Saved. It goes to the crew as soon as your phone has signal."); goBack(); } }, "Send to crew")];
+      list._plan = false; persist(); showInfo("Sent to the crew", Store.online() ? "Each person now sees their tasks under My work today." : "Saved. It goes to the crew as soon as your phone has signal."); goBack(); } }, "Send to crew")];
 }
 
 function vMySection() {
@@ -1192,13 +1206,13 @@ function vMySection() {
   const schedBox = h("div");
   const drawSched = () => schedBox.replaceChildren(locked ? schedPanel(S.user) : sheet("", h("div", { class: "band" }, "Am I on schedule?"), h("div", { style: "padding:12px;font-size:13px;color:#5b6470;text-align:center" }, "Your progress bars show here once you have signed and submitted your section.")));
   const behind = () => tasks.some((t, i) => { const r = sec.rows[i] || {}; return r.done !== undefined && r.done !== "" && +r.done < +t.target; });
-  const delayHint = h("div", { class: "err", hidden: true, style: "margin:0 0 10px" }, "You are behind the target today. Add the reason in Delays below.");
+  const delayHint = h("div", { class: "err", hidden: true, style: "margin:0 0 10px" }, "You are behind the target today. Add the reason in Delays below. Pick the cause, and type more in the box if the list does not cover it.");
   const tb = h("tbody");
   const draw = () => {
     tb.replaceChildren(...tasks.map((t, i) => {
       const r = sec.rows[i] || (sec.rows[i] = {});
       return h("tr", {},
-        h("td", { style: "padding:8px;font-weight:700;font-size:12.5px" }, nice2(t.act), h("div", { style: "font-weight:500;color:#5b6470" }, t.loc)),
+        h("td", { style: "padding:8px;font-weight:700;font-size:12.5px" + (t.crit ? ";border-left:4px solid #c8102e" : "") }, t.crit ? h("div", { style: "color:#c8102e;font-size:11px;font-weight:800;letter-spacing:.04em" }, "CRITICAL") : null, nice2(t.act), h("div", { style: "font-weight:500;color:#5b6470" }, t.loc)),
         h("td", { style: "width:70px;text-align:center;font-weight:800;color:#0069aa" }, `${t.target} ${t.unit}`),
         h("td", { style: "width:84px" }, locked ? h("div", { style: "text-align:center;font-weight:800;padding:8px" }, r.done || "0") : inp("number", r.done, v => { r.done = v; drawSched(); delayHint.hidden = !(behind() && !sec.delays.some(d => d.cause)); }, "Done")));
     }));
@@ -1334,7 +1348,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792406993"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792406993"); await loadJs("./js/pdf.js?v=1792406993");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792408369"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792408369"); await loadJs("./js/pdf.js?v=1792408369");
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
     // Phones only open the share menu straight after a tap, so the last step is one tap on Share.
@@ -1526,7 +1540,7 @@ function snapshot() {
   const out = [];
   // Each phone only saves what its owner may change: the site manager the allocation, each man his own section.
   const pOf = k => PROJECTS.find(p => p.id === k.split("|")[0]);
-  for (const k in S.alloc) { const r = roleIn(S.user, pOf(k)); if (["sm", "pm"].includes(r) && (S.alloc[k].length || lastSaved.has("alloc|" + k))) out.push(["alloc|" + k, S.alloc[k]]); }
+  for (const k in S.alloc) { const r = roleIn(S.user, pOf(k)); if (["sm", "pm"].includes(r) && !S.alloc[k]._plan && (S.alloc[k].length || lastSaved.has("alloc|" + k))) out.push(["alloc|" + k, S.alloc[k]]); }
   for (const k in S.sections) { const r = roleIn(S.user, pOf(k)); for (const who in S.sections[k]) if (who === S.user || r === "sm") out.push([`sec|${k}|${who}`, S.sections[k][who]]); }
   for (const pid in S.links) for (const l of S.links[pid]) {
     if (!Object.keys(l.steps || {}).length && !(l.faults || []).length && !l.custom) continue;
