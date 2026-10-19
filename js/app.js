@@ -73,6 +73,39 @@ function topbar(title, sub, back) {
 function go(view) { S.hist.push(S.view); S.view = view; render(); window.scrollTo(0, 0); }
 function goBack() { S.view = S.hist.pop() || "projects"; render(); window.scrollTo(0, 0); }
 
+// ---------- the phone's back button ----------
+// Back goes one screen back inside the app. It never drops a man straight out of the app.
+// On the main screen it takes three presses to close, with a message each time.
+const FORM_VIEWS = ["check", "toolbox", "incident", "si", "order", "diary", "dsti", "inspection", "mysection"];
+const ROOT_VIEWS = ["projects", "users", "signature", "waiting", "removed"];
+let backPresses = 0, backAt = 0;
+function guardBack() { if (!(history.state && history.state.fib === "top")) { history.replaceState({ fib: "base" }, ""); history.pushState({ fib: "top" }, ""); } }
+function toast(t) {
+  document.querySelectorAll(".fib-toast").forEach(x => x.remove());
+  const el = h("div", { class: "fib-toast", role: "status", style: "position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:#15191e;color:#fff;font-weight:700;font-size:14px;padding:12px 18px;border-radius:24px;z-index:9999;max-width:88vw;text-align:center;box-shadow:0 4px 14px rgba(0,0,0,.3)" }, t);
+  document.body.append(el); setTimeout(() => el.remove(), 2600);
+}
+function leaveFormCheck(then) {
+  if (!(FORM_VIEWS.includes(S.view) && S.formDirty)) return then();
+  const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Leave this page" }, h("div", { class: "modal" }, h("h2", {}, "Leave this page?"),
+    h("p", {}, S.view === "mysection" ? "Your diary section is kept on the phone. You can come back to it." : "What you filled in on this form is not submitted yet. If you leave, it is lost."),
+    h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Stay"), h("button", { class: "btn-w", type: "button", onclick: () => { ov.remove(); S.formDirty = false; then(); } }, "Leave"))));
+  document.body.append(ov);
+}
+addEventListener("input", () => { if (FORM_VIEWS.includes(S.view)) S.formDirty = true; }, true);
+addEventListener("popstate", () => {
+  if (!CFG) return;
+  const ovs = document.querySelectorAll(".overlay");
+  if (ovs.length) { ovs[ovs.length - 1].remove(); history.pushState({ fib: "top" }, ""); return; }
+  if (!ROOT_VIEWS.includes(S.view)) { backPresses = 0; history.pushState({ fib: "top" }, ""); leaveFormCheck(goBack); return; }
+  if (Date.now() - backAt > 3000) backPresses = 0;
+  backPresses++; backAt = Date.now();
+  if (backPresses === 1) { history.pushState({ fib: "top" }, ""); toast("Press back two more times to close Fibraco"); return; }
+  // second press: stay on the bottom step, so the third press closes the app. Re-arm after 3 seconds.
+  toast("Press back once more to close Fibraco");
+  setTimeout(() => { if (backPresses === 2 && history.state && history.state.fib === "base") { backPresses = 0; history.pushState({ fib: "top" }, ""); } }, 3000);
+});
+
 // ---------- signature ----------
 // own = the person using the phone signs: his saved signature after his PIN. Otherwise (client, attendees) a fresh drawing.
 function sigCell(get, set, label, own) {
@@ -289,7 +322,7 @@ function startForm(type, key) {
     sched: "", schedWhy: "", written: "", verbal: "", mats: [{}, {}, {}], delays: [{}, {}, {}], clientRep: "", sigF: "", sigC: "" });
   if (type === "dsti") Object.assign(base, { task: "", ms: "", tbt: "", hz: {}, ppe: [], ack: OCCUPATIONS.map(o => ({ occ: o, name: "", sig: "" })), assessor: S.user, sigA: "" });
   if (type === "inspection") Object.assign(base, { company: "", contact: "", number: "", email: "", acts: [{ sow: "", comments: "", photos: [] }] });
-  S.form = base; go(type);
+  S.form = base; S.formDirty = false; go(type);
 }
 function formHead(title, docNote) {
   const f = S.form;
@@ -1348,7 +1381,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792408369"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792408369"); await loadJs("./js/pdf.js?v=1792408369");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792411663"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792411663"); await loadJs("./js/pdf.js?v=1792411663");
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
     // Phones only open the share menu straight after a tap, so the last step is one tap on Share.
@@ -1721,7 +1754,7 @@ function waiting() {
   waitT = setTimeout(startApp, 20000);
 }
 async function startApp() {
-  clearTimeout(waitT);
+  clearTimeout(waitT); guardBack();
   Store.config(CONF);
   screen(centre("Opening..."));
   let me = Store.me();
