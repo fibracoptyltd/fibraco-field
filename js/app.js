@@ -74,11 +74,73 @@ function go(view) { S.hist.push(S.view); S.view = view; render(); window.scrollT
 function goBack() { S.view = S.hist.pop() || "projects"; render(); window.scrollTo(0, 0); }
 
 // ---------- signature ----------
-function sigCell(get, set, label) {
+// own = the person using the phone signs: his saved signature after his PIN. Otherwise (client, attendees) a fresh drawing.
+function sigCell(get, set, label, own) {
   const b = h("button", { type: "button", class: "sigbox", "aria-label": label || "Sign" });
-  const draw = () => { const v = get(); b.replaceChildren(v ? h("img", { src: v, alt: "Signature" }) : "Tap to sign"); };
-  b.onclick = () => openSig(label || "Signature", v => { set(v); draw(); });
+  const draw = () => { const v = get(); b.replaceChildren(v ? h("img", { src: v, alt: "Signature" }) : own ? "Tap to sign with your PIN" : "Tap to sign"); };
+  b.onclick = () => own ? mySig(v => { set(v); draw(); }) : openSig(label || "Signature", v => { set(v); draw(); });
   draw(); return b;
+}
+const sigId = () => `sig|${(Store.me() || {}).member}`;
+const savedSig = () => { const o = Store.get(sigId()); return o && o.img && !o.reset ? o : null; };
+// saved signature, stamped with name, date and time, after the PIN
+function mySig(done) {
+  const sg = savedSig();
+  if (!sg) return setupSignature(() => { render(); mySig(done); });
+  pinOverlay("Sign with your PIN", "Type your PIN to put your signature here.", pin => Store.checkPin(pin).then(async ok => {
+    if (ok !== true) {
+      if (10 - ok <= 0) { await Store.wipe(true); location.reload(); return "x"; }
+      return `Wrong PIN. ${10 - ok} ${10 - ok === 1 ? "try" : "tries"} left.`;
+    }
+    const im = new Image(); im.src = sg.img; await new Promise(r => { im.onload = im.onerror = r; });
+    const w = im.naturalWidth || 600, hh = im.naturalHeight || 240, c = document.createElement("canvas"); c.width = w; c.height = hh + Math.round(w / 14);
+    const x = c.getContext("2d"); x.drawImage(im, 0, 0);
+    const now = new Date(); x.fillStyle = "#33414f"; x.font = `${Math.round(w / 24)}px sans-serif`;
+    x.fillText(`${S.user}  |  ${dmy(now)} ${now.toLocaleTimeString("en-ZA", { hour: "2-digit", minute: "2-digit" }).replace(":", "h")}`, 6, c.height - Math.round(w / 40));
+    done(c.toDataURL("image/png")); return true;
+  }));
+}
+function pinOverlay(title, sub, check) {
+  let v = ""; const dots = h("div", { class: "pin-dots" }), msg = h("p", { class: "pin-msg" }, sub);
+  const ov = h("div", { class: "overlay", role: "dialog", "aria-label": title });
+  const drawD = () => dots.replaceChildren(...[0, 1, 2, 3].map(i => h("i", { class: i < v.length ? "on" : "" })));
+  const press = d => { if (d === "del") v = v.slice(0, -1); else if (v.length < 4) v += d; drawD(); if (v.length === 4) { const p = v; v = ""; setTimeout(async () => { drawD(); const r = await check(p); if (r === true || r === "x") ov.remove(); else msg.textContent = r; }, 120); } };
+  drawD();
+  ov.append(h("div", { class: "modal", style: "text-align:center" }, h("h2", {}, title), msg, dots,
+    h("div", { class: "pin-pad" }, ...["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "del"].map(d => d ? h("button", { type: "button", onclick: () => press(d), "aria-label": d === "del" ? "Delete" : d }, d === "del" ? "⌫" : d) : h("span"))),
+    h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Cancel"))));
+  document.body.append(ov);
+}
+// once per person: draw a signature, try again until happy, lock it in
+function setupSignature(after) {
+  // own view name, so changes arriving from other phones do not redraw over this screen
+  const prev = S.view === "signature" ? "projects" : S.view; S.view = "signature";
+  const c = h("canvas", { class: "sigpad", style: "width:100%;max-width:420px;height:200px;background:#fff;border:1.5px solid #c9ced6;border-radius:8px;touch-action:none;display:block;margin:10px auto" });
+  const lockBtn = h("button", { class: "btn-w", type: "button", style: "flex:1;padding:14px;border-radius:8px;font-weight:800;opacity:.45" }, "Lock it in");
+  let ctx, dirty = false, drawing = false;
+  app.replaceChildren(h("div", { class: "lock", style: "min-height:auto" },
+    h("img", { src: LOGO, alt: "Fibraco", style: "width:180px;max-width:60%;margin:14px auto 8px;display:block" }),
+    h("h1", { class: "big", style: "text-align:center" }, "Your signature"),
+    h("p", { style: "text-align:center;padding:0 16px;margin:4px 0" }, `${S.user}, sign with your finger in the white box. Try again as often as you like. When you are happy, lock it in.`),
+    h("div", { class: "pin-warn", role: "note" }, h("b", { style: "color:#c8102e;font-weight:900" }, "THIS IS YOUR SIGNATURE FOR EVERY FORM."), " Each time you sign, the app asks for your PIN and puts this signature in. Only the office can change it later."),
+    c,
+    h("div", { style: "display:flex;gap:10px;width:100%;max-width:420px;margin:6px auto" },
+      h("button", { class: "btn-g", type: "button", style: "flex:1;padding:14px;border-radius:8px;font-weight:800", onclick: () => { ctx.clearRect(0, 0, c.width, c.height); dirty = false; lockBtn.style.opacity = ".45"; } }, "Try again"),
+      lockBtn)));
+  lockBtn.onclick = () => {
+    if (!dirty) return;
+    const img = c.toDataURL("image/png"), id = sigId();
+    Store.put(id, { img, at: new Date().toISOString(), name: S.user });
+    Store.lock([id], "own");
+    S.view = prev; after();
+  };
+  const r = c.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+  c.width = r.width * dpr; c.height = r.height * dpr;
+  ctx = c.getContext("2d"); ctx.scale(dpr, dpr); ctx.lineWidth = 2.8; ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.strokeStyle = "#0b1f33";
+  const pos = e => { const b = c.getBoundingClientRect(); return [e.clientX - b.left, e.clientY - b.top]; };
+  c.addEventListener("pointerdown", e => { drawing = true; c.setPointerCapture(e.pointerId); const [x, y] = pos(e); ctx.beginPath(); ctx.moveTo(x, y); });
+  c.addEventListener("pointermove", e => { if (!drawing) return; const [x, y] = pos(e); ctx.lineTo(x, y); ctx.stroke(); dirty = true; lockBtn.style.opacity = "1"; });
+  ["pointerup", "pointercancel"].forEach(t => c.addEventListener(t, () => drawing = false));
 }
 function openSig(label, done) {
   const c = h("canvas", { class: "sigpad" });
@@ -299,7 +361,7 @@ function vDiary() {
     sheet("", h("div", { class: "band" }, "Photo diary"), photoBlock(f.photos)),
     f.combined ? h("p", { class: "hint" }, "No signature here. You sign once, in step 3 on the review page. The client signs on his own link the next morning.") : sheet("", h("div", { class: "band" }, "Representative"), h("table", {}, h("thead", {}, h("tr", {}, h("th", {}, ""), h("th", {}, "Fibraco rep"), h("th", {}, "Client rep"))), h("tbody", {},
       h("tr", {}, h("td", { class: "lab", style: "width:24%" }, "Name"), h("td", { class: "ro" }, f.user), h("td", {}, inp("text", f.clientRep, v => f.clientRep = v, "Client name"))),
-      h("tr", {}, h("td", { class: "lab" }, "Signature"), h("td", {}, sigCell(() => f.sigF, v => f.sigF = v, "Fibraco rep signature")), h("td", {}, sigCell(() => f.sigC, v => f.sigC = v, "Client rep signature")))))),
+      h("tr", {}, h("td", { class: "lab" }, "Signature"), h("td", {}, sigCell(() => f.sigF, v => f.sigF = v, "Fibraco rep signature", true)), h("td", {}, sigCell(() => f.sigC, v => f.sigC = v, "Client rep signature")))))),
     f.combined ? submitBtn(() => [], { label: "Save and back to review", onDone: () => { S.siteDone[dayKey()] = true; Store.put("site|" + dayKey(), formRecord(f)); S.hist.pop(); S.view = "review"; render(); window.scrollTo(0, 0); } }) : submitBtn(() => { const e = []; if (!f.team.some(r => r.name)) e.push("Add at least one person to the project team."); if (!f.acts.some(r => r.act)) e.push("Add at least one activity."); if (!f.sigF) e.push("The Fibraco rep must sign."); return e; })];
 }
 
@@ -331,7 +393,7 @@ function vDsti() {
     h("p", { class: "hint" }, "Acknowledgement. I am conversant with the work instructions and the risks of this task, I will work according to them, and I will report any unsafe condition."),
     sheet("", h("table", {}, h("tbody", {},
       h("tr", {}, h("td", { class: "lab" }, "CR 9(1) risk assessor"), h("td", {}, sel(STAFF, f.assessor, v => f.assessor = v, "Name"))),
-      h("tr", {}, h("td", { class: "lab" }, "Signature"), h("td", {}, sigCell(() => f.sigA, v => f.sigA = v, "Risk assessor signature")))))),
+      h("tr", {}, h("td", { class: "lab" }, "Signature"), h("td", {}, sigCell(() => f.sigA, v => f.sigA = v, "Risk assessor signature", true)))))),
     submitBtn(() => { const e = []; if (!f.task.trim()) e.push("Describe the task being performed today."); if (!Object.values(f.hz).some(x => x.r)) e.push("Rate at least one hazard."); if (!f.ack.some(a => a.name && a.sig)) e.push("At least one crew member must sign on."); if (!f.sigA) e.push("The risk assessor must sign."); return e; })];
 }
 
@@ -481,7 +543,7 @@ function vCheck() {
   });
   return [...formHead(c.title, c.basis), stdHeader(f, c.title, c.details.map(d => detailRow(f, d))), ...blocks,
     sheet("", h("div", { class: "band" }, "Outcome"), seg([["Fit", "Fit for use"], ["Not fit", "Not fit, taken out of use"]], f.outcome, v => f.outcome = v)),
-    sheet("", h("table", {}, h("tbody", {}, h("tr", {}, h("td", { class: "lab" }, "Signature"), h("td", {}, sigCell(() => f.sig, v => f.sig = v, "Inspector signature")))))),
+    sheet("", h("table", {}, h("tbody", {}, h("tr", {}, h("td", { class: "lab" }, "Signature"), h("td", {}, sigCell(() => f.sig, v => f.sig = v, "Inspector signature", true)))))),
     submitBtn(() => { const e = []; const all = f.items.flat(); if (all.some(i => !i.a && i.name)) e.push("Mark every item."); if (all.some(i => ["Defect", "Replace", "Short", "Fail"].includes(i.a) && !(i.c || "").trim())) e.push("Write what is wrong for every item that failed."); if (!f.sig) e.push("Sign the inspection."); return e; })];
 }
 
@@ -515,7 +577,7 @@ function vIncident() {
     sheet("", h("div", { class: "band" }, "What happened"), txt(f.what, v => f.what = v, "Describe what happened, in order")),
     sheet("", h("div", { class: "band" }, "Immediate actions"), chips(acts, "acts")),
     sheet("", h("div", { class: "band" }, "Photos"), photoBlock(f.photos)),
-    sheet("", h("table", {}, h("tbody", {}, h("tr", {}, h("td", { class: "lab" }, "Witness"), h("td", {}, inp("text", f.wit, v => f.wit = v, "Name and cell no"))), h("tr", {}, h("td", { class: "lab" }, "Reported by signature"), h("td", {}, sigCell(() => f.sig, v => f.sig = v, "Reporter signature")))))),
+    sheet("", h("table", {}, h("tbody", {}, h("tr", {}, h("td", { class: "lab" }, "Witness"), h("td", {}, inp("text", f.wit, v => f.wit = v, "Name and cell no"))), h("tr", {}, h("td", { class: "lab" }, "Reported by signature"), h("td", {}, sigCell(() => f.sig, v => f.sig = v, "Reporter signature", true)))))),
     h("p", { class: "hint" }, `Submitting sends this to ${adminName()} and the site manager straight away. The investigation part is done later by the office.`),
     submitBtn(() => { const e = []; if (!f.types.length) e.push("Tick the type of incident."); if (!f.what.trim()) e.push("Describe what happened."); if (!f.sig) e.push("Sign the report."); return e; })];
 }
@@ -537,7 +599,7 @@ function vSI() {
     sheet("", h("div", { class: "band" }, "Photos"), photoBlock(f.photos)),
     sheet("", h("table", {}, h("tbody", {},
       h("tr", {}, h("td", { class: "lab" }, "Given by (client) signature"), h("td", {}, sigCell(() => f.sigC, v => f.sigC = v, "Client signature"))),
-      h("tr", {}, h("td", { class: "lab" }, "Received by (Fibraco) signature"), h("td", {}, sigCell(() => f.sigF, v => f.sigF = v, "Fibraco signature")))))),
+      h("tr", {}, h("td", { class: "lab" }, "Received by (Fibraco) signature"), h("td", {}, sigCell(() => f.sigF, v => f.sigF = v, "Fibraco signature", true)))))),
     submitBtn(() => { const e = []; if (!f.by.trim()) e.push("Who gave the instruction?"); if (!f.text.trim()) e.push("Write the instruction."); if (!f.sigF) e.push("Fibraco must sign."); return e; })];
 }
 
@@ -550,7 +612,7 @@ function vOrder() {
       h("tr", {}, h("td", { class: "lab" }, "Reason"), h("td", {}, sel(["Project material", "Consumables", "Replacement or repair", "PPE", "Tools"], f.reason, v => f.reason = v, "Choose")))]),
     rowsTable("wide", ["No", "Description", "Spec or part no", "Unit", "Qty"], f.items, (r, i) => h("tr", {}, h("td", { class: "no" }, i + 1), h("td", { style: "min-width:200px" }, inp("text", r.d, v => r.d = v, "What is needed")), h("td", { style: "min-width:140px" }, inp("text", r.s, v => r.s = v, "If known")), h("td", { style: "width:90px" }, sel(["m", "ea", "roll", "box", "set", "pack"], r.u, v => r.u = v, "Unit")), h("td", { style: "width:80px" }, inp("number", r.q, v => r.q = v, "0"))), "+ Add item", () => ({})),
     sheet("", h("div", { class: "band" }, "Notes for the office"), txt(f.notes, v => f.notes = v, "Supplier, urgency or anything else")),
-    sheet("", h("table", {}, h("tbody", {}, h("tr", {}, h("td", { class: "lab" }, "Requested by signature"), h("td", {}, sigCell(() => f.sig, v => f.sig = v, "Requester signature")))))),
+    sheet("", h("table", {}, h("tbody", {}, h("tr", {}, h("td", { class: "lab" }, "Requested by signature"), h("td", {}, sigCell(() => f.sig, v => f.sig = v, "Requester signature", true)))))),
     submitBtn(() => { const e = []; if (!f.items.some(r => r.d && r.q)) e.push("Add at least one item with a quantity."); if (!f.sig) e.push("Sign the request."); return e; })];
 }
 
@@ -1159,7 +1221,7 @@ function vMySection() {
     sheet("", h("table", {}, h("tbody", {},
       h("tr", {}, h("td", { class: "lab" }, "Hours worked"), h("td", {}, locked ? h("div", { class: "ro" }, sec.hrs) : sel(hrsOpts, sec.hrs, v => sec.hrs = v, "Hrs")))))),
     locked ? null : sheet("", h("div", { class: "band" }, "Photos"), photoBlock(sec.photos || (sec.photos = []))),
-    locked ? null : sheet("", h("table", {}, h("tbody", {}, h("tr", {}, h("td", { class: "lab" }, "My signature"), h("td", {}, sigCell(() => sec.sig, v => sec.sig = v, "Your signature")))))),
+    locked ? null : sheet("", h("table", {}, h("tbody", {}, h("tr", {}, h("td", { class: "lab" }, "My signature"), h("td", {}, sigCell(() => sec.sig, v => sec.sig = v, "Your signature", true)))))),
     locked ? h("div", { style: "text-align:center;margin:10px 0" }, statusPill(sec.status)) :
       submitBtn(() => { const e = []; if (tasks.some((t, i) => (sec.rows[i] || {}).done === undefined || (sec.rows[i] || {}).done === "")) e.push("Fill in what you did for every task, even if it is 0."); if (behind() && !sec.delays.some(d => d.cause && d.hrs)) e.push("You are behind the target. Add the delay cause and the hours lost."); if (!sec.hrs) e.push("Choose your hours worked."); if (!sec.sig) e.push("Sign your section."); return e; },
         { label: "Submit my section", onDone: () => { sec.status = "submitted"; sec.at = new Date().toLocaleTimeString("en-ZA", { hour: "2-digit", minute: "2-digit" }).replace(":", "h"); showInfo("Submitted", "Your section is with the site manager for review."); goBack(); } })];
@@ -1217,7 +1279,7 @@ function vReview() {
     ...people.map(personBlock), totals,
     final ? after : h("div", {},
       h("button", { class: "mbtn", style: `margin-bottom:12px;${s1 ? "" : "opacity:.45"}`, onclick: () => { if (s1) openCombined(); } }, s2 ? "✓ My part of the diary (open again)" : "2. My part of the diary", h("small", {}, "Weather, plant, site instructions and materials. Team and work fill in by themselves.")),
-      h("button", { class: "submit", type: "button", style: s1 && s2 ? "" : "opacity:.45", onclick: () => { if (!(s1 && s2)) return; openSig("Site manager signature", v => { if (!v) return; S.final[k] = new Date().toLocaleTimeString("en-ZA", { hour: "2-digit", minute: "2-digit" }).replace(":", "h"); S.done[k] = true; persist(); Store.put("final|" + k, { at: S.final[k], by: S.user, sig: v, date: ymd(S.date) }); S.form = { type: "diary", project: S.project, date: S.date, user: S.user, photos: [] }; go("done"); }); } }, "3. Sign and make final"))];
+      h("button", { class: "submit", type: "button", style: s1 && s2 ? "" : "opacity:.45", onclick: () => { if (!(s1 && s2)) return; mySig(v => { if (!v) return; S.final[k] = new Date().toLocaleTimeString("en-ZA", { hour: "2-digit", minute: "2-digit" }).replace(":", "h"); S.done[k] = true; persist(); Store.put("final|" + k, { at: S.final[k], by: S.user, sig: v, date: ymd(S.date) }); Store.lock(["alloc|" + k, "site|" + k, "final|" + k, ...people.map(p => `sec|${k}|${p}`)]); S.form = { type: "diary", project: S.project, date: S.date, user: S.user, photos: [] }; go("done"); }); } }, "3. Sign and make final"))];
 }
 // ---------- daily diary as PDF (print or save from the phone or laptop) ----------
 function printDiary(k, project, date) {
@@ -1388,7 +1450,7 @@ let render = function () {
 }
 
 // ---------- live layer: identity, PIN, saving, sync, feedback ----------
-const CONF = { url: "https://ahbcixfknqgqvmauhnyo.supabase.co", anon: "testanon" };
+const CONF = { url: "https://ahbcixfknqgqvmauhnyo.supabase.co", anon: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFoYmNpeGZrbnFncXZtYXVobnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIxNzI0NDMsImV4cCI6MjEwNzc0ODQ0M30.n58qy_PcGFoi9-JGzUecra9ggxUn_Yprsg9kO_2M02c" };
 const PHOTO_CACHE = new Map();
 const lastSaved = new Map();
 const strip = (k, v) => k === "url" ? undefined : (k === "project" && v && typeof v === "object") ? v.id : v;
@@ -1480,10 +1542,27 @@ function hydrate(ids) {
   }
   if (touched && (SAFE_VIEWS.includes(S.view) || (S.view === "mysection" && ids.some(i => i.startsWith("sec|") && i.endsWith("|" + S.user))))) render();
 }
-let deniedAt = 0;
+// Need-to-know: every record says who may receive it. The tags are scrambled before they leave the phone.
+// A man's section and forms go to him and his site manager. Allocations, tests, faults and checklists go to the project crew.
+Store.metaFor = (id, obj) => {
+  const x = id.split("|"), kind = x[0], pid = x[1], me = (Store.me() || {}).member;
+  const idOf = name => (PEOPLE.find(p => p.name === name) || {}).id;
+  if (kind === "sig") return { tags: [`user:${pid}`] };
+  if (kind === "alloc") return { tags: [`proj:${pid}`] };
+  if (kind === "sec") return { tags: [`user:${idOf(x.slice(3).join("|")) || me}`, `mgr:${pid}`] };
+  if (kind === "final" || kind === "site") return { tags: [`mgr:${pid}`] };
+  if (kind === "link" || kind === "issue" || kind === "bio") return { shared: true, tags: [`proj:${pid}`] };
+  if (kind === "form") return { tags: pid && pid !== "none" ? [`user:${me}`, `mgr:${pid}`] : [`user:${me}`] };
+  if (kind === "alert") return { tags: obj && obj.project ? [`user:${me}`, `mgr:${obj.project}`] : [`user:${me}`] };
+  if (kind === "ph") return { tags: S.project ? [`user:${me}`, `proj:${S.project.id}`] : [`user:${me}`] };
+  return { tags: [`user:${me}`] };
+};
+let deniedAt = 0, refusedAt = 0;
 Store.on((ids, state) => {
   if (state === "denied" && CFG && Date.now() - deniedAt > 60e3) { deniedAt = Date.now(); Store.whoami().then(me => { if (me.status !== "active") location.reload(); }).catch(e => { if (e.status) location.reload(); }); }
-  if (ids.length) hydrate(ids); const p = document.querySelector(".bar .pill"); if (p) p.replaceWith(syncPill()); });
+  if (state === "refused" && Date.now() - refusedAt > 30e3) { refusedAt = Date.now(); showInfo("Not saved", "That diary is already signed and locked, or it is not yours to change. The app has put back the signed version."); }
+  if (ids.length) hydrate(ids);
+  if (CFG && ids.includes(sigId()) && !savedSig() && S.view !== "signature") setupSignature(() => render()); const p = document.querySelector(".bar .pill"); if (p) p.replaceWith(syncPill()); });
 
 // "Something wrong?" on every screen
 function feedbackButton() {
@@ -1554,6 +1633,9 @@ function vDevices() {
           d.status !== "active" ? h("button", { class: "btn-w", type: "button", style: "padding:8px 14px", onclick: () => askYesNo("Allow this device?", `${p.name} on ${d.label || "this device"} gets full access to his projects.`, "Allow", () => act(() => Store.setDevice(p.id, d.dev, "active"))) }, "Allow") : null,
           d.status !== "blocked" ? h("button", { class: "btn-g", type: "button", style: "padding:8px 14px", onclick: () => askYesNo("Block this device?", `${d.label || "This device"} stops working for ${p.name} straight away. Next time it has signal, everything the app kept on it is wiped.`, "Block", () => act(() => Store.setDevice(p.id, d.dev, "blocked")), true) }, "Block") : null)))
         : [h("div", { style: "padding:10px 12px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)" }, "Link not opened yet.")]),
+      h("div", { style: "padding:8px 12px;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap" },
+        h("span", { style: "font-size:12.5px;color:var(--muted)" }, (() => { const o = Store.get(`sig|${p.id}`); return o && o.img && !o.reset ? `Signature locked in ${when(o.at)}` : o && o.reset ? "Signature reset, waiting for a new one" : "No signature yet"; })()),
+        h("button", { class: "btn-g", type: "button", style: "padding:6px 12px;font-size:12px", onclick: () => askYesNo(`Reset ${p.name.split(" ")[0]}'s signature?`, "Next time he opens the app he draws a new one and locks it in. The old one stays on record.", "Reset", () => { const id = `sig|${p.id}`; Store.lock([id], "unlock"); Store.put(id, { reset: true, at: new Date().toISOString(), by: S.user }); showInfo("Signature reset", `${p.name} draws a new signature next time he opens the app.`); setTimeout(render, 300); }) }, "Reset signature")),
       p.admin ? null : h("div", { style: "padding:8px 12px;border-top:1px solid var(--line);text-align:right" },
         h("button", { class: "btn-g", type: "button", style: "padding:6px 12px;font-size:12px", onclick: () => on
           ? askYesNo(`Switch ${p.name} off?`, `All his devices stop working at once and are wiped when they next have signal. His work already sent stays. You can switch him on again later.`, "Switch off", () => act(() => Store.setMember(p.id, false)), true)
@@ -1625,7 +1707,10 @@ async function startApp() {
   for (const [id, o] of Store.list("sec|")) { const x = id.split("|"); if (["submitted", "approved"].includes(o.status)) S.done[x[1] + "|" + x[2]] = true; }
   for (const [id, o] of Store.list("")) lastSaved.set(id, J(o));
   S.view = "projects"; S.hist = [];
-  render();
+  // every person has one saved signature. On a new phone, fetch it first before asking for a new one.
+  if (!savedSig() && Store.online()) { screen(centre("Opening...")); await Store.sync(); }
+  if (!savedSig()) setupSignature(() => { render(); });
+  else render();
   Store.sync();
   setInterval(() => Store.sync(), 30000);
   if (me.admin) { refreshDevices(true); setInterval(() => refreshDevices(), 30000); }

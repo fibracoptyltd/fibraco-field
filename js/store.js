@@ -12,6 +12,7 @@ const Store = (() => {
   let K = null, HK = null, FK = null, TOKEN = null, DEV = null, CONF = null, ME = null;
   const mem = new Map();          // id -> {obj, kind, at, dirty}
   const listeners = new Set();
+  let pendingLocks = [];
   let db = null, syncing = false, lastPull = "1970-01-01T00:00:00Z", online = navigator.onLine;
 
   // ---------- IndexedDB ----------
@@ -121,6 +122,7 @@ const Store = (() => {
       for (const r of await allRecs()) {
         try { mem.set(await open(r.idIv, r.idData), await open(r.iv, r.data)); } catch (e) { /* not ours */ }
       }
+      const lk = await metaGet("locks"); if (lk) { try { pendingLocks = (await open(lk.iv, lk.data)).filter(x => x && x.ids); } catch (e) {} }
       return true;
     },
     async forget() { await metaDel("wrapped"); },
@@ -169,10 +171,12 @@ const Store = (() => {
     setMember: (member, active) => rpc("set_member", { p_member: member, p_active: active }),
     get(id) { const v = mem.get(id); return v ? v.obj : undefined; },
     list(prefix) { const out = []; for (const [id, v] of mem) if (id.startsWith(prefix)) out.push([id, v.obj]); return out; },
-    async put(id, obj, kind = "r") {
+    metaFor: null, // set by the app: who may see this record, and whether others may update it
+    async put(id, obj, kind = "r", meta) {
       const at = new Date().toISOString();
-      mem.set(id, { obj, kind, at, dirty: 1 });
-      const box = await seal({ obj, kind, at, dirty: 1 }), idBox = await seal(id);
+      meta = meta || (api.metaFor ? api.metaFor(id, obj, kind) : null) || {};
+      mem.set(id, { obj, kind, at, dirty: 1, meta });
+      const box = await seal({ obj, kind, at, dirty: 1, meta }), idBox = await seal(id);
       await putRec({ hid: await hid(id), id: undefined, idIv: idBox.iv, idData: idBox.data, iv: box.iv, data: box.data, kind, dirty: 1 });
       api.kick();
     },
@@ -184,6 +188,12 @@ const Store = (() => {
       return null;
     },
     on(fn) { listeners.add(fn); return () => listeners.delete(fn); },
+    async lock(ids, op = "lock") { pendingLocks.push({ op, ids }); await metaSet("locks", await seal(pendingLocks)); api.kick(); },
+    // check the PIN without changing anything (used when he signs with his saved signature)
+    async checkPin(pin) {
+      try { await unwrap(pin, await metaGet("wrapped")); await metaSet("fails", 0); return true; }
+      catch (e) { const n = ((await metaGet("fails")) || 0) + 1; await metaSet("fails", n); return n; }
+    },
     pending() { let n = 0; for (const v of mem.values()) if (v.dirty) n++; return n; },
     kick() { clearTimeout(api._t); api._t = setTimeout(() => api.sync().catch(() => {}), 400); },
     async sync() {
@@ -193,6 +203,7 @@ const Store = (() => {
       try {
         // push what this phone changed
         const recs = (await allRecs()).filter(r => r.dirty);
+        const refused = [];
         for (let i = 0; i < recs.length; i += 20) {
           const batch = recs.slice(i, i + 20);
           const rows = [];
@@ -200,17 +211,40 @@ const Store = (() => {
             const id = await open(r.idIv, r.idData), v = mem.get(id);
             if (!v) continue;
             const box = await seal({ id, obj: v.obj, kind: v.kind, at: v.at });
-            rows.push({ id: r.hid, kind: v.kind === "ph" ? "ph" : v.kind === "fb" ? "fb" : "r", iv: box.iv, data: box.data });
+            const meta = v.meta || {};
+            const tags = meta.tags ? await Promise.all(meta.tags.map(t => hid("tag|" + t))) : null;
+            rows.push({ id: r.hid, kind: v.kind === "ph" ? "ph" : v.kind === "fb" ? "fb" : "r", iv: box.iv, data: box.data, shared: !!meta.shared, tags });
           }
-          if (rows.length) await rpc("put_records", { p_rows: rows });
+          const res = rows.length ? await rpc("put_records", { p_rows: rows }) : null;
+          const rejected = new Set((res && res.rejected) || []);
           for (const r of batch) {
             const id = await open(r.idIv, r.idData), v = mem.get(id); if (!v) continue;
-            v.dirty = 0; const box = await seal({ obj: v.obj, kind: v.kind, at: v.at, dirty: 0 });
+            v.dirty = 0; const box = await seal({ obj: v.obj, kind: v.kind, at: v.at, dirty: 0, meta: v.meta });
             await putRec(Object.assign(r, { iv: box.iv, data: box.data, dirty: 0 }));
+            if (rejected.has(r.hid)) refused.push([r.hid, id]);
           }
         }
-        // pull what others changed
         let changed = [];
+        // the server refused a change (signed and locked, or not this man's work): take the server's copy back
+        if (refused.length) {
+          const rows = await rpc("get_by_ids", { p_ids: refused.slice(0, 50).map(x => x[0]) }).catch(() => []);
+          for (const row of rows || []) {
+            let o; try { o = await open(row.iv, row.data); } catch (e) { continue; }
+            mem.set(o.id, { obj: o.obj, kind: o.kind, at: o.at, dirty: 0 });
+            const box = await seal({ obj: o.obj, kind: o.kind, at: o.at, dirty: 0 }), idBox = await seal(o.id);
+            await putRec({ hid: row.id, idIv: idBox.iv, idData: idBox.data, iv: box.iv, data: box.data, kind: o.kind, dirty: 0 });
+            changed.push(o.id);
+          }
+          listeners.forEach(fn => fn([], "refused", refused.map(x => x[1])));
+        }
+        // locks and unlocks, in the order they were asked for
+        while (pendingLocks.length) {
+          const x = pendingLocks[0], fn = { lock: "lock_records", own: "lock_own_records", unlock: "unlock_records" }[x.op] || "lock_records";
+          try { await rpc(fn, { p_ids: await Promise.all(x.ids.map(hid)) }); }
+          catch (e) { if (!e.status || e.status >= 500) break; } // no signal: try again next time. Refused: drop it, so it never blocks the sync.
+          pendingLocks.shift(); await metaSet("locks", await seal(pendingLocks));
+        }
+        // pull what others changed
         for (;;) {
           const rows = await rpc("get_records", { p_since: lastPull, p_kinds: ME && ME.admin ? ["r", "fb"] : ["r"] });
           if (!rows || !rows.length) break;
@@ -219,6 +253,7 @@ const Store = (() => {
             let o; try { o = await open(r.iv, r.data); } catch (e) { continue; }
             const local = mem.get(o.id);
             if (local && local.dirty && local.at > o.at) continue; // our newer edit wins
+            if (local && local.at === o.at) continue; // the same version we already have (often our own save coming back)
             mem.set(o.id, { obj: o.obj, kind: o.kind, at: o.at, dirty: 0 });
             const box = await seal({ obj: o.obj, kind: o.kind, at: o.at, dirty: 0 }), idBox = await seal(o.id);
             await putRec({ hid: r.id, idIv: idBox.iv, idData: idBox.data, iv: box.iv, data: box.data, kind: o.kind, dirty: 0 });
