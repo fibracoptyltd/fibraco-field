@@ -1310,7 +1310,7 @@ function printDiary(k, project, date) {
   <h2>Delays</h2>${tbl(["No", "Cause", "Time lost"], delays.map((d, i) => [i + 1, noName(d.c), d.t ? `${d.t} hrs` : ""]))}
   <div class="sigs">
     <div><h3>Fibraco site manager</h3><div class="sigline">${fin.sig ? `<img src="${fin.sig}" alt="Signature">` : ""}</div><div>${esc(fin.by || smName())}</div><div>Signed ${esc(fin.at || "")}</div></div>
-    <div><h3>Client representative</h3><div class="sigline"></div><div>Name: ______________________</div><div>Date: ______________________</div></div>
+    <div><h3>Client representative</h3><div class="sigline"></div><div>Name: ${project.sm ? esc(String(project.sm).split(",")[0]) : "______________________"}</div><div>Date: ______________________</div></div>
   </div>
   <p class="foot">Fibraco (Pty) Ltd. Daily diary from Fibraco Field, printed ${esc(new Date().toLocaleString("en-ZA"))}. Photos are kept in the app.</p>`;
   let root = document.getElementById("print-root"); if (!root) { root = h("div", { id: "print-root" }); document.body.append(root); }
