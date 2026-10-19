@@ -164,12 +164,12 @@ function changePin() {
   let oldPin = null, first = null;
   const back = () => { render(); };
   const cancel = h("div", { style: "text-align:center;margin-top:10px" }, h("button", { class: "btn-g", type: "button", style: "padding:8px 14px", onclick: back }, "Cancel"));
-  const step = (t, s, fn) => { pinPad(t, s, fn); document.querySelector(".lock").append(cancel); };
+  const step = (t, s, fn, w) => { pinPad(t, s, fn, w); document.querySelector(".lock").append(cancel); };
   const askOld = s => step("Type your current PIN", s, pin => { oldPin = pin; askNew(""); });
-  const askNew = s => step("Choose a new PIN", s, pin => { first = pin; step("Type it again", "To make sure.", pin2 => {
+  const askNew = s => step("Choose a new PIN", s, pin => { first = pin; step("Type it again", "To make sure you remember it.", pin2 => {
     if (pin2 !== first) return askNew("The two PINs did not match. Try again.");
-    Store.changePin(oldPin, first).then(ok => { if (!ok) return askOld("Wrong PIN. Try again."); back(); showInfo("PIN changed", "Use the new PIN from now on."); });
-  }); });
+    Store.changePin(oldPin, first).then(ok => { if (!ok) return askOld("Wrong PIN. Try again."); back(); showInfo("PIN changed", "Use the new PIN from now on. Remember it, you type it every time you open the app."); });
+  }, PIN_WARN); }, PIN_WARN);
   askOld("");
 }
 function vCalendar() {
@@ -1572,13 +1572,15 @@ function vFeedback() {
 
 // ---------- boot ----------
 let CFG = null;
+const PIN_WARN = "REMEMBER THIS PIN. You must type it every time you open the app. If you forget it, the office has to reset it for you.";
 const screen = (...kids) => { app.replaceChildren(h("div", { class: "lock" }, h("img", { src: LOGO, alt: "Fibraco", style: "width:220px;max-width:70%;margin:30px auto 18px;display:block" }), ...kids)); };
-function pinPad(title, sub, onDone) {
+function pinPad(title, sub, onDone, warn) {
   let v = ""; const dots = h("div", { class: "pin-dots" }); const msg = h("p", { class: "pin-msg" }, sub || "");
   const draw = () => dots.replaceChildren(...[0, 1, 2, 3].map(i => h("i", { class: i < v.length ? "on" : "" })));
   const press = d => { if (d === "del") v = v.slice(0, -1); else if (v.length < 4) v += d; draw(); if (v.length === 4) { const x = v; v = ""; setTimeout(() => { draw(); onDone(x, m => { msg.textContent = m; }); }, 120); } };
   draw();
   screen(h("h1", { class: "big", style: "text-align:center" }, title), msg, dots,
+    warn ? h("div", { class: "pin-warn", role: "note" }, warn) : null,
     h("div", { class: "pin-pad" }, ...["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "del"].map(d => d ? h("button", { type: "button", onclick: () => press(d), "aria-label": d === "del" ? "Delete" : d }, d === "del" ? "⌫" : d) : h("span"))));
 }
 const centre = t => h("p", { style: "text-align:center;padding:0 20px" }, t);
@@ -1632,18 +1634,18 @@ async function boot() {
   if (Store.hasLink()) {
     let first = null;
     const ask = (t, s) => pinPad(t, s, (pin, say) => {
-      if (!first) { first = pin; return ask("Type it again", "To make sure."); }
+      if (!first) { first = pin; return ask("Type it again", "To make sure you remember it."); }
       if (pin !== first) { first = null; return ask("Choose a 4 digit PIN", "The two PINs did not match. Try again."); }
       Store.setupFromLink(pin).then(startApp);
-    });
-    return ask("Choose a 4 digit PIN", `Welcome. You will type this PIN every time the app opens.`);
+    }, PIN_WARN);
+    return ask("Choose a 4 digit PIN", "Welcome to Fibraco Field.");
   }
   if (await Store.hasSaved()) {
     return pinPad("Type your PIN", "", (pin, say) => Store.unlock(pin).then(async ok => {
       if (ok === true) return startApp();
       const left = 10 - ok;
-      if (left <= 0) { await Store.wipe(true); return screen(h("h1", { class: "big", style: "text-align:center" }, "App cleared"), centre("The PIN was wrong 10 times, so the app cleared itself on this phone."), centre("Open your personal link again to set it up with a new PIN.")); }
-      say(left <= 3 ? `Wrong PIN. ${left} ${left === 1 ? "try" : "tries"} left before the app clears itself on this phone.` : ok >= 3 ? "Wrong PIN. Forgot it? Open your personal link again to set a new one." : "Wrong PIN. Try again.");
+      if (left <= 0) { await Store.wipe(true); return screen(h("h1", { class: "big", style: "text-align:center" }, "App cleared"), centre("The PIN was wrong 10 times, so the app cleared itself on this phone."), centre("Ask the office to set it up again on this phone.")); }
+      say(left <= 3 ? `Wrong PIN. ${left} ${left === 1 ? "try" : "tries"} left before the app clears itself on this phone.` : ok >= 3 ? "Wrong PIN. Forgot it? Ask the office to reset it." : "Wrong PIN. Try again.");
     }));
   }
   screen(h("h1", { class: "big", style: "text-align:center" }, "Fibraco Field"), h("p", { style: "text-align:center;padding:0 20px" }, "Open the app with your personal link from WhatsApp. It only works for you."));
