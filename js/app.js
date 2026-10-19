@@ -1400,7 +1400,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792413309"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792413309"); await loadJs("./js/pdf.js?v=1792413309");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792413768"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792413768"); await loadJs("./js/pdf.js?v=1792413768");
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
     // Phones only open the share menu straight after a tap, so the last step is one tap on Share.
@@ -1941,6 +1941,19 @@ const leave = () => { splash.hidden = true; };
 splash.addEventListener("click", leave);
 splash.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") leave(); });
 setTimeout(leave, 1500);
-if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
+// Updates: when a new version of the app arrives, the phone switches to it by itself.
+// It never reloads in the middle of a form, only on the main screen or the PIN screen.
+let updateReady = false;
+function applyUpdate() { if (!updateReady) return; if (!CFG || S.locked || ["projects", "users"].includes(S.view)) { updateReady = false; location.reload(); } }
+if ("serviceWorker" in navigator && location.protocol === "https:") {
+  const hadController = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(reg => {
+    const check = () => reg.update().catch(() => {});
+    document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") check(); });
+    setInterval(check, 30 * 60e3);
+  }).catch(() => {});
+  navigator.serviceWorker.addEventListener("controllerchange", () => { if (!hadController) return; updateReady = true; applyUpdate(); });
+  setInterval(applyUpdate, 5000);
+}
 boot();
 })();
