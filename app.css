@@ -268,3 +268,26 @@ html, body { overscroll-behavior-y: none; }
 .blk-warn { color: #ff8a80; font-weight: 800; font-size: 13px; margin-top: 7px; }
 .sheet .blk-tile input.blk-in, .sheet .blk-tile input.blk-in:focus { flex: 1; width: 100%; min-height: 0; border: 0; outline: 0; background: transparent; padding: 0; font-size: 28px; font-weight: 900; color: #0069aa; text-align: center; border-radius: 0; }
 .blk-tile.today:focus-within { background: #eef6fc; }
+
+/* test sheets */
+.ts-list { display: flex; flex-direction: column; gap: 10px; }
+.ts-route { display: flex; gap: 12px; align-items: center; width: 100%; background: #1b1f26; border: 0; border-radius: 10px; padding: 12px; cursor: pointer; }
+.ts-bar { display: flex; gap: 6px; margin: 6px 0; }
+.ts-tab { flex: 1; padding: 11px 6px; border-radius: 8px; border: 2px solid #1b1f26; background: #fff; color: #1b1f26; font-weight: 800; font-size: 14px; }
+.ts-tab.on { background: #1b1f26; color: #39ff14; box-shadow: 0 0 8px rgba(57,255,20,.45); }
+.ts-grid-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 10px; }
+.ts-grid { border-collapse: separate; border-spacing: 0; background: #1b1f26; min-width: 100%; }
+.ts-grid th { background: #1b1f26; color: #aeb6c1; font-size: 12px; font-weight: 800; padding: 8px 6px; text-align: center; white-space: nowrap; }
+.ts-grid tbody th { color: #fff; font-size: 15px; position: sticky; left: 0; z-index: 1; border-right: 1px solid #2c323c; }
+.ts-grid td { padding: 4px; border-top: 1px solid #2c323c; }
+.ts-in { width: 74px; height: 42px; border: 2px solid #00e5ff; border-radius: 8px; background: #fff; color: #0069aa; font-weight: 900; font-size: 17px; text-align: center; -moz-appearance: textfield; }
+.ts-in::-webkit-outer-spin-button, .ts-in::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.ts-in:focus { outline: none; box-shadow: 0 0 8px #00e5ff; }
+.ts-tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; }
+.ts-tile { border: 2px solid; border-radius: 12px; background: #232a33; padding: 7px 2px; text-align: center; min-height: 72px; display: flex; flex-direction: column; }
+.ts-tl { font-weight: 800; font-size: 12px; line-height: 1.15; }
+.ts-tv { flex: 1; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 22px; }
+.ts-heat { border-collapse: separate; border-spacing: 3px; }
+.ts-heat th { color: #aeb6c1; font-size: 11.5px; font-weight: 800; padding: 2px 4px; white-space: nowrap; text-align: center; }
+.ts-heat tbody th { color: #fff; font-size: 13px; }
+.ts-sq { min-width: 56px; height: 30px; border-radius: 6px; font-weight: 900; font-size: 12.5px; text-align: center; }

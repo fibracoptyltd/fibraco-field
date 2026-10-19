@@ -307,11 +307,13 @@ function vMenu() {
   const later = (name, what) => h("button", { class: "mbtn later", onclick: () => showInfo(name, what) }, name);
   return [topbar(S.project.short, nice(d), true), projCard(S.project), todayCard(),
     h("div", { class: "stack" },
+      myRepairs(S.user).length ? h("button", { class: "mbtn", style: "background:#c8102e;color:#fff;border-color:#c8102e", onclick: () => go("mysection") }, `SPLICE FAILED: ${myRepairs(S.user).length} TO FIX`, h("small", { style: "color:#ffe1e1" }, "Found by the testers. Fix it, then tap Repaired")) : null,
       isMgr(S.user) && myTasks(S.user).length ? h("button", { class: "mbtn", onclick: () => go("mysection") }, "My tasks today", h("small", {}, "Fill in what you did yourself")) : null,
       h("button", { class: "mbtn", onclick: () => isMgr(S.user) ? go("review") : go("mysection") }, "Daily diaries", h("small", {}, isSM(S.user) ? "Check the crew, add your part, sign" : isMgr(S.user) ? "See how the day is going" : "Fill in my section for today")),
       h("button", { class: "mbtn", onclick: () => startForm("dsti") }, "DSTI"),
       h("button", { class: "mbtn", onclick: () => go("inspections") }, "Daily inspections", h("small", {}, "Toolbox talk, PPE, vehicle, ladder, harness, first aid and more")),
-      h("button", { class: "mbtn", onclick: () => go("tests") }, S.project.kind === "turbines" ? "Turbines" : S.project.kind === "opgw" ? "Joint repair and tests" : "Cable tests", h("small", {}, S.project.kind === "turbines" ? "Splice box, patch panel, tests and checklist per turbine" : S.project.kind === "opgw" ? "Permit, joint box, re-splice, OTDR and OLTS" : "Drum, DIT, after install, control and witness tests")),
+      S.project.routes ? h("button", { class: "mbtn", onclick: () => go("tsheets") }, "Test sheets", h("small", {}, "OTDR both ways and OLTS, type the losses, get the report")) : null,
+      S.project.routes ? null : h("button", { class: "mbtn", onclick: () => go("tests") }, S.project.kind === "turbines" ? "Turbines" : S.project.kind === "opgw" ? "Joint repair and tests" : "Cable tests", h("small", {}, S.project.kind === "turbines" ? "Splice box, patch panel, tests and checklist per turbine" : S.project.kind === "opgw" ? "Permit, joint box, re-splice, OTDR and OLTS" : "Drum, DIT, after install, control and witness tests")),
       later("Job observation", "Next build. The behavioural observation checklist as a tap table, filed under 6. Behavioural Observations."),
       later("ITP", "Next build. Each ITP line for this project, with an RFI raised from the phone when the work is ready. Accepted or rejected signs the ITP line off."),
       h("button", { class: "mbtn", onclick: () => startForm("si") }, "Site instruction"),
@@ -1230,7 +1232,7 @@ function repairsBlock(u) {
     ...list.map(f => h("div", { style: "padding:10px 12px;border-top:1px solid var(--line);font-size:13px" },
       h("b", {}, f.title),
       h("div", { style: "color:#5b6470;margin:2px 0 8px" }, `${f.detail} Found by ${f.found} on ${dayLab(f.foundOn)}.`),
-      h("button", { class: "btn-w", type: "button", style: "width:100%;padding:11px;border-radius:6px;border:0;font-weight:800", onclick: () => { f.ref.status = "retest"; f.ref.repairNote = `Repaired by ${u}, ${dayLab(S.date)}`; persist(); showInfo("Sent for recheck", `${f.found} gets it back to retest or recheck. Log the time you spent under Delays as Rework.`); render(); } }, "Repaired, send for recheck"))));
+      h("button", { class: "btn-w", type: "button", style: "width:100%;padding:11px;border-radius:6px;border:0;font-weight:800", onclick: () => { f.ref.status = "retest"; f.ref.repairAt = new Date().toISOString(); f.ref.repairNote = `Repaired by ${u}, ${dayLab(S.date)}`; persist(); showInfo("Sent for recheck", `${f.found} gets it back to retest or recheck. Log the time you spent under Delays as Rework.`); render(); } }, "Repaired, send for recheck"))));
 }
 
 function todayCard() {
@@ -1443,7 +1445,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792415297"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792415297"); await loadJs("./js/pdf.js?v=1792415297");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792416222"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792416222"); await loadJs("./js/pdf.js?v=1792416222");
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
     // Phones only open the share menu straight after a tap, so the last step is one tap on Share.
@@ -1581,7 +1583,7 @@ function openEmergency() {
 // ---------- render ----------
 let render = function () {
   const v = S.view;
-  const views = { users: vUsers, projects: vProjects, calendar: vCalendar, menu: vMenu, inspections: vInspections, client: vClient, tests: vTests, link: vLink, logtest: vLogTest, biocheck: vBioCheck, allocate: vAllocate, mysection: vMySection, review: vReview, kpi: vKpi, rams: vRams, ramsdoc: vRamsDoc, drawings: vDrawings, drawing: vDrawing, diary: vDiary, dsti: vDsti, inspection: vInspection, check: vCheck, toolbox: vToolbox, incident: vIncident, si: vSI, order: vOrder, done: vDone, feedback: vFeedback, devices: vDevices, dash: vDash };
+  const views = { users: vUsers, projects: vProjects, calendar: vCalendar, menu: vMenu, inspections: vInspections, client: vClient, tests: vTests, link: vLink, logtest: vLogTest, biocheck: vBioCheck, allocate: vAllocate, mysection: vMySection, review: vReview, kpi: vKpi, rams: vRams, ramsdoc: vRamsDoc, drawings: vDrawings, drawing: vDrawing, diary: vDiary, dsti: vDsti, inspection: vInspection, check: vCheck, toolbox: vToolbox, incident: vIncident, si: vSI, order: vOrder, done: vDone, feedback: vFeedback, devices: vDevices, dash: vDash, tsheets: vTsheets, tsheet: vTsheet, treport: vTreport };
   app.replaceChildren(...[].concat((views[v] || vProjects)()).filter(Boolean));
 }
 
@@ -1805,6 +1807,230 @@ function vDevices() {
     ...people.map(card),
     h("button", { class: "mbtn ghost", onclick: () => refreshDevices(true) }, "Refresh")];
 }
+// ---------- test sheets: OTDR both directions and OLTS, per section point A to point B ----------
+// The testers only type the losses. Generate report averages the two OTDR directions per joint
+// (the bidirectional result), checks OLTS against the link budget, and lists every problem.
+const TS_DEF = { spliceGood: 0.10, spliceMax: 0.15, att: { 1310: 0.36, 1550: 0.25 }, conn: 0.5, wls: [1310, 1550] };
+const tsLim = () => Object.assign({}, TS_DEF, S.project.testLimits || {});
+function tsRoutes() {
+  const pid = S.project.id, base = (S.project.routes || []).map(r => JSON.parse(JSON.stringify(r)));
+  for (const [id, o] of Store.list(`tsr|${pid}|`)) { const i = base.findIndex(r => r.id === o.id); if (i >= 0) base[i] = o; else base.push(o); }
+  return base.filter(r => !r.removed).sort((x, y) => (x.practice ? 1 : 0) - (y.practice ? 1 : 0));
+}
+const tsRoute = rid => tsRoutes().find(r => r.id === rid);
+const tsSaveRoute = r => Store.put(`tsr|${S.project.id}|${r.id}`, r, "r", { shared: true, tags: [`proj:${S.project.id}`] });
+// typing keeps the numbers on the phone at once and sends them a moment later
+const tsCache = {}, tsTimer = {};
+const tsGet = (rid, part) => { const id = `tsd|${S.project.id}|${rid}|${part}`; return tsCache[id] || Store.get(id) || {}; };
+function tsPut(id) { clearTimeout(tsTimer[id]); delete tsTimer[id]; const d = tsCache[id]; if (d) Store.put(id, Object.assign(d, { by: S.user, at: new Date().toISOString() }), "r", { shared: true, tags: [`proj:${id.split("|")[1]}`] }); }
+function tsSave(rid, part, data) { const id = `tsd|${S.project.id}|${rid}|${part}`; tsCache[id] = data; clearTimeout(tsTimer[id]); tsTimer[id] = setTimeout(() => tsPut(id), 600); }
+const tsFlush = () => Object.keys(tsTimer).forEach(tsPut);
+const num = v => v === "" || v == null || isNaN(+v) ? null : +v;
+const f2 = v => v == null ? "-" : (+v).toFixed(2);
+const f3 = v => v == null ? "-" : (+v).toFixed(3);
+
+// one route, all the numbers worked out
+function tsAnalyse(r, wl) {
+  const L = tsLim(), ab = (tsGet(r.id, "ab")[wl]) || {}, ba = (tsGet(r.id, "ba")[wl]) || {}, ol = (tsGet(r.id, "olts")[wl]) || {};
+  const nJ = (r.joints || []).length, km = (+r.m || 0) / 1000;
+  const budget = km * (L.att[wl] || 0.3) + nJ * L.spliceMax + 2 * L.conn;
+  const cores = [], issues = [];
+  for (let c = 1; c <= (+r.cores || 12); c++) {
+    const A = ab[c] || {}, B = ba[c] || {}, O = ol[c] || {};
+    const joints = (r.joints || []).map((j, k) => {
+      const a = num((A.j || [])[k]), b = num((B.j || [])[k]);
+      const avg = a != null && b != null ? (a + b) / 2 : null;
+      const st = avg == null ? (a != null || b != null ? "half" : "none") : avg <= L.spliceGood ? "good" : avg <= L.spliceMax ? "ok" : "bad";
+      if (st === "bad") issues.push({ sev: "bad", core: c, joint: k, text: `Core ${c} at ${j.name}: ${f3(avg)} dB average (A to B ${f3(a)}, B to A ${f3(b)}). Over the ${L.spliceMax} dB limit. Re-splice and test again.` });
+      return { a, b, avg, st };
+    });
+    const ta = num(A.t), tb = num(B.t), tAvg = ta != null && tb != null ? (ta + tb) / 2 : null;
+    const oa = num(O.a), ob = num(O.b), oAvg = oa != null && ob != null ? (oa + ob) / 2 : null;
+    const oSt = oAvg == null ? (oa != null || ob != null ? "half" : "none") : oAvg <= budget ? "good" : "bad";
+    if (oSt === "bad") issues.push({ sev: "bad", core: c, text: `Core ${c}: OLTS ${f2(oAvg)} dB average, over the ${f2(budget)} dB link budget. Check the connectors and patch leads, clean and test again.` });
+    if (oa != null && ob != null && Math.abs(oa - ob) > 0.5) issues.push({ sev: "warn", core: c, text: `Core ${c}: OLTS differs ${f2(Math.abs(oa - ob))} dB between directions. Clean both connectors and test again.` });
+    const anyHalf = joints.some(j => j.st === "half") || oSt === "half";
+    if (anyHalf) issues.push({ sev: "warn", core: c, text: `Core ${c}: only one direction tested so far. Test from the other end too.` });
+    const worst = joints.reduce((m, j) => j.avg != null && (m == null || j.avg > m) ? j.avg : m, null);
+    const done = joints.every(j => j.st !== "none" && j.st !== "half") && oSt !== "none" && oSt !== "half" && (nJ > 0 || (ta != null && tb != null));
+    cores.push({ c, joints, ta, tb, tAvg, oa, ob, oAvg, oSt, worst, done, bad: joints.some(j => j.st === "bad") || oSt === "bad" });
+  }
+  const tested = cores.filter(x => x.done).length, bad = cores.filter(x => x.bad).length;
+  const vals = cores.flatMap(x => x.joints.map(j => j.avg)).filter(v => v != null);
+  return { cores, issues, budget, tested, bad, mean: vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null, worst: vals.length ? Math.max(...vals) : null, wl, L };
+}
+const TS_COL = { good: "#39ff14", ok: "#ffd60a", bad: "#ff3b3b", half: "#5b6470", none: "#2c323c" };
+
+function vTsheets() {
+  const routes = tsRoutes(), L = tsLim();
+  const card = r => {
+    const a1 = tsAnalyse(r, L.wls[0]), a2 = tsAnalyse(r, L.wls[1]);
+    const tested = Math.min(a1.tested, a2.tested), bad = new Set([...a1.cores, ...a2.cores].filter(x => x.bad).map(x => x.c)).size, n = +r.cores || 12;
+    const col = bad ? "#ff3b3b" : tested === n ? "#39ff14" : tested ? "#ffd60a" : "#5b6470";
+    return h("button", { type: "button", class: "ts-route", onclick: () => { S.ts = { rid: r.id, wl: L.wls[0], tab: "ab" }; go("tsheet"); } },
+      h("div", { style: `width:7px;align-self:stretch;background:${col};border-radius:4px;box-shadow:0 0 8px ${col}` }),
+      h("div", { style: "flex:1;min-width:0;text-align:left" },
+        h("div", { style: "font-weight:900;font-size:15.5px;color:#fff" }, r.practice ? "PRACTICE SECTION" : `${r.a}  to  ${r.b}`),
+        r.practice ? h("div", { style: "font-size:12.5px;color:#00e5ff;font-weight:800" }, "For dry runs. It never goes on a report to the client.") : null,
+        h("div", { style: "font-size:12.5px;color:#aeb6c1;margin-top:2px" }, `${n} cores  |  ${r.m ? (+r.m).toLocaleString("en-ZA") + " m" : "length not set"}  |  ${(r.joints || []).length} joint${(r.joints || []).length === 1 ? "" : "s"}`),
+        h("div", { style: `font-size:13px;font-weight:800;margin-top:4px;color:${col}` }, bad ? `${bad} core${bad > 1 ? "s" : ""} with a problem` : tested === n ? "All cores tested and passed" : `${tested} of ${n} cores fully tested`)),
+      h("div", { style: "color:#aeb6c1;font-size:22px;font-weight:900" }, "›"));
+  };
+  return [topbar("Test sheets", S.project.short, true),
+    h("p", { class: "form-sub" }, "One sheet per section, point A to point B. Type the OTDR losses from both ends and the OLTS readings. Then tap Generate report."),
+    h("div", { class: "ts-list" }, ...routes.map(card)),
+    h("button", { class: "mbtn ghost", style: "margin-top:12px", onclick: () => tsEditRoute(null) }, "+ Add a section")];
+}
+
+function tsEditRoute(r) {
+  const isNew = !r; r = r ? JSON.parse(JSON.stringify(r)) : { id: "R" + Date.now().toString(36), a: "", b: "", m: "", cores: 12, joints: [] };
+  const jbox = h("div");
+  const drawJ = () => jbox.replaceChildren(...r.joints.map((j, k) => h("div", { style: "display:flex;gap:6px;margin-top:6px" },
+    h("input", { type: "text", value: j.name, placeholder: `Joint ${k + 1} name, e.g. RMU 4 or Camp`, style: "flex:1;padding:10px;border:1px solid #c9ced6;border-radius:6px;font-size:15px", oninput: e => j.name = e.target.value }),
+    h("button", { type: "button", class: "btn-g", style: "padding:8px 10px", onclick: () => { r.joints.splice(k, 1); drawJ(); } }, "Remove"))),
+    h("button", { type: "button", class: "btn-g", style: "margin-top:8px;padding:8px 12px", onclick: () => { r.joints.push({ name: "" }); drawJ(); } }, "+ Add a joint"));
+  drawJ();
+  const fld = (lab, k, ph, type) => h("label", { style: "display:block;margin:8px 0 2px;font-size:13px;font-weight:700" }, lab, h("input", { type: type || "text", value: r[k] ?? "", placeholder: ph, oninput: e => r[k] = e.target.value.trim(), style: "display:block;width:100%;margin-top:4px;padding:10px;border:1px solid #c9ced6;border-radius:6px;font-size:15px" }));
+  const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Section" }, h("div", { class: "modal", style: "max-height:86vh;overflow:auto" }, h("h2", {}, isNew ? "New section" : "Change this section"),
+    fld("Point A", "a", "e.g. RMU 1"), fld("Point B", "b", "e.g. RMU 3"), fld("Length in metres", "m", "e.g. 845", "number"), fld("Number of cores", "cores", "12", "number"),
+    h("div", { style: "margin-top:10px;font-size:13px;font-weight:700" }, "Joints between A and B, in order from point A"), jbox,
+    h("div", { class: "row", style: "margin-top:14px" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Cancel"),
+      h("button", { class: "btn-w", type: "button", onclick: () => {
+        if (!r.a || !r.b) return showInfo("Not finished", "Type point A and point B.");
+        r.joints = r.joints.filter(j => (j.name || "").trim()); r.cores = +r.cores || 12; tsSaveRoute(r); ov.remove(); render(); } }, "Save"))));
+  document.body.append(ov);
+}
+
+function vTsheet() {
+  const r = tsRoute(S.ts.rid); if (!r) { S.view = "tsheets"; return vTsheets(); }
+  const L = tsLim(), wl = S.ts.wl, tab = S.ts.tab, n = +r.cores || 12, J = r.joints || [];
+  const part = tab === "olts" ? "olts" : tab, all = tsGet(r.id, part), data = all[wl] || (all[wl] = {});
+  const cell = (val, onv, ph) => h("input", { class: "ts-in", type: "number", step: "any", inputmode: "decimal", value: val ?? "", placeholder: ph || "", oninput: e => { onv(e.target.value); tsSave(r.id, part, all); } });
+  // B to A: the tester stands at point B, so the joints are listed from B's side
+  const order = tab === "ba" ? J.map((_, k) => k).reverse() : J.map((_, k) => k);
+  let head, rows;
+  if (tab === "olts") {
+    head = h("tr", {}, h("th", {}, "Core"), h("th", {}, "Loss A to B (dB)"), h("th", {}, "Loss B to A (dB)"));
+    rows = Array.from({ length: n }, (_, i) => { const c = i + 1, o = data[c] || (data[c] = {}); return h("tr", {}, h("th", {}, c), h("td", {}, cell(o.a, v => o.a = v)), h("td", {}, cell(o.b, v => o.b = v))); });
+  } else {
+    head = h("tr", {}, h("th", {}, "Core"), ...order.map(k => h("th", {}, J[k].name || `Joint ${k + 1}`)), h("th", {}, "Total loss"));
+    rows = Array.from({ length: n }, (_, i) => { const c = i + 1, o = data[c] || (data[c] = { j: [] }); if (!o.j) o.j = [];
+      return h("tr", {}, h("th", {}, c), ...order.map(k => h("td", {}, cell(o.j[k], v => o.j[k] = v))), h("td", {}, cell(o.t, v => o.t = v))); });
+  }
+  const tabBtn = (k, lab) => h("button", { type: "button", class: "ts-tab" + (tab === k ? " on" : ""), onclick: () => { S.ts.tab = k; render(); } }, lab);
+  const wlBtn = w => h("button", { type: "button", class: "ts-tab" + (wl === w ? " on" : ""), onclick: () => { S.ts.wl = w; render(); } }, `${w} nm`);
+  return [topbar(`${r.a} to ${r.b}`, `${S.project.short}  |  ${n} cores`, true),
+    h("div", { class: "ts-bar" }, ...L.wls.map(wlBtn)),
+    h("div", { class: "ts-bar" }, tabBtn("ab", "OTDR A to B"), tabBtn("ba", "OTDR B to A"), tabBtn("olts", "OLTS")),
+    h("p", { class: "form-sub", style: "margin-top:6px" }, tab === "ab" ? `Standing at ${r.a}, shooting to ${r.b}. Type the loss at each joint and the total loss.` : tab === "ba" ? `Standing at ${r.b}, shooting back to ${r.a}. The joints are listed from your side.` : "Type the OLTS loss in both directions for each core."),
+    J.length || tab === "olts" ? null : h("p", { class: "hint" }, "No joints on this section. Only the total loss is needed."),
+    h("div", { class: "ts-grid-wrap" }, h("table", { class: "ts-grid" }, h("thead", {}, head), h("tbody", {}, ...rows))),
+    h("p", { class: "hint" }, "Everything saves by itself as you type. Leave a box empty if it is not tested yet."),
+    h("div", { style: "display:flex;gap:8px;flex-wrap:wrap;margin:10px 0" },
+      h("button", { class: "submit", type: "button", style: "flex:2", onclick: () => { tsFlush(); go("treport"); } }, "Generate report"),
+      h("button", { class: "mbtn ghost", type: "button", style: "flex:1;margin:0", onclick: () => tsEditRoute(r) }, "Change section"))];
+}
+
+function tsGridHtml(r, an, forPdf) {
+  const J = r.joints || [];
+  const sq = (st, txt) => forPdf ? `<td style="background:${st === "good" ? "#d9f99d" : st === "ok" ? "#fde68a" : st === "bad" ? "#fecaca" : "#f1f5f9"};text-align:center">${txt}</td>`
+    : h("td", { class: "ts-sq", style: `background:${TS_COL[st]};color:${["good", "ok"].includes(st) ? "#10140f" : "#fff"};box-shadow:${["good", "ok", "bad"].includes(st) ? "0 0 6px " + TS_COL[st] : "none"}` }, txt);
+  const row = x => {
+    const jc = x.joints.map(j => sq(j.st, j.avg != null ? f3(j.avg) : j.st === "half" ? "1 side" : ""));
+    const oc = sq(x.oSt, x.oAvg != null ? f2(x.oAvg) : x.oSt === "half" ? "1 side" : "");
+    return forPdf ? `<tr><th>${x.c}</th>${jc.join("")}${J.length ? "" : `<td style="text-align:center">${f2(x.tAvg)}</td>`}${oc}</tr>` : h("tr", {}, h("th", {}, x.c), ...jc, J.length ? null : h("td", { class: "ts-sq", style: "background:#2c323c;color:#fff" }, f2(x.tAvg)), oc);
+  };
+  if (forPdf) return `<table class="g"><thead><tr><th>Core</th>${J.map(j => `<th>${j.name}</th>`).join("")}${J.length ? "" : "<th>OTDR total (avg)</th>"}<th>OLTS (avg)</th></tr></thead><tbody>${an.cores.map(row).join("")}</tbody></table>`;
+  return h("div", { class: "ts-grid-wrap" }, h("table", { class: "ts-heat" }, h("thead", {}, h("tr", {}, h("th", {}, "Core"), ...J.map(j => h("th", {}, j.name)), J.length ? null : h("th", {}, "OTDR total"), h("th", {}, "OLTS"))), h("tbody", {}, ...an.cores.map(row))));
+}
+
+function vTreport() {
+  seedLinks();
+  const r = tsRoute(S.ts.rid); if (!r) { S.view = "tsheets"; return vTsheets(); }
+  const L = tsLim(), wl = S.ts.wl, an = tsAnalyse(r, wl), n = +r.cores || 12;
+  const tile = (lab, val, col) => h("div", { class: "ts-tile", style: `border-color:${col};box-shadow:0 0 10px ${col}` }, h("div", { class: "ts-tl", style: `color:${col}` }, lab), h("div", { class: "ts-tv", style: `color:${col}` }, val));
+  const bad = an.issues.filter(i => i.sev === "bad"), warn = an.issues.filter(i => i.sev === "warn");
+  const overall = bad.length ? "#ff3b3b" : an.tested === n ? "#39ff14" : "#ffd60a";
+  const wlBtn = w => h("button", { type: "button", class: "ts-tab" + (wl === w ? " on" : ""), onclick: () => { S.ts.wl = w; render(); } }, `${w} nm`);
+  // Every failed joint goes to the man who spliced it, by itself, as a red repair on his phone.
+  // When a retest passes, the repair closes by itself.
+  const sent = r.practice ? [] : tsRouteFaults(r, wl, an);
+  return [topbar("Test report", `${r.a} to ${r.b}  |  ${wl} nm`, true),
+    h("div", { class: "ts-bar" }, ...L.wls.map(wlBtn)),
+    h("div", { class: "dash-block", style: "padding:12px" },
+      h("div", { style: "display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:10px" },
+        h("div", { style: "font-weight:900;font-size:16px;color:#fff;letter-spacing:.03em" }, `${r.a.toUpperCase()}  TO  ${r.b.toUpperCase()}`),
+        h("span", { class: "dash-chip", style: `background:${overall};color:#10140f` }, bad.length ? "PROBLEMS FOUND" : an.tested === n ? "ALL PASSED" : "NOT FINISHED")),
+      h("div", { class: "ts-tiles" }, tile("Cores done", `${an.tested}/${n}`, an.tested === n ? "#39ff14" : "#ffd60a"), tile("Problems", String(bad.length), bad.length ? "#ff3b3b" : "#39ff14"),
+        tile("Worst joint", an.worst == null ? "-" : f3(an.worst), an.worst == null ? "#aeb6c1" : an.worst > L.spliceMax ? "#ff3b3b" : an.worst > L.spliceGood ? "#ffd60a" : "#39ff14"),
+        tile("Link budget", f2(an.budget), "#00e5ff")),
+      h("div", { style: "font-size:12px;color:#aeb6c1;margin:12px 0 6px" }, "Joint loss per core, average of both directions (dB). Last column OLTS average (dB)."),
+      tsGridHtml(r, an, false),
+      h("div", { style: "display:flex;gap:10px;flex-wrap:wrap;font-size:11.5px;color:#aeb6c1;margin-top:8px" },
+        ...[["good", `up to ${L.spliceGood}`], ["ok", `up to ${L.spliceMax}`], ["bad", `over ${L.spliceMax}`], ["half", "one side only"]].map(([k, t]) => h("span", { style: "display:inline-flex;gap:5px;align-items:center" }, h("span", { style: `width:12px;height:12px;border-radius:3px;background:${TS_COL[k]};display:inline-block` }), t)))),
+    sheet("", h("div", { class: "band", style: bad.length ? "background:#c8102e" : "" }, bad.length ? `FIX THESE (${bad.length})` : "NO PROBLEMS"),
+      ...(bad.length ? bad.map(i => { const to = (sent.find(x => x.core === i.core && x.joint === i.joint) || {}).resp; return h("div", { style: "padding:10px 12px;border-top:1px solid var(--line);font-size:13.5px;font-weight:700;color:#c8102e" }, i.text, to ? h("div", { style: "color:#15191e;font-weight:800;font-size:12.5px;margin-top:3px" }, `Sent to ${to} as a repair.`) : null); }) : [h("div", { style: "padding:10px 12px;font-size:13.5px" }, "No joint or OLTS reading is over the limit.")]),
+      r.practice && bad.length ? h("div", { style: "padding:8px 12px;font-size:12.5px;color:#5b6470" }, "Practice section: nothing is sent to anyone.") : null),
+    warn.length ? sheet("", h("div", { class: "band", style: "background:#b07d00" }, `CHECK (${warn.length})`), ...warn.map(i => h("div", { style: "padding:9px 12px;border-top:1px solid var(--line);font-size:13px" }, i.text))) : null,
+    h("p", { class: "hint" }, `Pass marks used: joint ${L.spliceGood} dB good, ${L.spliceMax} dB maximum (average of both directions). Link budget = length x ${L.att[wl]} dB/km at ${wl} nm + ${L.spliceMax} dB per joint + ${L.conn} dB per connector at each end.`),
+    h("div", { style: "display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 16px" },
+      h("button", { class: "mbtn", type: "button", style: "flex:1;margin:0", onclick: () => tsSendPdf(r) }, "Send report", h("small", {}, "PDF, both wavelengths"))) ];
+}
+
+// who did the splicing at a joint: the man the programme gave splicing at that spot, else the main splicer, else the site manager
+function tsSplicerFor(jointName) {
+  const plan = S.project.plan || {}, at = {}, count = {};
+  for (const rows of Object.values(plan)) for (const t of rows) if (/SPLICE|DOME JOINT/.test(t.act)) { const node = (t.key || "").split("|")[1] || "Site"; if (node !== "Site") at[node] = at[node] || t.who; count[t.who] = (count[t.who] || 0) + (/SPLICE/.test(t.act) ? 2 : 1); }
+  for (const [node, w] of Object.entries(at)) if ((jointName || "").includes(node)) return w;
+  const main = Object.entries(count).sort((a, b) => b[1] - a[1])[0];
+  return main ? main[0] : smName();
+}
+const tsDataAt = rid => ["ab", "ba", "olts"].map(p => tsGet(rid, p).at || "").sort().pop() || "";
+function tsRouteFaults(r, wl, an) {
+  const pid = S.project.id; S.issues[pid] = S.issues[pid] || [];
+  const list = S.issues[pid], out = []; let changed = false;
+  const badNow = new Set();
+  for (const i of an.issues.filter(x => x.sev === "bad")) {
+    const id = `ts-${r.id}-${wl}-${i.core}-${i.joint ?? "o"}`; badNow.add(id);
+    const jn = i.joint != null ? (r.joints[i.joint] || {}).name : null;
+    const resp = i.joint != null ? tsSplicerFor(jn) : smName();
+    const ex = list.find(x => x.id === id);
+    if (!ex) { list.push({ id, title: `Splice failed: ${r.a} to ${r.b}, core ${i.core}${jn ? ", " + jn : ""}`, detail: i.text, found: S.user, foundOn: ymd(S.date), resp, status: "open" }); changed = true; }
+    else if (ex.status === "closed" || (ex.status === "retest" && tsDataAt(r.id) > (ex.repairAt || ""))) { ex.status = "open"; ex.detail = i.text; ex.foundOn = ymd(S.date); changed = true; }
+    out.push({ core: i.core, joint: i.joint, resp: (ex || {}).resp || resp });
+  }
+  // a joint that now passes closes its repair
+  for (const x of list) if (x.id.startsWith(`ts-${r.id}-${wl}-`) && !badNow.has(x.id) && x.status !== "closed") { x.status = "closed"; x.closedOn = ymd(S.date); changed = true; }
+  if (changed) persist();
+  return out;
+}
+function tsPdfHtml(r) {
+  const esc = x => String(x == null ? "" : x).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+  const L = tsLim(), J = r.joints || [];
+  let html = `<div class="pd-head"><img src="${LOGO}" alt="Fibraco"><div><h1>FIBRE TEST REPORT</h1><div>${esc(S.project.name)}</div><div>${esc(r.a)} to ${esc(r.b)}  |  ${esc(r.cores)} cores  |  ${r.m ? esc(r.m) + " m" : "length not set"}</div></div></div>`;
+  for (const wl of L.wls) {
+    const an = tsAnalyse(r, wl), ab = (tsGet(r.id, "ab")[wl]) || {}, ba = (tsGet(r.id, "ba")[wl]) || {}, ol = (tsGet(r.id, "olts")[wl]) || {};
+    html += `<h2>${wl} nm summary</h2><table class="kv"><tr><th>Cores fully tested</th><td>${an.tested} of ${r.cores}</td></tr><tr><th>Problems</th><td>${an.issues.filter(i => i.sev === "bad").length}</td></tr><tr><th>Mean joint loss (both directions)</th><td>${f3(an.mean)} dB</td></tr><tr><th>Worst joint</th><td>${f3(an.worst)} dB</td></tr><tr><th>Link budget</th><td>${f2(an.budget)} dB</td></tr></table>`;
+    html += `<h2>${wl} nm bidirectional result</h2>` + tsGridHtml(r, an, true);
+    html += `<h2>${wl} nm readings</h2><table class="g"><thead><tr><th>Core</th>${J.map(j => `<th>${esc(j.name)} A-B</th><th>${esc(j.name)} B-A</th>`).join("")}<th>Total A-B</th><th>Total B-A</th><th>OLTS A-B</th><th>OLTS B-A</th></tr></thead><tbody>` +
+      an.cores.map(x => `<tr><th>${x.c}</th>${x.joints.map(j => `<td>${f3(j.a)}</td><td>${f3(j.b)}</td>`).join("")}<td>${f2(x.ta)}</td><td>${f2(x.tb)}</td><td>${f2(x.oa)}</td><td>${f2(x.ob)}</td></tr>`).join("") + `</tbody></table>`;
+    const iss = an.issues; html += `<h2>${wl} nm problems and checks</h2>` + (iss.length ? `<table class="g"><tbody>${iss.map(i => `<tr><td>${i.sev === "bad" ? "FIX" : "CHECK"}</td><td>${esc(i.text)}</td></tr>`).join("")}</tbody></table>` : `<p class="none">None</p>`);
+  }
+  html += `<p class="foot">Pass marks: joint ${L.spliceGood} dB good, ${L.spliceMax} dB maximum, average of both OTDR directions. Link budget = length x attenuation per km + ${L.spliceMax} dB per joint + ${L.conn} dB per connector at each end. Fibraco (Pty) Ltd, Fibraco Field, made ${esc(new Date().toLocaleString("en-ZA"))}.</p>`;
+  return { html, title: `FIBRACO - Test Report - ${S.project.short} - ${r.a} to ${r.b} (${dmy(S.date || new Date())})` };
+}
+async function tsSendPdf(r) {
+  const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
+  document.body.append(ov);
+  try {
+    await loadJs("./js/lib/html2canvas.min.js?v=1792416222"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792416222"); await loadJs("./js/pdf.js?v=1792416222");
+    const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
+    const m = ov.querySelector(".modal"); m.innerHTML = "";
+    m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
+      h("button", { class: "btn-w", type: "button", onclick: async () => { ov.remove(); const res = await window.FibPdf.shareFile(file, `Fibraco test report, ${r.a} to ${r.b}`); if (res === "downloaded") showInfo("PDF saved", `${file.name} is in your Downloads.`); } }, "Share")));
+  } catch (e) { ov.remove(); showInfo("Could not make the PDF", "Try again with signal, or tell the office."); }
+}
+
 // ---------- Wanro's dashboard (office only) ----------
 // One charcoal block per project, then the office block. Colour first, words second.
 const CH = { bg: "#262a30", line: "rgba(255,255,255,.12)", soft: "#aeb6c1" };
