@@ -237,3 +237,7 @@ h1.big { font-family: var(--display); font-weight: 900; color: var(--head); text
 }
 
 .pin-warn { max-width: 300px; margin: 12px auto 4px; padding: 10px 12px; border-radius: 6px; background: #fff4e0; border: 1.5px solid #f29900; color: #6b3d00; font-size: 13.5px; font-weight: 500; line-height: 1.4; text-align: center; }
+
+/* office dashboard */
+.dash-block { background: #262a30; color: #fff; border-radius: 10px; overflow: hidden; margin: 0 0 16px; box-shadow: 0 2px 8px rgba(0,0,0,.18); }
+.dash-chip { display: inline-block; font-size: 11px; font-weight: 800; letter-spacing: .03em; color: #fff; border-radius: 999px; padding: 4px 10px; white-space: nowrap; }

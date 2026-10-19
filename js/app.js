@@ -265,6 +265,7 @@ function installCard() {
 function vProjects() {
   return [topbar("Fibraco", S.user, false), h("div", { class: "who" }, h("span", {}, "Signed in as ", h("b", {}, S.user), ` (${ROLE[S.user]})`), null),
     installCard(),
+    isAdmin(S.user) ? h("button", { class: "mbtn", style: `background:${CH.bg};color:#fff;border-color:${CH.bg};margin-bottom:12px`, onclick: () => go("dash") }, "MY DASHBOARD", h("small", { style: "color:#c9d0d8" }, "Who is in, who is behind, colour first")) : null,
     ...(alertsBanner() || []),
     h("h1", { class: "big" }, "Projects"),
     h("div", { class: "stack" },
@@ -1399,7 +1400,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792412115"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792412115"); await loadJs("./js/pdf.js?v=1792412115");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792413309"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792413309"); await loadJs("./js/pdf.js?v=1792413309");
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
     // Phones only open the share menu straight after a tap, so the last step is one tap on Share.
@@ -1537,7 +1538,7 @@ function openEmergency() {
 // ---------- render ----------
 let render = function () {
   const v = S.view;
-  const views = { users: vUsers, projects: vProjects, calendar: vCalendar, menu: vMenu, inspections: vInspections, client: vClient, tests: vTests, link: vLink, logtest: vLogTest, biocheck: vBioCheck, allocate: vAllocate, mysection: vMySection, review: vReview, kpi: vKpi, rams: vRams, ramsdoc: vRamsDoc, drawings: vDrawings, drawing: vDrawing, diary: vDiary, dsti: vDsti, inspection: vInspection, check: vCheck, toolbox: vToolbox, incident: vIncident, si: vSI, order: vOrder, done: vDone, feedback: vFeedback, devices: vDevices };
+  const views = { users: vUsers, projects: vProjects, calendar: vCalendar, menu: vMenu, inspections: vInspections, client: vClient, tests: vTests, link: vLink, logtest: vLogTest, biocheck: vBioCheck, allocate: vAllocate, mysection: vMySection, review: vReview, kpi: vKpi, rams: vRams, ramsdoc: vRamsDoc, drawings: vDrawings, drawing: vDrawing, diary: vDiary, dsti: vDsti, inspection: vInspection, check: vCheck, toolbox: vToolbox, incident: vIncident, si: vSI, order: vOrder, done: vDone, feedback: vFeedback, devices: vDevices, dash: vDash };
   app.replaceChildren(...[].concat((views[v] || vProjects)()).filter(Boolean));
 }
 
@@ -1760,6 +1761,84 @@ function vDevices() {
     h("p", { class: "hint", style: "margin:4px 2px 12px" }, "Each person can use one phone only. His link works on the first phone that opens it. Any other phone or laptop waits here for you, with its make and model. Allow a new phone and his old one is cut off and wiped. Record each phone's IMEI so you can match it to the phone you handed out."),
     ...people.map(card),
     h("button", { class: "mbtn ghost", onclick: () => refreshDevices(true) }, "Refresh")];
+}
+// ---------- Wanro's dashboard (office only) ----------
+// One charcoal block per project, then the office block. Colour first, words second.
+const CH = { bg: "#262a30", line: "rgba(255,255,255,.12)", soft: "#aeb6c1" };
+function dashStatus(st) {
+  const late = new Date().getHours() >= 17;
+  const m = { approved: ["APPROVED", "#1e8e3e"], submitted: ["SUBMITTED", "#0069aa"], returned: ["SENT BACK", "#c8102e"], draft: [late ? "NOT IN" : "NOT IN YET", late ? "#c8102e" : "#f29900"] };
+  const [t, c] = m[st] || m.draft; return { t, c };
+}
+function dashProject(p, d) {
+  const saveP = S.project, saveD = S.date; S.project = p; S.date = d;
+  try {
+    const k = dayKey(); ensureDay(k);
+    const alloc = S.alloc[k] || [], secs = S.sections[k] || {};
+    const people = [...new Set(alloc.map(a => a.who))];
+    const head = h("div", { style: "display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;padding:14px 14px 10px" },
+      h("div", { style: "font-weight:900;font-size:17px;letter-spacing:.04em;color:#fff" }, p.short.toUpperCase()), h("div", { style: `font-size:12.5px;color:${CH.soft};font-weight:700` }, dayLab ? dayLab(d) : dmy(d)));
+    if (!people.length) return h("div", { class: "dash-block" }, head, h("div", { style: `padding:0 14px 14px;color:${CH.soft};font-size:13.5px` }, "No work loaded for today."));
+    const sub = people.filter(n => ["submitted", "approved"].includes((secs[n] || {}).status)).length;
+    const signed = S.final[k];
+    const pctAll = (() => { let t = 0, dn = 0; people.forEach(n => { const x = todayFor(n); if (x.filled) { t += x.target; dn += x.done; } }); return t ? Math.round(dn / t * 100) : null; })();
+    const summary = h("div", { style: "display:flex;gap:8px;flex-wrap:wrap;padding:0 14px 12px" },
+      h("span", { class: "dash-chip", style: `background:${sub === people.length ? "#1e8e3e" : sub ? "#f29900" : "#c8102e"}` }, `${sub} of ${people.length} diaries in`),
+      h("span", { class: "dash-chip", style: `background:${signed ? "#1e8e3e" : "#5b6470"}` }, signed ? `Signed ${signed}` : "Not signed yet"),
+      pctAll != null ? h("span", { class: "dash-chip", style: `background:${barColour(pctAll).bg};color:${barColour(pctAll).fg}` }, `Output ${pctAll}%`) : null);
+    const rows = people.map(n => {
+      const sec = secs[n] || {}, t = todayFor(n), sc = schedFor(n);
+      const st = (sec.status || "draft") === "draft" && t.filled ? { t: "FILLED, NOT SENT", c: "#f29900" } : dashStatus(sec.status || "draft");
+      // to date counts today only once he has filled it in, so a man is not shown behind before his day is over
+      const planTD = sc ? sc.plan - (t.filled ? 0 : t.target) : 0;
+      const tp = t.filled && t.target ? t.done / t.target * 100 : null, wp = sc && planTD > 0 ? sc.done / planTD * 100 : null;
+      const mine = alloc.filter(a => a.who === n), critOpen = mine.filter((a, i) => a.crit && t.filled && +(((sec.rows || [])[i] || {}).done || 0) < +a.target);
+      const lead = tp != null ? barColour(tp).bg : wp != null ? barColour(wp).bg : st.c;
+      const bar = (lab, pct, txt) => h("div", { style: "display:flex;gap:8px;align-items:center;margin-top:6px" },
+        h("div", { style: `width:44px;font-size:11px;font-weight:800;color:${CH.soft};letter-spacing:.04em` }, lab),
+        pct == null ? h("div", { style: "flex:1;height:22px;border-radius:11px;background:#3a3f47;display:flex;align-items:center;justify-content:center;font-size:11.5px;color:#aeb6c1;font-weight:700" }, txt) : pill(pct, barColour(pct)));
+      return h("div", { style: `display:flex;border-top:1px solid ${CH.line}` },
+        h("div", { style: `width:7px;flex:none;background:${lead}` }),
+        h("div", { style: "flex:1;min-width:0;padding:10px 12px" },
+          h("div", { style: "display:flex;justify-content:space-between;gap:8px;align-items:center" },
+            h("div", { style: "font-weight:800;font-size:15px;color:#fff" }, n),
+            h("span", { class: "dash-chip", style: `background:${st.c}` }, st.t)),
+          bar("TODAY", tp, t.filled ? "No target" : "Not in yet"),
+          bar("TO DATE", wp, "No history yet"),
+          critOpen.length ? h("div", { style: "margin-top:6px;font-size:12.5px;color:#ff8a80;font-weight:700" }, `Critical not finished: ${critOpen.map(a => nice2(a.act)).join(", ")}`) : null,
+          t.why ? h("div", { style: `margin-top:4px;font-size:12px;color:${CH.soft}` }, `Reason given: ${t.why}`) : null));
+    });
+    return h("div", { class: "dash-block" }, head, summary, ...rows);
+  } finally { S.project = saveP; S.date = saveD; }
+}
+function vDash() {
+  const d = today();
+  if (!DEVS) refreshDevices(true).then(() => { if (S.view === "dash") render(); });
+  const notIn = [];
+  for (const p of PROJECTS) {
+    const k = p.id + "|" + ymd(d); ensureDay(k);
+    const secs = S.sections[k] || {};
+    [...new Set((S.alloc[k] || []).map(a => a.who))].forEach(n => { if (!["submitted", "approved"].includes((secs[n] || {}).status)) notIn.push(`${n} (${p.short})`); });
+  }
+  const waiting = DEVS ? DEVS.filter(x => x.status === "pending" && x.dev).length : null;
+  const noImei = DEVS ? DEVS.filter(x => x.status === "active" && x.dev).filter(x => { const pr = PEOPLE.find(q => q.id === x.member_id) || {}; return !pr.admin && !(Store.get(`phreg|${x.member_id}|${x.dev}`) || {}).imei; }).length : null;
+  const alerts = Store.list("alert|").map(([, o]) => o).filter(a => (a.at || "").slice(0, 10) === ymd(d)).length;
+  const line = (col, big, txt, onclick) => h("div", { style: `display:flex;gap:12px;align-items:center;padding:12px 14px;border-top:1px solid ${CH.line}${onclick ? ";cursor:pointer" : ""}`, onclick },
+    h("div", { style: `width:14px;height:14px;border-radius:7px;flex:none;background:${col}` }),
+    h("div", { style: "font-weight:900;font-size:18px;color:#fff;min-width:28px" }, big),
+    h("div", { style: "font-size:13.5px;color:#e8ebef;flex:1" }, txt));
+  const office = h("div", { class: "dash-block" },
+    h("div", { style: "padding:14px 14px 10px;font-weight:900;font-size:17px;letter-spacing:.04em;color:#fff" }, "OFFICE"),
+    line(notIn.length ? (new Date().getHours() >= 17 ? "#c8102e" : "#f29900") : "#1e8e3e", String(notIn.length), notIn.length ? `Diaries not in yet: ${notIn.join(", ")}` : "Every diary for today is in."),
+    line(alerts ? "#c8102e" : "#1e8e3e", String(alerts), alerts ? "Emergency alerts today. Open the alerts at the top of Projects." : "No emergency alerts today."),
+    line(waiting == null ? "#5b6470" : waiting ? "#f29900" : "#1e8e3e", waiting == null ? "-" : String(waiting), waiting == null ? "Phones: needs signal to check." : waiting ? "Phones waiting for you to allow or block. Tap to open." : "No phones waiting.", waiting ? () => go("devices") : null),
+    line(noImei == null ? "#5b6470" : noImei ? "#f29900" : "#1e8e3e", noImei == null ? "-" : String(noImei), noImei == null ? "IMEI register: needs signal to check." : noImei ? "Phones in use with no IMEI recorded. Tap to add." : "Every phone in use has its IMEI recorded.", noImei ? () => go("devices") : null));
+  return [topbar("Dashboard", `Office only  |  ${dmy(d)}`, true),
+    h("div", { style: "display:flex;gap:10px;flex-wrap:wrap;font-size:12px;color:#5b6470;margin:2px 2px 12px;align-items:center" },
+      ...[["#c8102e", "Behind"], ["#f29900", "Slipping"], ["#e0c200", "Nearly"], ["#3a9d23", "On target or ahead"]].map(([c, t]) => h("span", { style: "display:inline-flex;gap:5px;align-items:center" }, h("span", { style: `width:12px;height:12px;border-radius:6px;background:${c};display:inline-block` }), t))),
+    ...PROJECTS.map(p => dashProject(p, d)),
+    office,
+    h("button", { class: "mbtn ghost", style: "margin-top:4px", onclick: () => { Store.kick && Store.kick(); refreshDevices(true).finally(() => render()); } }, "Refresh")];
 }
 function vFeedback() {
   const list = Store.list("fb|").map(([, o]) => o).sort((a, b) => a.at < b.at ? 1 : -1);
