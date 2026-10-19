@@ -276,7 +276,7 @@ function vProjects() {
     h("div", { style: "text-align:center;margin-top:14px" }, h("button", { class: "btn-g", type: "button", style: "padding:8px 14px;font-size:13px", onclick: changePin }, "Change my PIN")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1792441271";
+const APPV = "1792442076";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -336,7 +336,7 @@ function attDoc(p, d, days) {
   if (days) { const parts = days.map(x => attDoc(p, x).html); return { html: parts.join('<div style="height:28px"></div>'), title: `FIBRACO - Attendance Register - ${p.short} (${dmy(days[0])} to ${dmy(days[days.length - 1])})` }; }
   const esc = x => String(x == null ? "" : x).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
   const rows = attPeople(p).map((n, i) => { const a = attGet(p, d, n) || {}; const pr = PEOPLE.find(x => x.name === n) || {};
-    return `<tr><td>${i + 1}</td><td>${esc(n)}</td><td>${esc(p.team[n] === "sm" ? "Site manager" : /site manager/i.test(pr.role || "") ? "Technician" : pr.role || "")}</td><td>${esc(a.in || "Absent")}</td><td>${a.sig ? `<img src="${a.sig}" style="height:34px">` : ""}</td><td>${esc(a.out || "")}</td><td>${a.outSig ? `<img src="${a.outSig}" style="height:34px">` : ""}</td></tr>`; }).join("");
+    return `<tr><td>${i + 1}</td><td>${esc(n)}</td><td>${esc((p.titles || {})[n] || (p.team[n] === "sm" ? "Site manager" : pr.role || ""))}${p.team[n] === "sm" ? " (site manager)" : ""}</td><td>${esc(a.in || "Absent")}</td><td>${a.sig ? `<img src="${a.sig}" style="height:34px">` : ""}</td><td>${esc(a.out || "")}</td><td>${a.outSig ? `<img src="${a.outSig}" style="height:34px">` : ""}</td></tr>`; }).join("");
   const n = attPeople(p).filter(x => (attGet(p, d, x) || {}).in).length;
   const html = `<div class="pd-head"><img src="${LOGO}" alt="Fibraco"><div><h1>ATTENDANCE REGISTER</h1><div>${esc(p.name)}</div><div>${esc(nice(d))}</div></div></div>
   <table class="kv"><tr><th>Client</th><td>${esc(p.client || "")}</td></tr><tr><th>Site manager</th><td>${esc(smName(p))}</td></tr><tr><th>On site</th><td>${n} of ${attPeople(p).length}</td></tr></table>
@@ -349,7 +349,7 @@ async function sendRegister(p, d, days) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792441271"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792441271"); await loadJs("./js/pdf.js?v=1792441271");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792442076"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792442076"); await loadJs("./js/pdf.js?v=1792442076");
     const { html, title } = attDoc(p, d, days); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
@@ -453,7 +453,7 @@ async function timeZone() {
   try {
     try { Store.kick(); await refreshDevices(true); } catch (e) {}
     await new Promise(r => setTimeout(r, 1800));
-    await loadJs("./js/lib/html2canvas.min.js?v=1792441271"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792441271"); await loadJs("./js/pdf.js?v=1792441271");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792442076"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792442076"); await loadJs("./js/pdf.js?v=1792442076");
     const D = tzData(), stamp = `${dmy(new Date())} ${hhmm()}`, name = `FIBRACO - Time Zone (${stamp})`;
     const pdf = await window.FibPdf.diaryPdf(tzHtml(D), name);
     const json = new File([JSON.stringify(D, null, 1)], name.replace(/[\\/:*?"<>|]+/g, "-") + ".json", { type: "application/json" });
@@ -1672,7 +1672,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792441271"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792441271"); await loadJs("./js/pdf.js?v=1792441271");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792442076"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792442076"); await loadJs("./js/pdf.js?v=1792442076");
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
     // Phones only open the share menu straight after a tap, so the last step is one tap on Share.
@@ -2284,7 +2284,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792441271"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792441271"); await loadJs("./js/pdf.js?v=1792441271");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792442076"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792442076"); await loadJs("./js/pdf.js?v=1792442076");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
