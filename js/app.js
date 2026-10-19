@@ -307,11 +307,13 @@ function vMenu() {
   const later = (name, what) => h("button", { class: "mbtn later", onclick: () => showInfo(name, what) }, name);
   return [topbar(S.project.short, nice(d), true), projCard(S.project), todayCard(),
     h("div", { class: "stack" },
-      myRepairs(S.user).length ? h("button", { class: "mbtn", style: "background:#c8102e;color:#fff;border-color:#c8102e", onclick: () => go("mysection") }, `SPLICE FAILED: ${myRepairs(S.user).length} TO FIX`, h("small", { style: "color:#ffe1e1" }, "Found by the testers. Fix it, then tap Repaired")) : null,
+      myRepairs(S.user).length ? (() => { const rp = myRepairs(S.user), t = rp.every(x => /^Splice failed/.test(x.title || "")) ? "SPLICE FAILED" : rp.every(x => /^QC failed/.test(x.title || "")) ? "QC FAILED" : "REPAIRS";
+        return h("button", { class: "mbtn", style: "background:#c8102e;color:#fff;border-color:#c8102e", onclick: () => go("mysection") }, `${t}: ${rp.length} TO FIX`, h("small", { style: "color:#ffe1e1" }, "Fix it, then tap Repaired")); })() : null,
       isMgr(S.user) && myTasks(S.user).length ? h("button", { class: "mbtn", onclick: () => go("mysection") }, "My tasks today", h("small", {}, "Fill in what you did yourself")) : null,
       h("button", { class: "mbtn", onclick: () => isMgr(S.user) ? go("review") : go("mysection") }, "Daily diaries", h("small", {}, isSM(S.user) ? "Check the crew, add your part, sign" : isMgr(S.user) ? "See how the day is going" : "Fill in my section for today")),
       h("button", { class: "mbtn", onclick: () => startForm("dsti") }, "DSTI"),
       h("button", { class: "mbtn", onclick: () => go("inspections") }, "Daily inspections", h("small", {}, "Toolbox talk, PPE, vehicle, ladder, harness, first aid and more")),
+      (isSM(S.user) || isAdmin(S.user)) && S.project.qcSpots ? h("button", { class: "mbtn", style: "background:#1b1f26;color:#fff;border-color:#1b1f26", onclick: () => go("qc") }, "QC CHECK SHEETS", h("small", { style: "color:#aeb6c1" }, "Site manager: walk every spot, Pass or Fail")) : null,
       S.project.routes ? h("button", { class: "mbtn", onclick: () => go("tsheets") }, "Test sheets", h("small", {}, "OTDR both ways and OLTS, type the losses, get the report")) : null,
       S.project.routes ? null : h("button", { class: "mbtn", onclick: () => go("tests") }, S.project.kind === "turbines" ? "Turbines" : S.project.kind === "opgw" ? "Joint repair and tests" : "Cable tests", h("small", {}, S.project.kind === "turbines" ? "Splice box, patch panel, tests and checklist per turbine" : S.project.kind === "opgw" ? "Permit, joint box, re-splice, OTDR and OLTS" : "Drum, DIT, after install, control and witness tests")),
       later("Job observation", "Next build. The behavioural observation checklist as a tap table, filed under 6. Behavioural Observations."),
@@ -1307,11 +1309,20 @@ function vMySection() {
             oninput: e => { r.done = e.target.value; bl.update(r.done); delayHint.hidden = !(behind() && !sec.delays.some(d => d.cause)); } });
       bl = blocks(t, input, r.done);
       const holder = bl;
+      // splicing: he picks the splice machine, the app shows its serial and calibration
+      const eqBox = /SPLICE|DOME JOINT/.test(t.act) ? (() => {
+        const box = h("div", { class: "task-eq" });
+        const draw = () => { const e = eqById(r.eq), cs = calState(e);
+          box.replaceChildren(...[h("div", { class: "task-eq-lab" }, "Splice machine used"),
+            locked ? h("div", { style: "font-weight:800" }, e ? `${e.name}, S/N ${e.serial}` : "Not chosen")
+              : h("select", { class: "ts-sel", onchange: ev => { r.eq = ev.target.value; draw(); } }, h("option", { value: "" }, "Choose the splice machine"), ...EQUIP().filter(x => x.type === "Splicer").map(x => h("option", { value: x.id, selected: r.eq === x.id }, `${x.name}, S/N ${x.serial}`))),
+            e ? h("div", { style: `font-size:12.5px;font-weight:800;margin-top:4px;color:${cs.c}` }, `${e.cert ? "Cert " + e.cert + "  |  " : ""}${cs.t}`) : null].filter(Boolean)); };
+        draw(); return box; })() : null;
       return h("div", { class: "task-card" + (t.crit ? " crit" : "") },
         t.crit ? h("div", { class: "task-crit" }, "CRITICAL, MUST BE DONE TODAY") : null,
         h("div", { class: "task-name" }, nice2(t.act)),
         h("div", { class: "task-loc" }, `${t.loc}  |  Target today ${t.target} ${t.unit}`),
-        holder);
+        eqBox, holder);
     }));
     drawSched();
   };
@@ -1335,7 +1346,7 @@ function vMySection() {
     locked ? null : sheet("", h("div", { class: "band" }, "Photos"), photoBlock(sec.photos || (sec.photos = []))),
     locked ? null : sheet("", h("table", {}, h("tbody", {}, h("tr", {}, h("td", { class: "lab" }, "My signature"), h("td", {}, sigCell(() => sec.sig, v => sec.sig = v, "Your signature", true)))))),
     locked ? h("div", { style: "text-align:center;margin:10px 0" }, statusPill(sec.status)) :
-      submitBtn(() => { const e = []; if (tasks.some((t, i) => (sec.rows[i] || {}).done === undefined || (sec.rows[i] || {}).done === "")) e.push("Fill in what you did for every task, even if it is 0."); if (behind() && !sec.delays.some(d => d.cause && d.hrs)) e.push("You are behind the target. Add the delay cause and the hours lost."); if (!sec.hrs) e.push("Choose your hours worked."); if (!sec.sig) e.push("Sign your section."); return e; },
+      submitBtn(() => { const e = []; if (tasks.some((t, i) => (sec.rows[i] || {}).done === undefined || (sec.rows[i] || {}).done === "")) e.push("Fill in what you did for every task, even if it is 0."); if (tasks.some((t, i) => /SPLICE|DOME JOINT/.test(t.act) && +((sec.rows[i] || {}).done || 0) > 0 && !(sec.rows[i] || {}).eq)) e.push("Choose the splice machine you used."); if (behind() && !sec.delays.some(d => d.cause && d.hrs)) e.push("You are behind the target. Add the delay cause and the hours lost."); if (!sec.hrs) e.push("Choose your hours worked."); if (!sec.sig) e.push("Sign your section."); return e; },
         { label: "Submit my section", onDone: () => { putProg(S.project.id, ymd(S.date), S.user, tasks, sec.rows); sec.status = "submitted"; sec.at = new Date().toLocaleTimeString("en-ZA", { hour: "2-digit", minute: "2-digit" }).replace(":", "h"); showInfo("Submitted", "Your section is with the site manager for review."); goBack(); } })];
 }
 
@@ -1417,6 +1428,8 @@ function diaryDoc(k, project, date) {
   ${nz(site.plant).length || nz(site.equip).length ? `<h2>Plant and equipment on site</h2>${tbl(["Item", "Qty"], nz(site.plant).concat(nz(site.equip)))}` : ""}
   <h2>Work done</h2>${tbl(["No", "Work area", "Activity", "Location", "Qty"], acts.map((r, i) => [i + 1, r.area || "", nice2(r.act), noName(r.loc), `${r.qty || 0} ${r.unit || ""}`]))}
   ${site.sched ? `<h2>Schedule</h2><p>${esc(site.sched)}. ${esc(site.schedWhy || "")}</p>` : ""}
+  ${(() => { const used = new Set(); people.forEach(p => ((secs[p] || {}).rows || []).forEach(r => r && r.eq && used.add(r.eq))); const rows = [...used].map(eqById).filter(Boolean);
+      return rows.length ? `<h2>Equipment used</h2>${tbl(["Make and model", "Serial", "Certificate", "Calibration"], rows.map(e => [e.name, e.serial, e.cert || "-", calState(e).t]))}` : ""; })()}
   <h2>Site instructions</h2><table class="kv">${row("Written", site.written || "None")}${row("Verbal", site.verbal || "None")}</table>
   <h2>Material delivered to site</h2>${tbl(["No", "Material"], (site.mats || []).filter(r => r.m).map((r, i) => [i + 1, r.m]))}
   <h2>Delays</h2>${tbl(["No", "Cause", "Time lost"], delays.map((d, i) => [i + 1, noName(d.c), d.t ? `${d.t} hrs` : ""]))}
@@ -1445,7 +1458,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792416222"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792416222"); await loadJs("./js/pdf.js?v=1792416222");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792417114"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792417114"); await loadJs("./js/pdf.js?v=1792417114");
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
     // Phones only open the share menu straight after a tap, so the last step is one tap on Share.
@@ -1583,7 +1596,7 @@ function openEmergency() {
 // ---------- render ----------
 let render = function () {
   const v = S.view;
-  const views = { users: vUsers, projects: vProjects, calendar: vCalendar, menu: vMenu, inspections: vInspections, client: vClient, tests: vTests, link: vLink, logtest: vLogTest, biocheck: vBioCheck, allocate: vAllocate, mysection: vMySection, review: vReview, kpi: vKpi, rams: vRams, ramsdoc: vRamsDoc, drawings: vDrawings, drawing: vDrawing, diary: vDiary, dsti: vDsti, inspection: vInspection, check: vCheck, toolbox: vToolbox, incident: vIncident, si: vSI, order: vOrder, done: vDone, feedback: vFeedback, devices: vDevices, dash: vDash, tsheets: vTsheets, tsheet: vTsheet, treport: vTreport };
+  const views = { users: vUsers, projects: vProjects, calendar: vCalendar, menu: vMenu, inspections: vInspections, client: vClient, tests: vTests, link: vLink, logtest: vLogTest, biocheck: vBioCheck, allocate: vAllocate, mysection: vMySection, review: vReview, kpi: vKpi, rams: vRams, ramsdoc: vRamsDoc, drawings: vDrawings, drawing: vDrawing, diary: vDiary, dsti: vDsti, inspection: vInspection, check: vCheck, toolbox: vToolbox, incident: vIncident, si: vSI, order: vOrder, done: vDone, feedback: vFeedback, devices: vDevices, dash: vDash, qc: vQc, qcspot: vQcSpot, tsheets: vTsheets, tsheet: vTsheet, treport: vTreport };
   app.replaceChildren(...[].concat((views[v] || vProjects)()).filter(Boolean));
 }
 
@@ -1688,7 +1701,7 @@ Store.metaFor = (id, obj) => {
   if (kind === "sig") return { tags: [`user:${pid}`] };
   if (kind === "alloc" || kind === "prog") return { tags: [`proj:${pid}`] };
   if (kind === "sec") return { tags: [`user:${idOf(x.slice(3).join("|")) || me}`, `mgr:${pid}`] };
-  if (kind === "final" || kind === "site") return { tags: [`mgr:${pid}`] };
+  if (kind === "final" || kind === "site" || kind === "qc") return { tags: [`mgr:${pid}`] };
   if (kind === "link" || kind === "issue" || kind === "bio") return { shared: true, tags: [`proj:${pid}`] };
   if (kind === "form") return { tags: pid && pid !== "none" ? [`user:${me}`, `mgr:${pid}`] : [`user:${me}`] };
   if (kind === "alert") return { tags: obj && obj.project ? [`user:${me}`, `mgr:${obj.project}`] : [`user:${me}`] };
@@ -1810,7 +1823,17 @@ function vDevices() {
 // ---------- test sheets: OTDR both directions and OLTS, per section point A to point B ----------
 // The testers only type the losses. Generate report averages the two OTDR directions per joint
 // (the bidirectional result), checks OLTS against the link budget, and lists every problem.
-const TS_DEF = { spliceGood: 0.10, spliceMax: 0.15, att: { 1310: 0.36, 1550: 0.25 }, conn: 0.5, wls: [1310, 1550] };
+const TS_DEF = { spliceGood: 0.10, spliceMax: 0.15, att: { 1310: 0.36, 1550: 0.25, 1625: 0.30 }, conn: 0.5, wls: [1310, 1550, 1625] };
+// test and splice equipment from the register, with its calibration status
+const EQUIP = () => (CFG && CFG.equip) || [];
+function calState(e) {
+  if (!e || !e.due) return { t: "No calibration date", c: "#5b6470" };
+  const days = Math.round((new Date(e.due + "T12:00:00") - new Date()) / 864e5);
+  if (days < 0) return { t: `Calibration overdue since ${dmy(new Date(e.due + "T12:00:00"))}`, c: "#ff3b3b", bad: true };
+  if (days < 60) return { t: `Calibration due ${dmy(new Date(e.due + "T12:00:00"))}`, c: "#ffd60a" };
+  return { t: `Calibrated, valid to ${dmy(new Date(e.due + "T12:00:00"))}`, c: "#39ff14" };
+}
+const eqById = id => EQUIP().find(e => e.id === id);
 const tsLim = () => Object.assign({}, TS_DEF, S.project.testLimits || {});
 function tsRoutes() {
   const pid = S.project.id, base = (S.project.routes || []).map(r => JSON.parse(JSON.stringify(r)));
@@ -1864,8 +1887,9 @@ const TS_COL = { good: "#39ff14", ok: "#ffd60a", bad: "#ff3b3b", half: "#5b6470"
 function vTsheets() {
   const routes = tsRoutes(), L = tsLim();
   const card = r => {
-    const a1 = tsAnalyse(r, L.wls[0]), a2 = tsAnalyse(r, L.wls[1]);
-    const tested = Math.min(a1.tested, a2.tested), bad = new Set([...a1.cores, ...a2.cores].filter(x => x.bad).map(x => x.c)).size, n = +r.cores || 12;
+    const used = L.wls.filter(w => ["ab", "ba", "olts"].some(p => Object.keys(tsGet(r.id, p)[w] || {}).length && JSON.stringify(tsGet(r.id, p)[w]).match(/\d/)));
+    const ans = used.map(w => tsAnalyse(r, w));
+    const tested = ans.length ? Math.min(...ans.map(a => a.tested)) : 0, bad = new Set(ans.flatMap(a => a.cores).filter(x => x.bad).map(x => x.c)).size, n = +r.cores || 12;
     const col = bad ? "#ff3b3b" : tested === n ? "#39ff14" : tested ? "#ffd60a" : "#5b6470";
     return h("button", { type: "button", class: "ts-route", onclick: () => { S.ts = { rid: r.id, wl: L.wls[0], tab: "ab" }; go("tsheet"); } },
       h("div", { style: `width:7px;align-self:stretch;background:${col};border-radius:4px;box-shadow:0 0 8px ${col}` }),
@@ -1919,7 +1943,16 @@ function vTsheet() {
   }
   const tabBtn = (k, lab) => h("button", { type: "button", class: "ts-tab" + (tab === k ? " on" : ""), onclick: () => { S.ts.tab = k; render(); } }, lab);
   const wlBtn = w => h("button", { type: "button", class: "ts-tab" + (wl === w ? " on" : ""), onclick: () => { S.ts.wl = w; render(); } }, `${w} nm`);
+  const meta = tsGet(r.id, "meta");
+  const eqSel = (type, k, lab) => { const list = EQUIP().filter(e => e.type === type);
+    const s2 = h("select", { class: "ts-sel", onchange: e => { meta[k] = e.target.value; tsSave(r.id, "meta", meta); render(); } }, h("option", { value: "" }, `Choose the ${lab}`), ...list.map(e => h("option", { value: e.id, selected: meta[k] === e.id }, `${e.name}, S/N ${e.serial}`)));
+    const cs = calState(eqById(meta[k]));
+    return h("div", { style: "margin:6px 0" }, h("div", { style: "font-size:12.5px;font-weight:800;color:#aeb6c1;margin-bottom:3px" }, lab), s2, meta[k] ? h("div", { style: `font-size:12.5px;font-weight:800;margin-top:3px;color:${cs.c}` }, cs.t) : null); };
+  const details = h("details", { class: "ts-details", open: !(meta.otdr && meta.olts && meta.splicer) },
+    h("summary", {}, meta.otdr && meta.olts ? `Equipment: ${(eqById(meta.otdr) || {}).name || ""}  |  ${(eqById(meta.olts) || {}).name || ""}` : "Test details: choose the equipment first"),
+    eqSel("OTDR", "otdr", "OTDR used"), eqSel("OLTS", "olts", "OLTS or power meter used"), eqSel("Splicer", "splicer", "Splice machine used on this section"));
   return [topbar(`${r.a} to ${r.b}`, `${S.project.short}  |  ${n} cores`, true),
+    details,
     h("div", { class: "ts-bar" }, ...L.wls.map(wlBtn)),
     h("div", { class: "ts-bar" }, tabBtn("ab", "OTDR A to B"), tabBtn("ba", "OTDR B to A"), tabBtn("olts", "OLTS")),
     h("p", { class: "form-sub", style: "margin-top:6px" }, tab === "ab" ? `Standing at ${r.a}, shooting to ${r.b}. Type the loss at each joint and the total loss.` : tab === "ba" ? `Standing at ${r.b}, shooting back to ${r.a}. The joints are listed from your side.` : "Type the OLTS loss in both directions for each core."),
@@ -1972,6 +2005,9 @@ function vTreport() {
       ...(bad.length ? bad.map(i => { const to = (sent.find(x => x.core === i.core && x.joint === i.joint) || {}).resp; return h("div", { style: "padding:10px 12px;border-top:1px solid var(--line);font-size:13.5px;font-weight:700;color:#c8102e" }, i.text, to ? h("div", { style: "color:#15191e;font-weight:800;font-size:12.5px;margin-top:3px" }, `Sent to ${to} as a repair.`) : null); }) : [h("div", { style: "padding:10px 12px;font-size:13.5px" }, "No joint or OLTS reading is over the limit.")]),
       r.practice && bad.length ? h("div", { style: "padding:8px 12px;font-size:12.5px;color:#5b6470" }, "Practice section: nothing is sent to anyone.") : null),
     warn.length ? sheet("", h("div", { class: "band", style: "background:#b07d00" }, `CHECK (${warn.length})`), ...warn.map(i => h("div", { style: "padding:9px 12px;border-top:1px solid var(--line);font-size:13px" }, i.text))) : null,
+    (() => { const meta = tsGet(r.id, "meta"); const rows = [["OTDR", meta.otdr], ["OLTS", meta.olts], ["Splicer", meta.splicer]].filter(x => x[1]).map(([t, id]) => { const e = eqById(id) || {}, cs = calState(e);
+        return h("div", { style: "padding:9px 12px;border-top:1px solid var(--line);font-size:13px" }, h("b", {}, `${t}: ${e.name || id}`), h("div", { style: "color:#5b6470" }, `S/N ${e.serial || "-"}${e.cert ? "  |  Cert " + e.cert : ""}  |  Owner ${e.owner || "-"}`), h("div", { style: `font-weight:800;color:${cs.bad ? "#c8102e" : "#15191e"}` }, cs.t)); });
+      return sheet("", h("div", { class: "band" }, "EQUIPMENT USED"), ...(rows.length ? rows : [h("div", { style: "padding:10px 12px;font-size:13px;color:#c8102e;font-weight:700" }, "No equipment chosen yet. Open the section and choose the OTDR and OLTS.")])); })(),
     h("p", { class: "hint" }, `Pass marks used: joint ${L.spliceGood} dB good, ${L.spliceMax} dB maximum (average of both directions). Link budget = length x ${L.att[wl]} dB/km at ${wl} nm + ${L.spliceMax} dB per joint + ${L.conn} dB per connector at each end.`),
     h("div", { style: "display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 16px" },
       h("button", { class: "mbtn", type: "button", style: "flex:1;margin:0", onclick: () => tsSendPdf(r) }, "Send report", h("small", {}, "PDF, both wavelengths"))) ];
@@ -2008,7 +2044,11 @@ function tsPdfHtml(r) {
   const esc = x => String(x == null ? "" : x).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
   const L = tsLim(), J = r.joints || [];
   let html = `<div class="pd-head"><img src="${LOGO}" alt="Fibraco"><div><h1>FIBRE TEST REPORT</h1><div>${esc(S.project.name)}</div><div>${esc(r.a)} to ${esc(r.b)}  |  ${esc(r.cores)} cores  |  ${r.m ? esc(r.m) + " m" : "length not set"}</div></div></div>`;
-  for (const wl of L.wls) {
+  const meta = tsGet(r.id, "meta");
+  html += `<h2>Test details</h2><table class="kv"><tr><th>Tested by</th><td>${esc(meta.by || S.user)}</td></tr><tr><th>Site manager</th><td>${esc(smName())}</td></tr></table>`;
+  html += `<h2>Equipment used</h2><table class="g"><thead><tr><th>Use</th><th>Make and model</th><th>Serial</th><th>Calibrated</th><th>Certificate</th><th>Status</th></tr></thead><tbody>` +
+    [["OTDR", meta.otdr], ["OLTS", meta.olts], ["Splicer", meta.splicer]].filter(x => x[1]).map(([t, id]) => { const e = eqById(id) || {}; return `<tr><td>${t}</td><td>${esc(e.name)}</td><td>${esc(e.serial)}</td><td>${esc(e.cal)}</td><td>${esc(e.cert || "-")}</td><td>${esc(calState(e).t)}</td></tr>`; }).join("") + `</tbody></table>`;
+  for (const wl of L.wls.filter(w => ["ab", "ba", "olts"].some(p => JSON.stringify(tsGet(r.id, p)[w] || {}).match(/\d/)))) {
     const an = tsAnalyse(r, wl), ab = (tsGet(r.id, "ab")[wl]) || {}, ba = (tsGet(r.id, "ba")[wl]) || {}, ol = (tsGet(r.id, "olts")[wl]) || {};
     html += `<h2>${wl} nm summary</h2><table class="kv"><tr><th>Cores fully tested</th><td>${an.tested} of ${r.cores}</td></tr><tr><th>Problems</th><td>${an.issues.filter(i => i.sev === "bad").length}</td></tr><tr><th>Mean joint loss (both directions)</th><td>${f3(an.mean)} dB</td></tr><tr><th>Worst joint</th><td>${f3(an.worst)} dB</td></tr><tr><th>Link budget</th><td>${f2(an.budget)} dB</td></tr></table>`;
     html += `<h2>${wl} nm bidirectional result</h2>` + tsGridHtml(r, an, true);
@@ -2023,12 +2063,148 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792416222"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792416222"); await loadJs("./js/pdf.js?v=1792416222");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792417114"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792417114"); await loadJs("./js/pdf.js?v=1792417114");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
       h("button", { class: "btn-w", type: "button", onclick: async () => { ov.remove(); const res = await window.FibPdf.shareFile(file, `Fibraco test report, ${r.a} to ${r.b}`); if (res === "downloaded") showInfo("PDF saved", `${file.name} is in your Downloads.`); } }, "Share")));
   } catch (e) { ov.remove(); showInfo("Could not make the PDF", "Try again with signal, or tell the office."); }
+}
+
+// ---------- QC check sheets: the site manager walks every spot and checks the work (site manager and office only) ----------
+// Built from the FOA workmanship guidance (splicing, tray dressing, closures), TIA-568 practice for CAT6a,
+// and our own method statements MS-FIB-001 (fibre) and MS-FIB-002 (CAT6a).
+// Every item: Pass, Fail or N/A. A Fail needs a comment and goes as a repair to the man who did that work at that spot.
+const QC_SHEETS = {
+  fibre: { title: "Fibre", sections: [
+    ["Manhole and sprague", ["SPRAGUE INSTALLATION (RUNS)"], [
+      "Manhole level, lid fitted and closes properly",
+      "Cable entries sealed, no soil or water getting in",
+      "Sprague fitted from manhole to DB with no kinks or sharp bends",
+      "Slack loop coiled neatly in the chamber, no tight bends"]],
+    ["Glanding and cable entry", ["GLANDING (M20)"], [
+      "M20 gland the right size, tight and sealed",
+      "Armour and strength member terminated as per the box instructions",
+      "Cable tied and supported inside the DB, no pull on the gland"]],
+    ["Box preparation and routing", ["PREP DIN RAIL OR WALL BOX", "PREP AND ROUTE FOC TO BOX", "FIT BOX IN DB (COMMS SPACE)"], [
+      "Box firmly mounted, inside the Fibraco 800 x 400 space in the DB",
+      "Tubes routed into the box with no kinks, bend radius kept",
+      "Gel cleaned off the fibres before splicing"]],
+    ["Splicing and tray dressing", ["SPLICE FOC IN SPLICE BOX", "DOME JOINT SPLICING & CLOSURE"], [
+      "Every splice has a heat-shrink sleeve, seated in the tray holder",
+      "Fibres dressed in the tray, none outside the tray or pinched by the lid",
+      "Splicer loss estimate checked on every fibre, high ones re-spliced",
+      "Colour code followed, cores in order as per the splice plan",
+      "Trays closed, lid fitted, all screws in"]],
+    ["Dome joint closure", ["DOME JOINT SPLICING & CLOSURE"], [
+      "Closure sealed as per the maker's instructions, cable clamps tight",
+      "Closure fixed in place, slack stored neatly"]],
+    ["Patch panel, patch leads and SFPs", ["48F PATCH PANEL TERMINATIONS", "PATCH LEADS AND SFPs"], [
+      "Connectors cleaned and checked before plugging in",
+      "Patch leads routed without tight bends, dust caps on unused ports",
+      "SFPs seated, link lights on at the switch"]],
+    ["Labelling", ["LABELLING"], [
+      "Cable labelled at both ends and in every manhole (Brady)",
+      "Splice box and ports labelled as per the label register"]],
+    ["Testing", ["OTDR TESTING (BIDIRECTIONAL)", "OLTS FIBRE LINK TESTING"], [
+      "OTDR done both directions on every core (see Test sheets)",
+      "OLTS done on every core, all within the link budget"]],
+    ["Housekeeping", ["CLEAN SITE"], [
+      "Offcuts, fibre scraps and packaging removed, fibre scraps in the bin",
+      "DB doors closed, area clean and safe"]]] },
+  cat: { title: "CAT6a", sections: [
+    ["Routing and containment", ["CAT6A CABLE INSTALLATION"], [
+      "Cable in tray, trunking or sprague all the way, not loose on the ground",
+      "Bend radius kept (at least 4 times the cable diameter), no kinks or crushing",
+      "Kept apart from power cables, not tied to them",
+      "Cable ties snug, not crushing the cable",
+      "Jacket undamaged, no signs of over-pulling"]],
+    ["Terminations", ["RJ45 TERMINATIONS"], [
+      "Shielded RJ45 used, shield bonded to the connector",
+      "Pairs untwisted as little as possible (13 mm maximum)",
+      "Same wiring standard at both ends",
+      "Strain relief on every connector"]],
+    ["Surge protection (only where instructed)", ["DATA SPD INSTALLATION"], [
+      "Data SPD fitted and earthed where the client asked for it"]],
+    ["Labelling", ["LABELLING"], [
+      "Every cable labelled at both ends, matching the cable schedule"]],
+    ["Certification", ["CAT6A CERTIFICATION TESTING"], [
+      "Every link certified Cat 6A, results saved with the link name",
+      "Failed links re-terminated and certified again"]],
+    ["Housekeeping", ["CLEAN SITE"], [
+      "Offcuts and packaging removed, cabinets closed, area clean"]]] }
+};
+const qcSpots = sheet => ((S.project.qcSpots || {})[sheet]) || ["Site"];
+const qcId = (sheet, spot) => `qc|${S.project.id}|${sheet}|${spot}`;
+const qcGet = (sheet, spot) => Store.get(qcId(sheet, spot)) || { items: {} };
+function qcCount(sheet, spot) {
+  const o = qcGet(sheet, spot), all = QC_SHEETS[sheet].sections.flatMap((s, si) => s[2].map((_, ii) => `${si}.${ii}`));
+  const v = all.map(k => (o.items[k] || {}).v);
+  return { total: all.length, done: v.filter(Boolean).length, fail: v.filter(x => x === "Fail").length, signed: o.signed };
+}
+// who did that work at that spot: from the programme, else the site manager
+function qcResp(acts, spot) {
+  const plan = S.project.plan || {}; let any = null;
+  for (const rows of Object.values(plan)) for (const t of rows) if (acts.includes(t.act)) { const node = (t.key || "").split("|")[1] || "Site"; if (node === spot || (t.loc || "").includes(spot)) return t.who; any = any || t.who; }
+  return any || smName();
+}
+function vQc() {
+  S.qc = S.qc || { sheet: "fibre", spot: null };
+  const sh = S.qc.sheet, spots = qcSpots(sh);
+  const tab = (k, lab) => h("button", { type: "button", class: "ts-tab" + (sh === k ? " on" : ""), onclick: () => { S.qc = { sheet: k, spot: null }; render(); } }, lab);
+  const spotCard = sp => { const c = qcCount(sh, sp), col = c.signed ? (c.fail ? "#ff3b3b" : "#39ff14") : c.fail ? "#ff3b3b" : c.done ? "#ffd60a" : "#5b6470";
+    return h("button", { type: "button", class: "ts-route", onclick: () => { S.qc.spot = sp; go("qcspot"); } },
+      h("div", { style: `width:7px;align-self:stretch;background:${col};border-radius:4px;box-shadow:0 0 8px ${col}` }),
+      h("div", { style: "flex:1;text-align:left" }, h("div", { style: "font-weight:900;font-size:15.5px;color:#fff" }, sp),
+        h("div", { style: `font-size:13px;font-weight:800;margin-top:3px;color:${col}` }, c.signed ? `Signed ${c.signed.at}${c.fail ? `, ${c.fail} failed` : ", all passed"}` : `${c.done} of ${c.total} checked${c.fail ? `, ${c.fail} failed` : ""}`)),
+      h("div", { style: "color:#aeb6c1;font-size:22px;font-weight:900" }, "›")); };
+  return [topbar("QC check sheets", `${S.project.short}  |  site manager`, true),
+    h("p", { class: "form-sub" }, "Walk every spot and check the work yourself. Tick Pass, Fail or N/A. A Fail needs a comment and goes as a repair to the man who did that work. Only you and the office see these sheets."),
+    h("div", { class: "ts-bar" }, tab("fibre", "Fibre"), tab("cat", "CAT6a")),
+    h("div", { class: "ts-list" }, ...spots.map(spotCard))];
+}
+function vQcSpot() {
+  const sh = S.qc.sheet, spot = S.qc.spot, def = QC_SHEETS[sh], id = qcId(sh, spot);
+  const o = JSON.parse(JSON.stringify(qcGet(sh, spot))); o.items = o.items || {};
+  const save = () => Store.put(id, o);
+  const locked = !!o.signed;
+  const cnt = () => { const c = { total: 0, done: 0, fail: 0 }; def.sections.forEach((s, si) => s[2].forEach((_, ii) => { c.total++; const v = (o.items[`${si}.${ii}`] || {}).v; if (v) c.done++; if (v === "Fail") c.fail++; })); return c; };
+  const bar = h("div");
+  const drawBar = () => { const c = cnt(); bar.replaceChildren(h("div", { style: "display:flex;justify-content:space-between;font-weight:800;font-size:13px;margin-bottom:4px" }, h("span", {}, `${c.done} of ${c.total} checked`), h("span", { style: `color:${c.fail ? "#c8102e" : "#1e8e3e"}` }, c.fail ? `${c.fail} failed` : "No fails")), pill(c.total ? c.done / c.total * 100 : 0, c.fail ? { bg: "#c8102e" } : barColour(c.done / c.total * 100))); };
+  drawBar();
+  const item = (si, ii, text) => {
+    const k = `${si}.${ii}`, it = o.items[k] || (o.items[k] = {});
+    const box = h("div", { class: "qc-item" + (it.v === "Fail" ? " fail" : it.v === "Pass" ? " pass" : "") });
+    const draw = () => {
+      box.className = "qc-item" + (it.v === "Fail" ? " fail" : it.v === "Pass" ? " pass" : it.v === "N/A" ? " na" : "");
+      const btn = v => h("button", { type: "button", class: "qc-btn" + (it.v === v ? " on " + v.replace("/", "") : ""), disabled: locked, onclick: () => { it.v = it.v === v ? "" : v; it.by = S.user; it.at = new Date().toISOString(); save(); draw(); drawBar(); } }, v);
+      box.replaceChildren(...[h("div", { class: "qc-text" }, text),
+        h("div", { class: "qc-btns" }, btn("Pass"), btn("Fail"), btn("N/A")),
+        it.v === "Fail" ? h("div", { style: "margin-top:8px" },
+          locked ? h("div", { style: "font-weight:700" }, it.note || "") : h("textarea", { class: "qc-note", placeholder: "What is wrong? The man who did the work gets this.", oninput: e => { it.note = e.target.value; save(); } }, it.note || ""),
+          h("div", { style: "font-size:12px;color:#5b6470;margin-top:4px" }, `Goes to ${qcResp(def.sections[si][1], spot)} as a repair when you sign.`),
+          locked ? null : photoBlock(it.photos || (it.photos = []))) : null].filter(Boolean));
+    };
+    draw(); return box;
+  };
+  const sign = () => {
+    const c = cnt();
+    if (c.done < c.total) return showInfo("Not finished", "Tick every point, Pass, Fail or N/A, before you sign.");
+    const noNote = def.sections.some((s, si) => s[2].some((_, ii) => { const it = o.items[`${si}.${ii}`] || {}; return it.v === "Fail" && !(it.note || "").trim(); }));
+    if (noNote) return showInfo("Comment missing", "Every Fail needs a comment saying what is wrong.");
+    mySig(v => { if (!v) return;
+      o.signed = { by: S.user, at: new Date().toLocaleString("en-ZA", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }), sig: v }; save();
+      // fails go to the man who did the work
+      const pid = S.project.id; S.issues[pid] = S.issues[pid] || []; let n = 0;
+      def.sections.forEach((s, si) => s[2].forEach((txt, ii) => { const it = o.items[`${si}.${ii}`] || {}; if (it.v !== "Fail") return;
+        const iid = `qc-${sh}-${spot}-${si}-${ii}`; if (S.issues[pid].some(x => x.id === iid && x.status === "open")) return;
+        S.issues[pid].push({ id: iid, title: `QC failed at ${spot}: ${s[0]}`, detail: `${txt}. ${it.note}`, found: S.user, foundOn: ymd(S.date || new Date()), resp: qcResp(s[1], spot), status: "open" }); n++; }));
+      persist(); showInfo("Signed", n ? `${n} fail${n > 1 ? "s" : ""} sent as repairs to the men who did the work.` : "Everything passed at this spot."); goBack(); });
+  };
+  return [topbar(`${def.title} QC: ${spot}`, `${S.project.short}  |  ${dmy(S.date || new Date())}`, true),
+    h("div", { class: "sheet", style: "padding:10px 12px" }, bar),
+    ...def.sections.map((s, si) => sheet("", h("div", { class: "band" }, s[0]), ...s[2].map((t, ii) => item(si, ii, t)))),
+    locked ? h("div", { style: "text-align:center;font-weight:800;margin:12px 0;color:#1e8e3e" }, `Signed by ${o.signed.by}, ${o.signed.at}`) : h("button", { class: "submit", type: "button", onclick: sign }, "Sign this check")];
 }
 
 // ---------- Wanro's dashboard (office only) ----------
@@ -2054,7 +2230,9 @@ function dashProject(p, d) {
     const summary = h("div", { style: "display:flex;gap:8px;flex-wrap:wrap;padding:0 14px 12px" },
       h("span", { class: "dash-chip", style: `background:${sub === people.length ? "#1e8e3e" : new Date().getHours() >= 17 ? "#c8102e" : "#f29900"}` }, `${sub} of ${people.length} diaries in`),
       h("span", { class: "dash-chip", style: `background:${signed ? "#1e8e3e" : "#5b6470"}` }, signed ? `Signed ${signed}` : "Not signed yet"),
-      pctAll != null ? h("span", { class: "dash-chip", style: `background:${barColour(pctAll).bg};color:${barColour(pctAll).fg}` }, `Output ${pctAll}%`) : null);
+      pctAll != null ? h("span", { class: "dash-chip", style: `background:${barColour(pctAll).bg};color:${barColour(pctAll).fg}` }, `Output ${pctAll}%`) : null,
+      p.qcSpots ? (() => { const all = Object.keys(QC_SHEETS).flatMap(k => qcSpots(k).map(sp => qcCount(k, sp))), sg = all.filter(c => c.signed).length, fl = all.filter(c => c.fail).length;
+        return h("span", { class: "dash-chip", style: `background:${fl ? "#c8102e" : sg ? "#1e8e3e" : "#5b6470"}` }, `QC ${sg} of ${all.length} spots signed${fl ? `, ${fl} with fails` : ""}`); })() : null);
     const rows = people.map(n => {
       const sec = secs[n] || {}, t = todayFor(n), sc = schedFor(n);
       const st = (sec.status || "draft") === "draft" && t.filled ? { t: "FILLED, NOT SENT", c: "#f29900" } : dashStatus(sec.status || "draft");
