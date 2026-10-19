@@ -245,8 +245,26 @@ function vUsers() {
       h("button", { class: "mbtn ghost", onclick: () => showInfo("Add user", "Only the office adds users. Each person gets their own login, so every form carries their name and signature automatically.") }, "+ Add user")),
     h("p", { class: "note" }, "Done once per phone. After that the app opens straight on the projects.")];
 }
+// ---------- putting the app on the phone ----------
+// The phone offers "install" to the app itself. The app keeps that offer and shows one big button,
+// so nobody has to look for menus. Once it runs from its own icon the button disappears.
+let installEvt = null;
+const standalone = () => matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+addEventListener("beforeinstallprompt", e => { e.preventDefault(); installEvt = e; if (CFG && S.view === "projects") render(); });
+addEventListener("appinstalled", () => { installEvt = null; showInfo("Fibraco is on your phone", "From now on open Fibraco from the Fibraco icon on your phone, like WhatsApp. You can close this screen."); if (CFG && S.view === "projects") render(); });
+async function installNow() {
+  if (installEvt) { const e = installEvt; installEvt = null; e.prompt(); const r = await e.userChoice.catch(() => ({})); if (r.outcome !== "accepted") { installEvt = e; } render(); return; }
+  showInfo("Put Fibraco on your phone", "Tap the three dots at the top right of the screen. Tap Install app (or Add to Home screen). Then tap Install. If it is already on your phone, just open it from the Fibraco icon.");
+}
+function installCard() {
+  if (standalone()) return null;
+  return h("div", { style: "margin:0 0 14px" },
+    h("button", { class: "submit", type: "button", style: "font-size:17px;padding:16px", onclick: installNow }, "Put Fibraco on my phone"),
+    h("p", { class: "note", style: "margin-top:6px;text-align:center" }, "One tap. After that, open Fibraco from its icon like WhatsApp."));
+}
 function vProjects() {
   return [topbar("Fibraco", S.user, false), h("div", { class: "who" }, h("span", {}, "Signed in as ", h("b", {}, S.user), ` (${ROLE[S.user]})`), null),
+    installCard(),
     ...(alertsBanner() || []),
     h("h1", { class: "big" }, "Projects"),
     h("div", { class: "stack" },
@@ -1381,7 +1399,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792411663"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792411663"); await loadJs("./js/pdf.js?v=1792411663");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792411722"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792411722"); await loadJs("./js/pdf.js?v=1792411722");
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
     // Phones only open the share menu straight after a tap, so the last step is one tap on Share.
