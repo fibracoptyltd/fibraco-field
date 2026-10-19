@@ -276,7 +276,7 @@ function vProjects() {
     h("div", { style: "text-align:center;margin-top:14px" }, h("button", { class: "btn-g", type: "button", style: "padding:8px 14px;font-size:13px", onclick: changePin }, "Change my PIN")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1792445969";
+const APPV = "1792447070";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -349,7 +349,7 @@ async function sendRegister(p, d, days) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792445969"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792445969"); await loadJs("./js/pdf.js?v=1792445969");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792447070"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792447070"); await loadJs("./js/pdf.js?v=1792447070");
     const { html, title } = attDoc(p, d, days); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
@@ -453,7 +453,7 @@ async function timeZone() {
   try {
     try { Store.kick(); await refreshDevices(true); } catch (e) {}
     await new Promise(r => setTimeout(r, 1800));
-    await loadJs("./js/lib/html2canvas.min.js?v=1792445969"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792445969"); await loadJs("./js/pdf.js?v=1792445969");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792447070"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792447070"); await loadJs("./js/pdf.js?v=1792447070");
     const D = tzData(), stamp = `${dmy(new Date())} ${hhmm()}`, name = `FIBRACO - Time Zone (${stamp})`;
     const pdf = await window.FibPdf.diaryPdf(tzHtml(D), name);
     const json = new File([JSON.stringify(D, null, 1)], name.replace(/[\\/:*?"<>|]+/g, "-") + ".json", { type: "application/json" });
@@ -1037,7 +1037,7 @@ function todayFor(p) {
   const done = tasks.reduce((a, t, i) => a + capped(t, rows[i]), 0);
   const short = filled ? tasks.map((t, i) => ({ t, d: +rows[i].done || 0 })).filter(x => x.d < +x.t.target) : [];
   const extra = filled ? tasks.map((t, i) => ({ t, x: (+rows[i].done || 0) - (+t.target || 0) })).filter(x => x.x > 0) : [];
-  return { d: S.date, target, done, filled, why: delayText(sec), short, extra, other: otherList(sec) };
+  return { d: S.date, target, done, filled, why: delayText(sec), short, extra, other: (sec.other || []).filter(o => o.act) };
 }
 function dayFor(p, d) {
   const k = S.project.id + "|" + ymd(d), alloc = allocOf(k) || [], sec = Store.get("sec|" + k + "|" + p) || {};
@@ -1468,30 +1468,22 @@ function vAllocate() {
 }
 
 // Other work: anything he did that was not on his list. Picked from the activity list, so it counts in the totals.
+// Other work: anything he did that was not on his list. He writes WHAT and WHERE only, no number.
+// The site manager puts in the quantity when he reviews the diary, so nothing is ever counted twice.
 function otherBox(sec, locked) {
   sec.other = sec.other || [];
   const acts = projActs(), box = h("div");
   const card = (o, i) => {
-    const unit = h("span", { style: "font-weight:800;color:#0069aa;padding:0 8px" }, o.unit || "");
-    if (locked) return h("div", { class: "other-card" }, h("div", { style: "font-weight:800" }, o.act ? nice2(o.act) : o.what || ""), h("div", { style: "font-size:12.5px;color:#5b6470" }, [o.loc, o.qty ? `${o.qty} ${o.unit || ""}` : "", o.what && o.act ? o.what : "", o.by ? `helped ${o.by}` : ""].filter(Boolean).join("  |  ")));
+    if (locked) return h("div", { class: "other-card" }, h("div", { style: "font-weight:800" }, o.act ? nice2(o.act) : o.what || ""),
+      h("div", { style: "font-size:12.5px;color:#5b6470" }, [o.loc, o.what && o.act ? o.what : "", o.qty !== undefined && o.qty !== "" ? `Quantity by site manager: ${o.qty} ${o.unit || ""}` : "Quantity: site manager fills in"].filter(Boolean).join("  |  ")));
     return h("div", { class: "other-card" },
       h("div", { style: "display:flex;justify-content:space-between;align-items:center;margin-bottom:6px" }, h("b", {}, `Other work ${i + 1}`),
         h("button", { type: "button", class: "btn-g", style: "padding:4px 10px;font-size:12px", onclick: () => { sec.other.splice(i, 1); draw(); } }, "Remove")),
-      sel(acts.map(a => a.act), o.act, v => { o.act = v; o.unit = (acts.find(a => a.act === v) || {}).unit || ""; unit.textContent = o.unit; }, "What did you do?"),
-      h("div", { style: "margin-top:6px" }, inp("text", o.loc, v => o.loc = v, "Where, e.g. Battery 1 to PCS")),
-      // one plain choice: my own job (I count it), or I helped someone else (he counts it)
-      (() => { const wrap = h("div", { style: "margin-top:8px" });
-        const draw2 = () => wrap.replaceChildren(
-          h("div", { style: "display:flex;gap:8px" },
-            h("button", { type: "button", class: "who-btn" + (!o.helped ? " on" : ""), onclick: () => { o.helped = false; o.by = ""; draw2(); } }, "My job"),
-            h("button", { type: "button", class: "who-btn" + (o.helped ? " on" : ""), onclick: () => { o.helped = true; draw2(); } }, "I helped")),
-          o.helped
-            ? h("div", { style: "margin-top:6px" }, sel(CREW_OF().filter(n => n !== S.user), o.by, v => o.by = v, "Who did you help?"), h("div", { style: "font-size:12px;color:#5b6470;margin-top:4px" }, "He puts the quantity in. Yours does not count, so nothing is counted twice."))
-            : h("div", { style: "display:flex;align-items:center;margin-top:6px" }, inp("number", o.qty, v => o.qty = v, "How many"), unit));
-        draw2(); return wrap; })(),
-      h("div", { style: "margin-top:6px" }, inp("text", o.what, v => o.what = v, "Why, or more detail (optional)")));
+      sel(acts.map(a => a.act), o.act, v => { o.act = v; o.unit = (acts.find(a => a.act === v) || {}).unit || ""; }, "What did you do?"),
+      h("div", { style: "margin-top:6px" }, inp("text", o.loc, v => o.loc = v, "Where, e.g. Control Room to battery 3")),
+      h("div", { style: "margin-top:6px" }, inp("text", o.what, v => o.what = v, "Who worked with you, or more detail (optional)")));
   };
-  const draw = () => box.replaceChildren(...sec.other.map(card), ...(sec.other.length ? [] : [h("div", { style: "padding:4px 12px 8px;font-size:13px;color:#5b6470" }, locked ? "None" : "Did work that is not in your list above? Add it here so it counts.")]));
+  const draw = () => box.replaceChildren(...sec.other.map(card), ...(sec.other.length ? [] : [h("div", { style: "padding:4px 12px 8px;font-size:13px;color:#5b6470" }, locked ? "None" : "Did work that is not in your list above? Write what and where. No number, the site manager puts that in.")]));
   draw();
   return sheet("", h("div", { class: "band" }, "Other work (not on my list)"), box,
     locked ? null : h("button", { class: "addrow", type: "button", onclick: () => { sec.other.push({}); draw(); } }, "+ Add other work"));
@@ -1555,7 +1547,7 @@ function vMySection() {
   const ro = (v, c) => h("div", { style: "padding:8px;font-size:12.5px" + (c ? ";text-align:center" : "") }, v || "");
   return [topbar("My diary section", `${S.project.short}  |  ${dmy(S.date)}`, true),
     h("p", { class: "form-sub" }, locked ? "Submitted. The site manager reviews it before the diary is signed." : "Fill in what you actually did against each task. Your section joins the project's daily diary."),
-    back, repairsBlock(S.user), helpReminders(),
+    back, repairsBlock(S.user),
     stdHeader({ project: S.project, date: S.date, user: S.user }, "Daily diary  |  my section"),
     sheet("", h("div", { class: "band" }, "My tasks today"), tb),
     schedBox,
@@ -1572,11 +1564,10 @@ function vMySection() {
     locked ? h("div", { style: "text-align:center;margin:10px 0" }, statusPill(sec.status),
       canReopen(sec) ? h("div", { style: "margin-top:12px" },
         h("button", { class: "mbtn", type: "button", onclick: () => askYesNo("Change my section?", `You can change your section until ${editUntil()} today. Then sign and submit it again.${sec.status === "approved" ? " The site manager approves it again after." : ""}`, "Change it", () => { sec.status = "draft"; sec.sig = ""; delete sec.at; persist(); render(); window.scrollTo(0, 0); }) }, "Change my section", h("small", {}, `Open until ${editUntil()} today, then it locks`))) : null) :
-      submitBtn(() => { const e = []; if (tasks.some((t, i) => (sec.rows[i] || {}).done === undefined || (sec.rows[i] || {}).done === "")) e.push("Fill in what you did for every task, even if it is 0."); if (tasks.some((t, i) => /SPLICE|DOME JOINT/.test(t.act) && +((sec.rows[i] || {}).done || 0) > 0 && !(sec.rows[i] || {}).eq)) e.push("Choose the splice machine you used."); if (behind() && !sec.delays.some(d => d.cause && d.hrs)) e.push("You are behind the target. Add the delay cause and the hours lost."); if ((sec.other || []).some(o => (o.act || o.loc || o.qty || o.what || o.helped) && (!o.act || !o.loc || (o.helped ? !o.by : !(+o.qty > 0))))) e.push("Other work: choose what you did and where. For your own job put how many. If you helped, choose who you helped. Remove a line you do not need."); tasks.forEach((t, i) => { const r = sec.rows[i] || {}; if (r.done !== undefined && r.done !== "" && +r.done === 0 && !(r.note || "").trim()) e.push(`${nice2(t.act)} is 0. Write in its note why it was not done.`); });
+      submitBtn(() => { const e = []; if (tasks.some((t, i) => (sec.rows[i] || {}).done === undefined || (sec.rows[i] || {}).done === "")) e.push("Fill in what you did for every task, even if it is 0."); if (tasks.some((t, i) => /SPLICE|DOME JOINT/.test(t.act) && +((sec.rows[i] || {}).done || 0) > 0 && !(sec.rows[i] || {}).eq)) e.push("Choose the splice machine you used."); if (behind() && !sec.delays.some(d => d.cause && d.hrs)) e.push("You are behind the target. Add the delay cause and the hours lost."); if ((sec.other || []).some(o => (o.act || o.loc || o.what) && (!o.act || !o.loc))) e.push("Other work: choose what you did and write where. Remove a line you do not need."); tasks.forEach((t, i) => { const r = sec.rows[i] || {}; if (r.done !== undefined && r.done !== "" && +r.done === 0 && !(r.note || "").trim()) e.push(`${nice2(t.act)} is 0. Write in its note why it was not done.`); });
         if (sec.delays.some(d => d.cause && !(+d.hrs > 0))) e.push("Every delay needs its hours lost.");
         if (!sec.hrs) e.push("Choose your hours worked."); if (!sec.sig) e.push("Sign your section."); return e; },
-        { label: "Submit my section", onDone: () => { putProg(S.project.id, ymd(S.date), S.user, tasks, sec.rows, sec.other);
-          (sec.other || []).forEach((o, i) => { if (o.helped && o.by && o.act) Store.put(`help|${S.project.id}|${ymd(S.date)}|${S.user}|${i}`, { from: S.user, to: o.by, act: o.act, loc: o.loc || "", at: new Date().toISOString() }); }); sec.status = "submitted"; sec.at = new Date().toLocaleTimeString("en-ZA", { hour: "2-digit", minute: "2-digit" }).replace(":", "h"); showInfo("Submitted", "Your section is with the site manager for review."); goBack(); } })];
+        { label: "Submit my section", onDone: () => { putProg(S.project.id, ymd(S.date), S.user, tasks, sec.rows, sec.other); sec.status = "submitted"; sec.at = new Date().toLocaleTimeString("en-ZA", { hour: "2-digit", minute: "2-digit" }).replace(":", "h"); showInfo("Submitted", "Your section is with the site manager for review."); goBack(); } })];
 }
 
 function vReview() {
@@ -1597,7 +1588,9 @@ function vReview() {
         h("td", { style: "padding:8px;font-size:12.5px;font-weight:700" }, nice2(t.act), h("div", { style: "font-weight:500;color:#5b6470" }, t.loc + (r.note ? `. ${r.note}` : ""))),
         h("td", { style: "width:74px;text-align:center;font-size:12.5px" }, "Target", h("div", { style: "font-weight:800" }, `${t.target}`)),
         h("td", { style: "width:84px" }, sec.status === "draft" || final || viewOnly ? h("div", { style: "text-align:center;font-weight:800;padding:8px" }, r.done ?? "-") : inp("number", r.done, v => { r.done = v; r.edited = true; }, "Done")))),
-        (sec.other || []).filter(o => o.act || o.what).map(o => h("tr", {}, h("td", { colspan: 3, style: "padding:8px;font-size:12.5px" }, h("b", {}, "Other work: "), o.act ? `${nice2(o.act)}, ${o.loc || "-"}, ${o.qty || 0} ${o.unit || ""}${o.what ? ". " + o.what : ""}${o.by ? ` (helped ${o.by}, not counted)` : ""}` : `${o.what} (${o.qty || 0})`))),
+        (sec.other || []).filter(o => o.act || o.what).map(o => h("tr", {}, h("td", { colspan: 2, style: "padding:8px;font-size:12.5px" }, h("b", {}, "Other work: "), o.act ? `${nice2(o.act)}, ${o.loc || "-"}${o.what ? ". " + o.what : ""}` : o.what),
+          h("td", { style: "width:84px" }, sec.status === "draft" || final || viewOnly ? h("div", { style: "text-align:center;font-weight:800;padding:8px" }, o.qty !== undefined && o.qty !== "" ? `${o.qty} ${o.unit || ""}` : "-")
+            : h("div", {}, inp("number", o.qty, v => { o.qty = v; o.smQty = true; }, "Qty"), h("div", { style: "font-size:10.5px;text-align:center;color:#5b6470" }, o.unit || ""))))),
         h("tr", {}, h("td", { colspan: 3, style: "padding:0" }, (() => { const sc = ["submitted", "approved"].includes(sec.status) && schedFor(p); return sc ? hbar("Total on project to date", sc.done, sc.plan, { unit: sc.unit, perDay: sc.perDay }) : ""; })())),
         h("tr", {}, h("td", { colspan: 3, style: "padding:8px;font-size:12.5px;color:#5b6470" }, `Hours ${sec.hrs || "-"}${delayText(sec) ? "  |  Delay: " + delayText(sec) : ""}${sec.at ? "  |  Submitted " + sec.at : ""}`)))),
       sec.status === "submitted" && !final && !viewOnly ? h("div", { style: "display:flex;gap:8px;padding:10px 12px" },
@@ -1631,7 +1624,10 @@ function vReview() {
     ...people.map(personBlock), totals,
     final ? after : h("div", {},
       h("button", { class: "mbtn", style: `margin-bottom:12px;${s1 ? "" : "opacity:.45"}`, onclick: () => { if (s1) openCombined(); } }, s2 ? "✓ My part of the diary (open again)" : "2. My part of the diary", h("small", {}, "Weather, plant, site instructions and materials. Team and work fill in by themselves.")),
-      h("button", { class: "submit", type: "button", style: s1 && s2 ? "" : "opacity:.45", onclick: () => { if (!(s1 && s2)) return; mySig(v => { if (!v) return; S.final[k] = new Date().toLocaleTimeString("en-ZA", { hour: "2-digit", minute: "2-digit" }).replace(":", "h"); S.done[k] = true; persist(); Store.put("final|" + k, { at: S.final[k], by: S.user, sig: v, date: ymd(S.date) }); people.forEach(pn => putProg(S.project.id, ymd(S.date), pn, myTasks(pn), ((S.sections[k] || {})[pn] || {}).rows || [], ((S.sections[k] || {})[pn] || {}).other || [])); Store.lock(["alloc|" + k, "site|" + k, "final|" + k, ...people.map(p => `sec|${k}|${p}`)]); S.form = { type: "diary", project: S.project, date: S.date, user: S.user, photos: [] }; go("done"); }); } }, "3. Sign and make final"))];
+      h("button", { class: "submit", type: "button", style: s1 && s2 ? "" : "opacity:.45", onclick: () => { if (!(s1 && s2)) return;
+        const noQty = people.flatMap(pn => (((S.sections[k] || {})[pn] || {}).other || []).filter(o => o.act && (o.qty === undefined || o.qty === "")).map(o => `${pn}: ${nice2(o.act)}, ${o.loc || ""}`));
+        if (noQty.length) return showInfo("Quantities missing", "Put the quantity on every Other work line before you sign (0 if two men wrote the same job, so it counts once): " + noQty.join("  |  "));
+        mySig(v => { if (!v) return; S.final[k] = new Date().toLocaleTimeString("en-ZA", { hour: "2-digit", minute: "2-digit" }).replace(":", "h"); S.done[k] = true; persist(); Store.put("final|" + k, { at: S.final[k], by: S.user, sig: v, date: ymd(S.date) }); people.forEach(pn => putProg(S.project.id, ymd(S.date), pn, myTasks(pn), ((S.sections[k] || {})[pn] || {}).rows || [], ((S.sections[k] || {})[pn] || {}).other || [])); Store.lock(["alloc|" + k, "site|" + k, "final|" + k, ...people.map(p => `sec|${k}|${p}`)]); S.form = { type: "diary", project: S.project, date: S.date, user: S.user, photos: [] }; go("done"); }); } }, "3. Sign and make final"))];
 }
 // ---------- daily diary as PDF (made on the phone, then shared) ----------
 function diaryDoc(k, project, date) {
@@ -1687,7 +1683,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792445969"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792445969"); await loadJs("./js/pdf.js?v=1792445969");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792447070"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792447070"); await loadJs("./js/pdf.js?v=1792447070");
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
     // Phones only open the share menu straight after a tap, so the last step is one tap on Share.
@@ -2300,7 +2296,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792445969"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792445969"); await loadJs("./js/pdf.js?v=1792445969");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792447070"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792447070"); await loadJs("./js/pdf.js?v=1792447070");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
@@ -2494,7 +2490,7 @@ function dashProject(p, d) {
           bar("TO DATE", wp, "No history yet"),
           ...t.short.map(x => h("div", { style: `margin-top:6px;font-size:12.5px;font-weight:800;color:${x.t.crit ? "#ff5c5c" : "#ff8a80"}` }, `${x.t.crit ? "CRITICAL NOT DONE" : "Not done"}: ${nice2(x.t.act)}${where(x.t)}, ${x.d} of ${x.t.target} ${x.t.unit || ""}`)),
           t.extra.length ? h("div", { style: "margin-top:4px;font-size:12.5px;color:#9be59b;font-weight:700" }, `Extra: ${t.extra.map(x => `${nice2(x.t.act)} +${x.x}`).join(", ")}`) : null,
-          t.other.length ? h("div", { style: `margin-top:4px;font-size:12.5px;color:${CH.soft};font-weight:700` }, `Other work: ${t.other.map(o => `${nice2(o.act)} at ${o.loc}, ${o.qty} ${o.unit || ""}`).join(", ")}`) : null,
+          t.other.length ? h("div", { style: `margin-top:4px;font-size:12.5px;color:${CH.soft};font-weight:700` }, `Other work: ${t.other.map(o => `${nice2(o.act)} at ${o.loc}, ${o.qty !== undefined && o.qty !== "" ? o.qty + " " + (o.unit || "") : "qty by site manager"}`).join(", ")}`) : null,
           t.why ? h("div", { style: `margin-top:4px;font-size:12px;color:${CH.soft}` }, `Reason given: ${t.why}`) : null));
     });
     return h("div", { class: "dash-block" }, head, summary, ...rows, ...testing);
