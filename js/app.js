@@ -307,6 +307,7 @@ function vMenu() {
   const later = (name, what) => h("button", { class: "mbtn later", onclick: () => showInfo(name, what) }, name);
   return [topbar(S.project.short, nice(d), true), projCard(S.project), todayCard(),
     h("div", { class: "stack" },
+      isMgr(S.user) && myTasks(S.user).length ? h("button", { class: "mbtn", onclick: () => go("mysection") }, "My tasks today", h("small", {}, "Fill in what you did yourself")) : null,
       h("button", { class: "mbtn", onclick: () => isMgr(S.user) ? go("review") : go("mysection") }, "Daily diaries", h("small", {}, isSM(S.user) ? "Check the crew, add your part, sign" : isMgr(S.user) ? "See how the day is going" : "Fill in my section for today")),
       h("button", { class: "mbtn", onclick: () => startForm("dsti") }, "DSTI"),
       h("button", { class: "mbtn", onclick: () => go("inspections") }, "Daily inspections", h("small", {}, "Toolbox talk, PPE, vehicle, ladder, harness, first aid and more")),
@@ -787,11 +788,46 @@ function planFor(k) {
   const [pid, ds] = k.split("|"), p = PROJECTS.find(x => x.id === pid) || (S.project && S.project.id === pid ? S.project : null);
   const rows = p && p.plan && p.plan[ds]; if (!rows) return null;
   const acts = p.acts || [];
-  const out = rows.map(r => ({ who: r.who, act: r.act, loc: r.loc, target: String(r.target), unit: (acts.find(a => a[1] === r.act) || [])[0] || "ea", crit: !!r.crit, area: p.area }));
+  const out = rows.map(r => ({ who: r.who, act: r.act, loc: r.loc, target: String(r.target), unit: (acts.find(a => a[1] === r.act) || [])[0] || "ea", crit: !!r.crit, area: p.area, key: r.key }));
   Object.defineProperty(out, "_plan", { value: true, writable: true, enumerable: false });
   return out;
 }
 const allocOf = k => Store.get("alloc|" + k) || planFor(k);
+// ---------- the four blocks: Today, To date, Remaining, G Total ----------
+// G Total = work done before the programme started + everything the programme plans for that activity at that spot.
+// To date = work done before + what everyone on the project has submitted, plus what he is typing today.
+const keyOf = t => t.key || (t.act + "|Site");
+const totCache = {};
+function grandTotal(p, key) {
+  if (!totCache[p.id]) { const m = {}; for (const rows of Object.values(p.plan || {})) for (const r of rows) m[r.key] = (m[r.key] || 0) + (+r.target || 0); for (const [kk, n] of Object.entries(p.before || {})) m[kk] = (m[kk] || 0) + n; totCache[p.id] = m; }
+  return totCache[p.id][key];
+}
+function doneToDate(p, key, ds, me, live) {
+  let n = (p.before || {})[key] || 0;
+  for (const [id, o] of Store.list(`prog|${p.id}|`)) { const x = id.split("|"); if (x[2] > ds || (x[2] === ds && x[3] === me)) continue; n += +((o.k || {})[key] || 0); }
+  return n + (+live || 0);
+}
+// what one man did today, per activity and spot, so the whole crew sees the running totals
+function progOf(tasks, rows) { const k = {}; tasks.forEach((t, i) => { const q = +((rows[i] || {}).done || 0); if (q) k[keyOf(t)] = (k[keyOf(t)] || 0) + q; }); return k; }
+function putProg(pid, ds, who, tasks, rows) { Store.put(`prog|${pid}|${ds}|${who}`, { k: progOf(tasks, rows), at: new Date().toISOString() }); }
+function blocks(t, todayInput, live, who) {
+  const p = S.project, key = keyOf(t), g = grandTotal(p, key), ds = ymd(S.date);
+  const tile = (label, kid, cls) => h("div", { class: "blk-tile " + cls }, h("div", { class: "blk-t" }, label), kid);
+  const nTd = h("div", { class: "blk-num" }), nRem = h("div", { class: "blk-num" }), bRem = tile("Remaining", nRem, "rem"), warn = h("div", { class: "blk-warn", hidden: true });
+  const update = v => {
+    const td = doneToDate(p, key, ds, who || S.user, v), rem = g == null ? null : g - td;
+    nTd.textContent = String(td); nRem.textContent = rem == null ? "-" : String(rem);
+    bRem.classList.toggle("over", rem != null && rem < 0); bRem.classList.toggle("zero", rem === 0);
+    warn.hidden = !(rem != null && rem < 0); warn.textContent = rem < 0 ? `That is ${-rem} more than the total. Check the number.` : "";
+  };
+  update(live);
+  const el = h("div", { class: "blk" },
+    h("div", { class: "blk-row" },
+      tile("Today", todayInput, "today"), tile("To date", nTd, "td"), bRem,
+      tile("G Total", h("div", { class: "blk-num" }, g == null ? "-" : String(g)), "tot")),
+    warn);
+  el.update = update; return el;
+}
 function ensureDay(k = dayKey()) {
   if (S.alloc[k]) return;
   S.alloc[k] = allocOf(k) || [];
@@ -1259,14 +1295,21 @@ function vMySection() {
   const drawSched = () => schedBox.replaceChildren(locked ? schedPanel(S.user) : sheet("", h("div", { class: "band" }, "Am I on schedule?"), h("div", { style: "padding:12px;font-size:13px;color:#5b6470;text-align:center" }, "Your progress bars show here once you have signed and submitted your section.")));
   const behind = () => tasks.some((t, i) => { const r = sec.rows[i] || {}; return r.done !== undefined && r.done !== "" && +r.done < +t.target; });
   const delayHint = h("div", { class: "err", hidden: true, style: "margin:0 0 10px" }, "You are behind the target today. Add the reason in Delays below. Pick the cause, and type more in the box if the list does not cover it.");
-  const tb = h("tbody");
+  const tb = h("div");
   const draw = () => {
     tb.replaceChildren(...tasks.map((t, i) => {
       const r = sec.rows[i] || (sec.rows[i] = {});
-      return h("tr", {},
-        h("td", { style: "padding:8px;font-weight:700;font-size:12.5px" + (t.crit ? ";border-left:4px solid #c8102e" : "") }, t.crit ? h("div", { style: "color:#c8102e;font-size:11px;font-weight:800;letter-spacing:.04em" }, "CRITICAL") : null, nice2(t.act), h("div", { style: "font-weight:500;color:#5b6470" }, t.loc)),
-        h("td", { style: "width:70px;text-align:center;font-weight:800;color:#0069aa" }, `${t.target} ${t.unit}`),
-        h("td", { style: "width:84px" }, locked ? h("div", { style: "text-align:center;font-weight:800;padding:8px" }, r.done || "0") : inp("number", r.done, v => { r.done = v; drawSched(); delayHint.hidden = !(behind() && !sec.delays.some(d => d.cause)); }, "Done")));
+      let bl;
+      const input = locked ? h("div", { class: "blk-num" }, r.done || "0")
+        : h("input", { class: "blk-in", type: "number", inputmode: "numeric", min: "0", value: r.done ?? "", placeholder: "0", "aria-label": `Today, ${nice2(t.act)}`,
+            oninput: e => { r.done = e.target.value; bl.update(r.done); delayHint.hidden = !(behind() && !sec.delays.some(d => d.cause)); } });
+      bl = blocks(t, input, r.done);
+      const holder = bl;
+      return h("div", { class: "task-card" + (t.crit ? " crit" : "") },
+        t.crit ? h("div", { class: "task-crit" }, "CRITICAL, MUST BE DONE TODAY") : null,
+        h("div", { class: "task-name" }, nice2(t.act)),
+        h("div", { class: "task-loc" }, `${t.loc}  |  Target today ${t.target} ${t.unit}`),
+        holder);
     }));
     drawSched();
   };
@@ -1277,7 +1320,7 @@ function vMySection() {
     h("p", { class: "form-sub" }, locked ? "Submitted. The site manager reviews it before the diary is signed." : "Fill in what you actually did against each task. Your section joins the project's daily diary."),
     back, repairsBlock(S.user),
     stdHeader({ project: S.project, date: S.date, user: S.user }, "Daily diary  |  my section"),
-    sheet("", h("div", { class: "band" }, "My tasks today"), h("table", {}, h("thead", {}, h("tr", {}, h("th", { class: "l" }, "Task"), h("th", {}, "Target"), h("th", {}, "Done"))), tb)),
+    sheet("", h("div", { class: "band" }, "My tasks today"), tb),
     schedBox,
     rowsTable("", ["Other work (not planned)", "Qty"], sec.other, r => h("tr", {}, h("td", {}, locked ? ro(r.what) : inp("text", r.what, v => r.what = v, "What and why")), h("td", { style: "width:80px" }, locked ? ro(r.qty, 1) : inp("number", r.qty, v => r.qty = v, "0"))), locked ? null : "+ Add other work", () => ({})),
     delayHint,
@@ -1291,7 +1334,7 @@ function vMySection() {
     locked ? null : sheet("", h("table", {}, h("tbody", {}, h("tr", {}, h("td", { class: "lab" }, "My signature"), h("td", {}, sigCell(() => sec.sig, v => sec.sig = v, "Your signature", true)))))),
     locked ? h("div", { style: "text-align:center;margin:10px 0" }, statusPill(sec.status)) :
       submitBtn(() => { const e = []; if (tasks.some((t, i) => (sec.rows[i] || {}).done === undefined || (sec.rows[i] || {}).done === "")) e.push("Fill in what you did for every task, even if it is 0."); if (behind() && !sec.delays.some(d => d.cause && d.hrs)) e.push("You are behind the target. Add the delay cause and the hours lost."); if (!sec.hrs) e.push("Choose your hours worked."); if (!sec.sig) e.push("Sign your section."); return e; },
-        { label: "Submit my section", onDone: () => { sec.status = "submitted"; sec.at = new Date().toLocaleTimeString("en-ZA", { hour: "2-digit", minute: "2-digit" }).replace(":", "h"); showInfo("Submitted", "Your section is with the site manager for review."); goBack(); } })];
+        { label: "Submit my section", onDone: () => { putProg(S.project.id, ymd(S.date), S.user, tasks, sec.rows); sec.status = "submitted"; sec.at = new Date().toLocaleTimeString("en-ZA", { hour: "2-digit", minute: "2-digit" }).replace(":", "h"); showInfo("Submitted", "Your section is with the site manager for review."); goBack(); } })];
 }
 
 function vReview() {
@@ -1346,7 +1389,7 @@ function vReview() {
     ...people.map(personBlock), totals,
     final ? after : h("div", {},
       h("button", { class: "mbtn", style: `margin-bottom:12px;${s1 ? "" : "opacity:.45"}`, onclick: () => { if (s1) openCombined(); } }, s2 ? "✓ My part of the diary (open again)" : "2. My part of the diary", h("small", {}, "Weather, plant, site instructions and materials. Team and work fill in by themselves.")),
-      h("button", { class: "submit", type: "button", style: s1 && s2 ? "" : "opacity:.45", onclick: () => { if (!(s1 && s2)) return; mySig(v => { if (!v) return; S.final[k] = new Date().toLocaleTimeString("en-ZA", { hour: "2-digit", minute: "2-digit" }).replace(":", "h"); S.done[k] = true; persist(); Store.put("final|" + k, { at: S.final[k], by: S.user, sig: v, date: ymd(S.date) }); Store.lock(["alloc|" + k, "site|" + k, "final|" + k, ...people.map(p => `sec|${k}|${p}`)]); S.form = { type: "diary", project: S.project, date: S.date, user: S.user, photos: [] }; go("done"); }); } }, "3. Sign and make final"))];
+      h("button", { class: "submit", type: "button", style: s1 && s2 ? "" : "opacity:.45", onclick: () => { if (!(s1 && s2)) return; mySig(v => { if (!v) return; S.final[k] = new Date().toLocaleTimeString("en-ZA", { hour: "2-digit", minute: "2-digit" }).replace(":", "h"); S.done[k] = true; persist(); Store.put("final|" + k, { at: S.final[k], by: S.user, sig: v, date: ymd(S.date) }); people.forEach(pn => putProg(S.project.id, ymd(S.date), pn, myTasks(pn), ((S.sections[k] || {})[pn] || {}).rows || [])); Store.lock(["alloc|" + k, "site|" + k, "final|" + k, ...people.map(p => `sec|${k}|${p}`)]); S.form = { type: "diary", project: S.project, date: S.date, user: S.user, photos: [] }; go("done"); }); } }, "3. Sign and make final"))];
 }
 // ---------- daily diary as PDF (made on the phone, then shared) ----------
 function diaryDoc(k, project, date) {
@@ -1400,7 +1443,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792414232"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792414232"); await loadJs("./js/pdf.js?v=1792414232");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792415099"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792415099"); await loadJs("./js/pdf.js?v=1792415099");
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
     // Phones only open the share menu straight after a tap, so the last step is one tap on Share.
@@ -1641,7 +1684,7 @@ Store.metaFor = (id, obj) => {
   const x = id.split("|"), kind = x[0], pid = x[1], me = (Store.me() || {}).member;
   const idOf = name => (PEOPLE.find(p => p.name === name) || {}).id;
   if (kind === "sig") return { tags: [`user:${pid}`] };
-  if (kind === "alloc") return { tags: [`proj:${pid}`] };
+  if (kind === "alloc" || kind === "prog") return { tags: [`proj:${pid}`] };
   if (kind === "sec") return { tags: [`user:${idOf(x.slice(3).join("|")) || me}`, `mgr:${pid}`] };
   if (kind === "final" || kind === "site") return { tags: [`mgr:${pid}`] };
   if (kind === "link" || kind === "issue" || kind === "bio") return { shared: true, tags: [`proj:${pid}`] };
