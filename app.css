@@ -241,3 +241,6 @@ h1.big { font-family: var(--display); font-weight: 900; color: var(--head); text
 /* office dashboard */
 .dash-block { background: #262a30; color: #fff; border-radius: 10px; overflow: hidden; margin: 0 0 16px; box-shadow: 0 2px 8px rgba(0,0,0,.18); }
 .dash-chip { display: inline-block; font-size: 11px; font-weight: 800; letter-spacing: .03em; color: #fff; border-radius: 999px; padding: 4px 10px; white-space: nowrap; }
+
+/* the phone's own pull-down reload is switched off: it would lock the app back to the PIN. The app does its own refresh. */
+html, body { overscroll-behavior-y: none; }

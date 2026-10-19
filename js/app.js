@@ -1400,7 +1400,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792413768"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792413768"); await loadJs("./js/pdf.js?v=1792413768");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792414232"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792414232"); await loadJs("./js/pdf.js?v=1792414232");
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
     // Phones only open the share menu straight after a tap, so the last step is one tap on Share.
@@ -1783,7 +1783,7 @@ function dashProject(p, d) {
     const signed = S.final[k];
     const pctAll = (() => { let t = 0, dn = 0; people.forEach(n => { const x = todayFor(n); if (x.filled) { t += x.target; dn += x.done; } }); return t ? Math.round(dn / t * 100) : null; })();
     const summary = h("div", { style: "display:flex;gap:8px;flex-wrap:wrap;padding:0 14px 12px" },
-      h("span", { class: "dash-chip", style: `background:${sub === people.length ? "#1e8e3e" : sub ? "#f29900" : "#c8102e"}` }, `${sub} of ${people.length} diaries in`),
+      h("span", { class: "dash-chip", style: `background:${sub === people.length ? "#1e8e3e" : new Date().getHours() >= 17 ? "#c8102e" : "#f29900"}` }, `${sub} of ${people.length} diaries in`),
       h("span", { class: "dash-chip", style: `background:${signed ? "#1e8e3e" : "#5b6470"}` }, signed ? `Signed ${signed}` : "Not signed yet"),
       pctAll != null ? h("span", { class: "dash-chip", style: `background:${barColour(pctAll).bg};color:${barColour(pctAll).fg}` }, `Output ${pctAll}%`) : null);
     const rows = people.map(n => {
@@ -1944,7 +1944,23 @@ setTimeout(leave, 1500);
 // Updates: when a new version of the app arrives, the phone switches to it by itself.
 // It never reloads in the middle of a form, only on the main screen or the PIN screen.
 let updateReady = false;
-function applyUpdate() { if (!updateReady) return; if (!CFG || S.locked || ["projects", "users"].includes(S.view)) { updateReady = false; location.reload(); } }
+// Only switch when nobody is looking (app in the background) or before he has typed his PIN, so nobody gets kicked out.
+function applyUpdate() { if (!updateReady) return; if (!CFG || document.visibilityState === "hidden") { updateReady = false; location.reload(); } }
+document.addEventListener("visibilitychange", applyUpdate);
+
+// Pull down on a page to fetch the latest from the server. This never reloads the app, so nobody is sent back to the PIN screen.
+(() => {
+  let y0 = null, armed = false;
+  addEventListener("touchstart", e => { y0 = CFG && window.scrollY <= 0 && !document.querySelector(".overlay") ? e.touches[0].clientY : null; armed = false; }, { passive: true });
+  addEventListener("touchmove", e => { if (y0 != null && !armed && e.touches[0].clientY - y0 > 110) { armed = true; toast("Getting the latest..."); } }, { passive: true });
+  addEventListener("touchend", () => {
+    if (!armed) { y0 = null; return; }
+    armed = false; y0 = null;
+    try { Store.kick(); } catch (e) {}
+    const done = () => { render(); toast(Store.online() ? "Up to date" : "No signal. Showing what is on the phone."); };
+    if (["dash", "devices"].includes(S.view)) refreshDevices(true).finally(() => setTimeout(done, 800)); else setTimeout(done, 1500);
+  }, { passive: true });
+})();
 if ("serviceWorker" in navigator && location.protocol === "https:") {
   const hadController = !!navigator.serviceWorker.controller;
   navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(reg => {
