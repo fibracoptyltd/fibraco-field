@@ -311,3 +311,7 @@ html, body { overscroll-behavior-y: none; }
 .qc-note:focus { outline: none; border-color: #39ff14; box-shadow: 0 0 10px #39ff14; }
 .sheet select.ts-sel, .task-eq select.ts-sel { width: 100%; min-height: 44px; padding: 10px; border: 2px solid #00e5ff; border-radius: 8px; background: #fff; color: #15191e; font-size: 14px; font-weight: 700; }
 .sheet select.ts-sel:focus { outline: none; border-color: #39ff14; box-shadow: 0 0 10px #39ff14; background: #f2ffe9; }
+
+/* new version ready bar */
+.updbar{position:fixed;left:0;right:0;top:0;z-index:9000;border:0;background:#1e8e3e;color:#fff;font:inherit;font-weight:900;font-size:15px;text-align:center;padding:calc(12px + env(safe-area-inset-top,0px)) 16px 12px;box-shadow:0 4px 16px rgba(0,0,0,.35);cursor:pointer}
+.updbar small{display:block;font-weight:600;font-size:12px;opacity:.9;margin-top:3px}

@@ -272,8 +272,11 @@ function vProjects() {
       h("button", { class: "mbtn red-text", onclick: () => { S.project = null; startForm("inspection"); } }, "Site inspection", h("small", {}, "For new work and client site visits")),
       PROJECTS.map(p => h("button", { class: "mbtn", onclick: () => { S.project = p; S.month = today(); go("calendar"); } }, p.name, h("small", {}, roleLabel(roleIn(S.user, p)))))),
     h("p", { class: "note" }, "Only your active projects show here. When a project closes, the office removes it."),
-    h("div", { style: "text-align:center;margin-top:14px" }, h("button", { class: "btn-g", type: "button", style: "padding:8px 14px;font-size:13px", onclick: changePin }, "Change my PIN"))];
+    h("div", { style: "text-align:center;margin-top:14px" }, h("button", { class: "btn-g", type: "button", style: "padding:8px 14px;font-size:13px", onclick: changePin }, "Change my PIN")),
+    h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
+const APPV = "1792424712";
+function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
   const back = () => { render(); };
@@ -1458,7 +1461,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792417180"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792417180"); await loadJs("./js/pdf.js?v=1792417180");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792424712"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792424712"); await loadJs("./js/pdf.js?v=1792424712");
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
     // Phones only open the share menu straight after a tap, so the last step is one tap on Share.
@@ -1884,13 +1887,19 @@ function tsAnalyse(r, wl) {
 }
 const TS_COL = { good: "#39ff14", ok: "#ffd60a", bad: "#ff3b3b", half: "#5b6470", none: "#2c323c" };
 
+// one section in a few numbers: cores fully tested, cores with a problem, colour
+function tsSummary(r) {
+  const L = tsLim();
+  const used = L.wls.filter(w => ["ab", "ba", "olts"].some(p => Object.keys(tsGet(r.id, p)[w] || {}).length && JSON.stringify(tsGet(r.id, p)[w]).match(/\d/)));
+  const ans = used.map(w => tsAnalyse(r, w));
+  const tested = ans.length ? Math.min(...ans.map(a => a.tested)) : 0, bad = new Set(ans.flatMap(a => a.cores).filter(x => x.bad).map(x => x.c)).size, n = +r.cores || 12;
+  const col = bad ? "#ff3b3b" : tested === n ? "#39ff14" : tested ? "#ffd60a" : "#5b6470";
+  return { used, tested, bad, n, col };
+}
 function vTsheets() {
   const routes = tsRoutes(), L = tsLim();
   const card = r => {
-    const used = L.wls.filter(w => ["ab", "ba", "olts"].some(p => Object.keys(tsGet(r.id, p)[w] || {}).length && JSON.stringify(tsGet(r.id, p)[w]).match(/\d/)));
-    const ans = used.map(w => tsAnalyse(r, w));
-    const tested = ans.length ? Math.min(...ans.map(a => a.tested)) : 0, bad = new Set(ans.flatMap(a => a.cores).filter(x => x.bad).map(x => x.c)).size, n = +r.cores || 12;
-    const col = bad ? "#ff3b3b" : tested === n ? "#39ff14" : tested ? "#ffd60a" : "#5b6470";
+    const { tested, bad, n, col } = tsSummary(r);
     return h("button", { type: "button", class: "ts-route", onclick: () => { S.ts = { rid: r.id, wl: L.wls[0], tab: "ab" }; go("tsheet"); } },
       h("div", { style: `width:7px;align-self:stretch;background:${col};border-radius:4px;box-shadow:0 0 8px ${col}` }),
       h("div", { style: "flex:1;min-width:0;text-align:left" },
@@ -2063,7 +2072,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792417180"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792417180"); await loadJs("./js/pdf.js?v=1792417180");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792424712"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792424712"); await loadJs("./js/pdf.js?v=1792424712");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
@@ -2223,7 +2232,8 @@ function dashProject(p, d) {
     const people = [...new Set(alloc.map(a => a.who))];
     const head = h("div", { style: "display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;padding:14px 14px 10px" },
       h("div", { style: "font-weight:900;font-size:17px;letter-spacing:.04em;color:#fff" }, p.short.toUpperCase()), h("div", { style: `font-size:12.5px;color:${CH.soft};font-weight:700` }, dayLab ? dayLab(d) : dmy(d)));
-    if (!people.length) return h("div", { class: "dash-block" }, head, h("div", { style: `padding:0 14px 14px;color:${CH.soft};font-size:13.5px` }, "No work loaded for today."));
+    const testing = dashTesting(p);
+    if (!people.length) return h("div", { class: "dash-block" }, head, h("div", { style: `padding:0 14px 14px;color:${CH.soft};font-size:13.5px` }, "No work loaded for today."), ...testing);
     const sub = people.filter(n => ["submitted", "approved"].includes((secs[n] || {}).status)).length;
     const signed = S.final[k];
     const pctAll = (() => { let t = 0, dn = 0; people.forEach(n => { const x = todayFor(n); if (x.filled) { t += x.target; dn += x.done; } }); return t ? Math.round(dn / t * 100) : null; })();
@@ -2255,8 +2265,31 @@ function dashProject(p, d) {
           critOpen.length ? h("div", { style: "margin-top:6px;font-size:12.5px;color:#ff8a80;font-weight:700" }, `Critical not finished: ${critOpen.map(a => nice2(a.act)).join(", ")}`) : null,
           t.why ? h("div", { style: `margin-top:4px;font-size:12px;color:${CH.soft}` }, `Reason given: ${t.why}`) : null));
     });
-    return h("div", { class: "dash-block" }, head, summary, ...rows);
+    return h("div", { class: "dash-block" }, head, summary, ...rows, ...testing);
   } finally { S.project = saveP; S.date = saveD; }
+}
+// Test sheets and open repairs for one project on the dashboard. Tap a section to open its sheet.
+function dashTesting(p) {
+  const out = [];
+  const sub = (t) => h("div", { style: `padding:12px 14px 6px;border-top:1px solid ${CH.line};font-weight:900;font-size:13px;letter-spacing:.08em;color:${CH.soft}` }, t);
+  const row = (col, title, txt, onclick) => h("div", { style: `display:flex;border-top:1px solid ${CH.line};cursor:pointer`, onclick },
+    h("div", { style: `width:7px;flex:none;background:${col};box-shadow:0 0 8px ${col}` }),
+    h("div", { style: "flex:1;min-width:0;padding:10px 12px" }, h("div", { style: "font-weight:800;font-size:14.5px;color:#fff" }, title), h("div", { style: `font-size:12.5px;font-weight:800;margin-top:2px;color:${col === "#5b6470" ? CH.soft : col}` }, txt)),
+    h("div", { style: `align-self:center;padding-right:12px;color:${CH.soft};font-size:20px;font-weight:900` }, "›"));
+  if (p.routes) {
+    const routes = tsRoutes().filter(r => !r.practice), sums = routes.map(r => ({ r, s: tsSummary(r) }));
+    const n = sums.reduce((a, x) => a + x.s.n, 0), t = sums.reduce((a, x) => a + x.s.tested, 0), b = sums.reduce((a, x) => a + x.s.bad, 0);
+    out.push(sub(`TEST SHEETS  |  ${t} OF ${n} CORES TESTED${b ? `  |  ${b} WITH A PROBLEM` : ""}`));
+    sums.forEach(({ r, s }) => out.push(row(s.col, `${r.a} to ${r.b}`, s.bad ? `${s.bad} core${s.bad > 1 ? "s" : ""} with a problem, ${s.tested} of ${s.n} tested` : s.tested === s.n ? "All cores tested and passed" : s.tested ? `${s.tested} of ${s.n} cores tested` : "Not tested yet",
+      () => { S.project = p; S.ts = { rid: r.id, wl: tsLim().wls[0], tab: "ab" }; S.hist.push(S.view); S.hist.push("tsheets"); S.view = "tsheet"; render(); window.scrollTo(0, 0); })));
+  }
+  const byId = {}; Store.list(`issue|${p.id}|`).forEach(([, o]) => { byId[o.id] = o; }); (S.issues[p.id] || []).forEach(o => { byId[o.id] = o; });
+  const open = Object.values(byId).filter(x => x.status === "open");
+  if (open.length) {
+    out.push(sub(`REPAIRS OPEN  |  ${open.length}`));
+    open.forEach(x => out.push(row("#ff3b3b", x.title, `${x.resp || "Not given to anyone"}  |  found by ${x.found || "-"} on ${(x.foundOn || "-").split("-").reverse().join("-")}`, () => showInfo(x.title, `${x.detail || ""} Given to ${x.resp || "-"}. Found by ${x.found || "-"} on ${x.foundOn || "-"}.`))));
+  } else if (p.routes || p.qcSpots) out.push(sub("REPAIRS OPEN  |  NONE"));
+  return out;
 }
 function vDash() {
   const d = today();
@@ -2392,7 +2425,12 @@ setTimeout(leave, 1500);
 // It never reloads in the middle of a form, only on the main screen or the PIN screen.
 let updateReady = false;
 // Only switch when nobody is looking (app in the background) or before he has typed his PIN, so nobody gets kicked out.
-function applyUpdate() { if (!updateReady) return; if (!CFG || document.visibilityState === "hidden") { updateReady = false; location.reload(); } }
+function applyUpdate() { if (!updateReady) return; if (!CFG || document.visibilityState === "hidden") { updateReady = false; location.reload(); } else updateBar(); }
+// While he is busy in the app, a green bar at the top offers the new version. He taps it when it suits him.
+function updateBar() {
+  if (document.getElementById("updbar")) return;
+  document.body.append(h("button", { id: "updbar", type: "button", class: "updbar", onclick: () => { try { tsFlush(); } catch (e) {} setTimeout(() => location.reload(), 400); } }, "New version of the app is ready. Tap here to update.", h("small", {}, "Finish what you are typing first. You type your PIN again after.")));
+}
 document.addEventListener("visibilitychange", applyUpdate);
 
 // Pull down on a page to fetch the latest from the server. This never reloads the app, so nobody is sent back to the PIN screen.
