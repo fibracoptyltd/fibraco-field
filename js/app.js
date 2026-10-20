@@ -276,7 +276,7 @@ function vProjects() {
     h("div", { style: "text-align:center;margin-top:14px" }, h("button", { class: "btn-g", type: "button", style: "padding:8px 14px;font-size:13px", onclick: changePin }, "Change my PIN")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1792474388";
+const APPV = "1792478169";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -349,7 +349,7 @@ async function sendRegister(p, d, days) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792474388"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792474388"); await loadJs("./js/pdf.js?v=1792474388");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792478169"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792478169"); await loadJs("./js/pdf.js?v=1792478169");
     const { html, title } = attDoc(p, d, days); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
@@ -453,7 +453,7 @@ async function timeZone() {
   try {
     try { Store.kick(); await refreshDevices(true); } catch (e) {}
     await new Promise(r => setTimeout(r, 1800));
-    await loadJs("./js/lib/html2canvas.min.js?v=1792474388"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792474388"); await loadJs("./js/pdf.js?v=1792474388");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792478169"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792478169"); await loadJs("./js/pdf.js?v=1792478169");
     const D = tzData(), stamp = `${dmy(new Date())} ${hhmm()}`, name = `FIBRACO - Time Zone (${stamp})`;
     const pdf = await window.FibPdf.diaryPdf(tzHtml(D), name);
     const json = new File([JSON.stringify(D, null, 1)], name.replace(/[\\/:*?"<>|]+/g, "-") + ".json", { type: "application/json" });
@@ -1683,7 +1683,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792474388"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792474388"); await loadJs("./js/pdf.js?v=1792474388");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792478169"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792478169"); await loadJs("./js/pdf.js?v=1792478169");
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
     // Phones only open the share menu straight after a tap, so the last step is one tap on Share.
@@ -2296,7 +2296,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792474388"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792474388"); await loadJs("./js/pdf.js?v=1792474388");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792478169"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792478169"); await loadJs("./js/pdf.js?v=1792478169");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
@@ -2620,7 +2620,24 @@ async function startApp() {
 }
 // Ask the phone to keep the app's data for good, so Chrome never clears it to free up space.
 try { if (navigator.storage && navigator.storage.persist) navigator.storage.persisted().then(p => { if (!p) navigator.storage.persist(); }); } catch (e) {}
+// The Samsung browser keeps losing the app's data, so each time the link is opened it counts as a new phone.
+// A personal link is only set up in Chrome.
+function useChrome() {
+  const link = location.href, box = h("textarea", { readonly: true, style: "width:100%;height:84px;font-size:13px;margin-top:8px" }, link);
+  const copy = h("button", { class: "btn-w", type: "button", style: "padding:12px 22px", onclick: () => {
+    const done = () => { copy.textContent = "Copied. Now open Chrome"; };
+    try { navigator.clipboard.writeText(link).then(done, () => { box.select(); document.execCommand("copy"); done(); }); } catch (e) { box.select(); document.execCommand("copy"); done(); }
+  } }, "Copy my link");
+  screen(h("h1", { class: "big", style: "text-align:center" }, "Open this in Chrome"),
+    centre("The Samsung browser does not keep the app, so it asks for approval again every time. Fibraco Field must be set up in Google Chrome."),
+    h("div", { style: "text-align:center;margin-top:12px" }, copy),
+    h("ol", { style: "padding:0 22px 0 40px;line-height:1.6" },
+      h("li", {}, "Tap Copy my link."), h("li", {}, "Open Google Chrome."), h("li", {}, "Paste the link at the top and tap Go."),
+      h("li", {}, "Choose your PIN and tap Put Fibraco on my phone."), h("li", {}, "From then on, only open the app from the Fibraco icon.")),
+    box);
+}
 async function boot() {
+  if (Store.hasLink() && /SamsungBrowser/i.test(navigator.userAgent)) return useChrome();
   if (Store.hasLink()) {
     let first = null;
     const ask = (t, s) => pinPad(t, s, (pin, say) => {
