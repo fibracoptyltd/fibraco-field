@@ -85,6 +85,23 @@ const Store = (() => {
     return JSON.parse(dec.decode(pt));
   }
 
+  // ---------- fingerprint ----------
+  // The phone's fingerprint (a passkey in the phone's own lock) gives a secret that only comes out after a
+  // successful fingerprint. That secret locks a second copy of the key and token. Without it, the PIN.
+  let CUR = null;
+  const BIO_SALT = crypto.subtle.digest("SHA-256", enc.encode("fibraco-field-fingerprint-v1")).then(b => new Uint8Array(b));
+  async function bioKey(out) {
+    const base = await crypto.subtle.importKey("raw", out, "HKDF", false, ["deriveKey"]);
+    return crypto.subtle.deriveKey({ name: "HKDF", hash: "SHA-256", salt: new Uint8Array(32), info: enc.encode("fibraco bio wrap") }, base, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+  }
+  async function bioGet(credId) {
+    const a = await navigator.credentials.get({ publicKey: { challenge: crypto.getRandomValues(new Uint8Array(32)), allowCredentials: [{ type: "public-key", id: credId }],
+      userVerification: "required", timeout: 60000, extensions: { prf: { eval: { first: await BIO_SALT } } } } });
+    const r = a && a.getClientExtensionResults ? a.getClientExtensionResults() : {};
+    const out = r.prf && r.prf.results && r.prf.results.first; if (!out) { const e = new Error("noprf"); e.noprf = true; throw e; }
+    return out;
+  }
+
   // ---------- server ----------
   async function rpc(fn, body) {
     const r = await fetch(`${CONF.url}/rest/v1/rpc/${fn}`, { method: "POST", headers: { "Content-Type": "application/json", apikey: CONF.anon, Authorization: `Bearer ${CONF.anon}` }, body: JSON.stringify(Object.assign({ p_token: TOKEN, p_device: DEV }, body)) });
@@ -104,7 +121,7 @@ const Store = (() => {
       // the device id survives a PIN reset on the same phone, so it stays approved
       let d = await metaGet("dev"); if (!d) { d = newDevice(); await metaSet("dev", d); }
       const secret = { k: h.get("k"), t: h.get("t"), d };
-      await metaSet("wrapped", await wrap(pin, secret));
+      await metaSet("wrapped", await wrap(pin, secret)); await metaDel("bio").catch(() => {});
       history.replaceState(null, "", location.pathname + location.search);
       return api.unlockWith(secret);
     },
@@ -117,6 +134,7 @@ const Store = (() => {
       return api.unlockWith(secret);
     },
     async unlockWith(secret) {
+      CUR = secret;
       await importKey(unb64url(secret.k)); TOKEN = secret.t; DEV = secret.d;
       const fk = await metaGet("fk"); if (fk) { try { await setFiles(unb64(await open(fk.iv, fk.data))); } catch (e) {} }
       // cached member info lets the app open with no signal
@@ -129,6 +147,30 @@ const Store = (() => {
       return true;
     },
     async forget() { await metaDel("wrapped"); },
+    async bioAvailable() { try { return !!(window.PublicKeyCredential && navigator.credentials && await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()); } catch (e) { return false; } },
+    async hasBio() { return !!(await metaGet("bio").catch(() => null)); },
+    async bioOff() { await metaDel("bio"); },
+    async bioEnroll(name) {
+      if (!CUR) throw new Error("not unlocked");
+      const c = await navigator.credentials.create({ publicKey: { rp: { name: "Fibraco Field" }, user: { id: crypto.getRandomValues(new Uint8Array(16)), name: name, displayName: name },
+        challenge: crypto.getRandomValues(new Uint8Array(32)), pubKeyCredParams: [{ type: "public-key", alg: -7 }, { type: "public-key", alg: -257 }],
+        authenticatorSelection: { authenticatorAttachment: "platform", residentKey: "preferred", userVerification: "required" }, timeout: 60000,
+        extensions: { prf: { eval: { first: await BIO_SALT } } } } });
+      const r = c.getClientExtensionResults ? c.getClientExtensionResults() : {};
+      if (!r.prf || r.prf.enabled === false) { const e = new Error("noprf"); e.noprf = true; throw e; }
+      const out = (r.prf.results && r.prf.results.first) || await bioGet(c.rawId);
+      const key = await bioKey(out), iv = crypto.getRandomValues(new Uint8Array(12));
+      const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, enc.encode(JSON.stringify(CUR)));
+      await metaSet("bio", { cred: b64(c.rawId), iv: b64(iv), data: b64(ct) });
+      return true;
+    },
+    async bioUnlock() {
+      const b = await metaGet("bio"); if (!b) return false;
+      const key = await bioKey(await bioGet(unb64(b.cred)));
+      const secret = JSON.parse(dec.decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv: unb64(b.iv) }, key, unb64(b.data))));
+      await metaSet("fails", 0);
+      return api.unlockWith(secret);
+    },
     async changePin(oldPin, newPin) {
       let secret; try { secret = await unwrap(oldPin, await metaGet("wrapped")); } catch (e) { return false; }
       await metaSet("wrapped", await wrap(newPin, secret)); return true;

@@ -274,10 +274,14 @@ function vProjects() {
       h("button", { class: "mbtn red-text", onclick: () => { S.project = null; startForm("inspection"); } }, "Site inspection", h("small", {}, "For new work and client site visits")),
       PROJECTS.map(p => h("button", { class: "mbtn", onclick: () => { S.project = p; S.month = today(); go("calendar"); } }, p.name, h("small", {}, roleLabel(roleIn(S.user, p)))))),
     h("p", { class: "note" }, "Only your active projects show here. When a project closes, the office removes it."),
-    h("div", { style: "text-align:center;margin-top:14px" }, h("button", { class: "btn-g", type: "button", style: "padding:8px 14px;font-size:13px", onclick: changePin }, "Change my PIN")),
+    h("div", { style: "text-align:center;margin-top:14px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap" }, h("button", { class: "btn-g", type: "button", style: "padding:8px 14px;font-size:13px", onclick: changePin }, "Change my PIN"),
+      h("button", { class: "btn-g bio-set", type: "button", style: "padding:8px 14px;font-size:13px", onclick: async () => {
+        if (await Store.hasBio()) return askYesNo("Switch fingerprint off?", "Fibraco will only ask for your PIN.", "Switch off", async () => { await Store.bioOff(); showInfo("Fingerprint is off", "Fibraco asks for your PIN only."); });
+        if (!(await Store.bioAvailable())) return showInfo("Not on this phone", "This phone has no fingerprint set up in its own settings. Set it up there first (Settings, Security, Fingerprints).");
+        bioSetup(); } }, "Fingerprint")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1792484850";
+const APPV = "1792485492";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -350,7 +354,7 @@ async function sendRegister(p, d, days) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792484850"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792484850"); await loadJs("./js/pdf.js?v=1792484850");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792485492"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792485492"); await loadJs("./js/pdf.js?v=1792485492");
     const { html, title } = attDoc(p, d, days); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
@@ -454,7 +458,7 @@ async function timeZone() {
   try {
     try { Store.kick(); await refreshDevices(true); } catch (e) {}
     await new Promise(r => setTimeout(r, 1800));
-    await loadJs("./js/lib/html2canvas.min.js?v=1792484850"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792484850"); await loadJs("./js/pdf.js?v=1792484850");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792485492"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792485492"); await loadJs("./js/pdf.js?v=1792485492");
     const D = tzData(), stamp = `${dmy(new Date())} ${hhmm()}`, name = `FIBRACO - Time Zone (${stamp})`;
     const pdf = await window.FibPdf.diaryPdf(tzHtml(D), name);
     const json = new File([JSON.stringify(D, null, 1)], name.replace(/[\\/:*?"<>|]+/g, "-") + ".json", { type: "application/json" });
@@ -1765,7 +1769,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792484850"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792484850"); await loadJs("./js/pdf.js?v=1792484850");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792485492"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792485492"); await loadJs("./js/pdf.js?v=1792485492");
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
     // Phones only open the share menu straight after a tap, so the last step is one tap on Share.
@@ -2379,7 +2383,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792484850"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792484850"); await loadJs("./js/pdf.js?v=1792484850");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792485492"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792485492"); await loadJs("./js/pdf.js?v=1792485492");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
@@ -2642,14 +2646,35 @@ function vFeedback() {
 let CFG = null;
 const PIN_WARN = () => [h("b", { style: "color:#c8102e;font-weight:900;font-size:15px" }, "REMEMBER THIS PIN."), " You must type it every time you open the app. If you forget it, the office has to reset it for you."];
 const screen = (...kids) => { app.replaceChildren(h("div", { class: "lock" }, h("img", { src: LOGO, alt: "Fibraco", style: "width:220px;max-width:70%;margin:30px auto 18px;display:block" }), ...kids)); };
-function pinPad(title, sub, onDone, warn) {
+function pinPad(title, sub, onDone, warn, extra) {
   let v = ""; const dots = h("div", { class: "pin-dots" }); const msg = h("p", { class: "pin-msg" }, sub || "");
   const draw = () => dots.replaceChildren(...[0, 1, 2, 3].map(i => h("i", { class: i < v.length ? "on" : "" })));
   const press = d => { if (d === "del") v = v.slice(0, -1); else if (v.length < 4) v += d; draw(); if (v.length === 4) { const x = v; v = ""; setTimeout(() => { draw(); onDone(x, m => { msg.textContent = m; }); }, 120); } };
   draw();
   screen(h("h1", { class: "big", style: "text-align:center" }, title), msg, dots,
     warn ? h("div", { class: "pin-warn", role: "note" }, ...[].concat(typeof warn === "function" ? warn() : warn)) : null,
-    h("div", { class: "pin-pad" }, ...["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "del"].map(d => d ? h("button", { type: "button", onclick: () => press(d), "aria-label": d === "del" ? "Delete" : d }, d === "del" ? "⌫" : d) : h("span"))));
+    h("div", { class: "pin-pad" }, ...["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "del"].map(d => d ? h("button", { type: "button", onclick: () => press(d), "aria-label": d === "del" ? "Delete" : d }, d === "del" ? "⌫" : d) : h("span"))), extra || null);
+}
+
+// ---------- fingerprint ----------
+function FP_ICON() {
+  const s = document.createElementNS("http://www.w3.org/2000/svg", "svg"); s.setAttribute("viewBox", "0 0 24 24"); s.setAttribute("width", "44"); s.setAttribute("height", "44"); s.setAttribute("aria-hidden", "true");
+  s.innerHTML = '<g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M6.5 4.8A9 9 0 0 1 20.6 9"/><path d="M3.6 9.4A9 9 0 0 1 4.9 6.5"/><path d="M5 13.5c0-4 3.1-7 7-7s7 3 7 7v.5"/><path d="M8 20c-1-1.8-1.5-3.8-1.5-6.3 0-3.1 2.4-5.4 5.5-5.4s5.5 2.3 5.5 5.4"/><path d="M12 11.3c1.7 0 3 1.2 3 3 0 2.8.7 4.8 1.6 6.2"/><path d="M9.2 14.3c0-1.6 1.2-3 2.8-3"/><path d="M11.1 21c-1.1-2-1.6-4.3-1.6-6.7"/><path d="M12 14.3c0 3 .6 5.4 2 7.2"/><path d="M18.9 17.4c-.2-.9-.3-1.9-.3-3"/></g>';
+  return s;
+}
+async function offerBio() {
+  try {
+    if (!savedSig() || await Store.hasBio() || !(await Store.bioAvailable())) return;
+    if (await Store.readLocal("bioNo")) return;
+    askYesNo("Open with your fingerprint?", "Next time you can open Fibraco with your fingerprint instead of typing your PIN. If the fingerprint does not work, you type your PIN as always.", "Yes, use fingerprint", bioSetup);
+  } catch (e) {}
+}
+async function bioSetup() {
+  try { await Store.bioEnroll(S.user || "Fibraco"); await Store.keepLocal("bioNo", null); showInfo("Fingerprint is on", "Next time Fibraco asks for your fingerprint first. Your PIN still works."); }
+  catch (e) {
+    if (e && e.noprf) { await Store.keepLocal("bioNo", 1); return showInfo("Not on this phone", "This phone cannot use the fingerprint for Fibraco. Keep using your PIN."); }
+    showInfo("Fingerprint not set up", "It did not finish. You can try again at the bottom of the Projects screen.");
+  }
 }
 const centre = t => h("p", { style: "text-align:center;padding:0 20px" }, t);
 async function removed(title, text) {
@@ -2726,17 +2751,24 @@ async function boot() {
     const ask = (t, s) => pinPad(t, s, (pin, say) => {
       if (!first) { first = pin; return ask("Type it again", "To make sure you remember it."); }
       if (pin !== first) { first = null; return ask("Choose a 4 digit PIN", "The two PINs did not match. Try again."); }
-      Store.setupFromLink(pin).then(startApp);
+      Store.setupFromLink(pin).then(startApp).then(offerBio);
     }, PIN_WARN);
     return ask("Choose a 4 digit PIN", "Welcome to Fibraco Field.");
   }
   if (await Store.hasSaved()) {
-    return pinPad("Type your PIN", "", (pin, say) => Store.unlock(pin).then(async ok => {
-      if (ok === true) return startApp();
+    const bio = await Store.hasBio();
+    let busy = false;
+    const useBio = async () => { if (busy) return; busy = true;
+      try { if (await Store.bioUnlock()) { busy = false; return startApp(); } } catch (e) { if (e && e.name !== "NotAllowedError") toast("Fingerprint did not work. Type your PIN."); }
+      busy = false; };
+    const fp = bio ? h("button", { class: "bio-btn", type: "button", "aria-label": "Use fingerprint", onclick: useBio }, FP_ICON(), h("span", {}, "Use fingerprint")) : null;
+    if (bio) setTimeout(useBio, 350);
+    return pinPad("Type your PIN", bio ? "Or touch the fingerprint below." : "", (pin, say) => Store.unlock(pin).then(async ok => {
+      if (ok === true) { await startApp(); return offerBio(); }
       const left = 10 - ok;
       if (left <= 0) { await Store.wipe(true); return screen(h("h1", { class: "big", style: "text-align:center" }, "App cleared"), centre("The PIN was wrong 10 times, so the app cleared itself on this phone."), centre("Ask the office to set it up again on this phone.")); }
       say(left <= 3 ? `Wrong PIN. ${left} ${left === 1 ? "try" : "tries"} left before the app clears itself on this phone.` : ok >= 3 ? "Wrong PIN. Forgot it? Ask the office to reset it." : "Wrong PIN. Try again.");
-    }));
+    }), null, fp);
   }
   screen(h("h1", { class: "big", style: "text-align:center" }, "Fibraco Field"), h("p", { style: "text-align:center;padding:0 20px" }, "Open the app with your personal link from WhatsApp. It only works for you."));
 }
