@@ -281,7 +281,7 @@ function vProjects() {
         bioSetup(); } }, "Fingerprint")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1792493027";
+const APPV = "1792497483";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -354,7 +354,7 @@ async function sendRegister(p, d, days) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792493027"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792493027"); await loadJs("./js/pdf.js?v=1792493027");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792497483"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792497483"); await loadJs("./js/pdf.js?v=1792497483");
     const { html, title } = attDoc(p, d, days); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
@@ -458,7 +458,7 @@ async function timeZone() {
   try {
     try { Store.kick(); await refreshDevices(true); } catch (e) {}
     await new Promise(r => setTimeout(r, 1800));
-    await loadJs("./js/lib/html2canvas.min.js?v=1792493027"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792493027"); await loadJs("./js/pdf.js?v=1792493027");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792497483"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792497483"); await loadJs("./js/pdf.js?v=1792497483");
     const D = tzData(), stamp = `${dmy(new Date())} ${hhmm()}`, name = `FIBRACO - Time Zone (${stamp})`;
     const pdf = await window.FibPdf.diaryPdf(tzHtml(D), name);
     const json = new File([JSON.stringify(D, null, 1)], name.replace(/[\\/:*?"<>|]+/g, "-") + ".json", { type: "application/json" });
@@ -1588,10 +1588,28 @@ function helpReminders() {
   return h("div", { class: "help-note" }, h("b", {}, "Others helped you today. Make sure the quantity is in YOUR diary:"),
     ...list.map(o => h("div", { style: "margin-top:4px" }, `${o.from} helped you with ${nice2(o.act)}${o.loc ? ", " + o.loc : ""}.`)));
 }
+// Each row remembers which task it belongs to. If the office changes the day's plan after a man started
+// typing, his numbers follow their task (or are cleared when the task is gone), never slide onto another task.
+function alignRows(sec, tasks) {
+  const tk = t => t.act + "|" + t.loc, rows = sec.rows || [];
+  const keyed = rows.some(r => r && r.k);
+  let changed = false;
+  if (keyed) {
+    const by = {}; rows.forEach(r => { if (r && r.k) by[r.k] = r; });
+    const next = tasks.map(t => by[tk(t)] || {});
+    changed = rows.some(r => r && r.k && (r.done !== undefined && r.done !== "") && !tasks.some(t => tk(t) === r.k));
+    sec.rows = next;
+  } else if (rows.length && rows.length !== tasks.length && rows.some(r => r && r.done !== undefined && r.done !== "")) {
+    sec.rows = tasks.map(() => ({})); changed = true;
+  }
+  tasks.forEach((t, i) => { (sec.rows[i] || (sec.rows[i] = {})).k = tk(t); });
+  return changed;
+}
 function vMySection() {
   const k = dayKey(), tasks = myTasks(S.user), sec = sectionOf(S.user);
   if (!sec.delays) sec.delays = [];
   const locked = sec.status === "submitted" || sec.status === "approved";
+  const planMoved = !locked && alignRows(sec, tasks);
   const hrsOpts = []; for (let x = 0.5; x <= 14; x += 0.5) hrsOpts.push(String(x));
   const lostOpts = []; for (let x = 0.5; x <= 10; x += 0.5) lostOpts.push(String(x));
   const schedBox = h("div");
@@ -1634,6 +1652,7 @@ function vMySection() {
   return [topbar("My diary section", `${S.project.short}  |  ${dmy(S.date)}`, true),
     h("p", { class: "form-sub" }, locked ? "Submitted. The site manager reviews it before the diary is signed." : "Fill in what you actually did against each task. Your section joins the project's daily diary."),
     back, repairsBlock(S.user),
+    planMoved ? h("div", { class: "err", style: "margin:0 0 10px" }, "Today's plan was changed by the office after you started. Your numbers were cleared so nothing lands on the wrong task. Type what you did again. Work that is not on your list goes under Other work.") : null,
     stdHeader({ project: S.project, date: S.date, user: S.user }, "Daily diary  |  my section"),
     sheet("", h("div", { class: "band" }, "My tasks today"), tb),
     schedBox,
@@ -1769,7 +1788,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792493027"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792493027"); await loadJs("./js/pdf.js?v=1792493027");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792497483"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792497483"); await loadJs("./js/pdf.js?v=1792497483");
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
     // Phones only open the share menu straight after a tap, so the last step is one tap on Share.
@@ -2383,7 +2402,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792493027"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792493027"); await loadJs("./js/pdf.js?v=1792493027");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792497483"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792497483"); await loadJs("./js/pdf.js?v=1792497483");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
