@@ -171,6 +171,7 @@ const Store = (() => {
     // office only
     listDevices: () => rpc("list_devices", {}),
     setDevice: (member, dev, status) => rpc("set_device", { p_member: member, p_dev: dev, p_status: status }),
+    removeDevice: (member, dev) => rpc("remove_device", { p_member: member, p_dev: dev }),
     setMember: (member, active) => rpc("set_member", { p_member: member, p_active: active }),
     get(id) { const v = mem.get(id); return v ? v.obj : undefined; },
     list(prefix) { const out = []; for (const [id, v] of mem) if (id.startsWith(prefix)) out.push([id, v.obj]); return out; },

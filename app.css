@@ -343,3 +343,5 @@ html, body { overscroll-behavior-y: none; }
 .sheet .other-card .who-btn.on{background:#0069aa;border-color:#0069aa;color:#fff}
 
 .help-note{background:#fff8e1;border:2px solid #f29900;border-radius:10px;padding:10px 12px;margin:0 0 12px;font-size:13.5px;color:#5a3b00}
+
+.dev-x{position:absolute;top:6px;right:8px;width:32px;height:32px;border-radius:50%;border:1px solid var(--line);background:#fff;color:#b3261e;font-size:22px;line-height:28px;padding:0;cursor:pointer}
