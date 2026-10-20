@@ -267,6 +267,7 @@ function vProjects() {
     installCard(),
     isAdmin(S.user) ? h("button", { class: "mbtn", style: `background:${CH.bg};color:#fff;border-color:${CH.bg};margin-bottom:12px`, onclick: () => go("dash") }, "MY DASHBOARD", h("small", { style: "color:#c9d0d8" }, "Who is in, who is behind, colour first")) : null,
     isAdmin(S.user) ? h("button", { class: "mbtn tz-btn", onclick: timeZone }, "TIME ZONE", h("small", {}, "Snapshot of everything right now, for Claude to review")) : null,
+    isAdmin(S.user) ? h("button", { class: "mbtn cl-btn", onclick: () => go("claude") }, "CLAUDE", h("small", {}, "Ask Claude anything about the app and the sites")) : null,
     ...(alertsBanner() || []),
     h("h1", { class: "big" }, "Projects"),
     h("div", { class: "stack" },
@@ -276,7 +277,7 @@ function vProjects() {
     h("div", { style: "text-align:center;margin-top:14px" }, h("button", { class: "btn-g", type: "button", style: "padding:8px 14px;font-size:13px", onclick: changePin }, "Change my PIN")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1792479831";
+const APPV = "1792484850";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -349,7 +350,7 @@ async function sendRegister(p, d, days) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792479831"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792479831"); await loadJs("./js/pdf.js?v=1792479831");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792484850"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792484850"); await loadJs("./js/pdf.js?v=1792484850");
     const { html, title } = attDoc(p, d, days); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
@@ -453,7 +454,7 @@ async function timeZone() {
   try {
     try { Store.kick(); await refreshDevices(true); } catch (e) {}
     await new Promise(r => setTimeout(r, 1800));
-    await loadJs("./js/lib/html2canvas.min.js?v=1792479831"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792479831"); await loadJs("./js/pdf.js?v=1792479831");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792484850"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792484850"); await loadJs("./js/pdf.js?v=1792484850");
     const D = tzData(), stamp = `${dmy(new Date())} ${hhmm()}`, name = `FIBRACO - Time Zone (${stamp})`;
     const pdf = await window.FibPdf.diaryPdf(tzHtml(D), name);
     const json = new File([JSON.stringify(D, null, 1)], name.replace(/[\\/:*?"<>|]+/g, "-") + ".json", { type: "application/json" });
@@ -467,6 +468,87 @@ async function timeZone() {
           showInfo("Saved", "Both files are in your Downloads."); } }, "Share")));
   } catch (e) { ov.remove(); showInfo("Could not make the snapshot", String(e && e.message || e)); }
   finally { sending = false; }
+}
+
+// ---------- CLAUDE, on Wanro's phone only ----------
+// Questions go straight from this phone to Claude with the guide (tools/brain), the setup and the live data.
+// The key is kept on this phone only, scrambled. The server never sees the questions or the answers.
+const CL = { msgs: null, key: null, busy: false, draft: "" }, CL_MODEL = "claude-sonnet-5-5";
+async function clLoad() { if (CL.msgs) return; CL.key = await Store.readLocal("claudeKey"); CL.msgs = (await Store.readLocal("claudeChat")) || []; }
+function clBrief() {
+  const strip = t => { const o = Object.assign({}, t); delete o.key; return o; };
+  return { people: PEOPLE.map(p => ({ id: p.id, name: p.name, role: p.role, phone: p.phone || "", email: p.email || "", admin: !!p.admin })), equipment: CFG.equip || [],
+    projects: CFG.projects.map(p => { const o = Object.assign({}, p); delete o.dwg;
+      if (o.checklist) o.checklist = { name: o.checklist.name, doc: o.checklist.doc, sections: (o.checklist.sections || []).map(x => x.title || x.name || "") };
+      if (o.plan) { o.plan = {}; for (const [d, ts] of Object.entries(p.plan)) o.plan[d] = ts.map(strip); }
+      return o; }) };
+}
+function clText(t) { // **bold** and line breaks only
+  return t.split(/(\*\*[^*]+\*\*)/g).map(x => /^\*\*[^*]+\*\*$/.test(x) ? h("b", {}, x.slice(2, -2)) : x);
+}
+function clCopy(text, btn) {
+  const done = () => { btn.textContent = "Copied"; setTimeout(() => { btn.textContent = "Copy"; }, 1500); };
+  const fall = () => { const t = h("textarea", { style: "position:fixed;opacity:0" }, text); document.body.append(t); t.select(); try { document.execCommand("copy"); } catch (e) {} t.remove(); done(); };
+  try { navigator.clipboard.writeText(text).then(done, fall); } catch (e) { fall(); }
+}
+async function clAsk(text) {
+  text = (text || "").trim(); if (!text || CL.busy) return;
+  if (!Store.online()) return showInfo("No signal", "Claude needs signal. Your question is still in the box, send it again when you are connected.");
+  CL.msgs.push({ role: "user", content: text, at: new Date().toISOString() }); CL.busy = true; CL.draft = ""; render(); clScroll();
+  try {
+    await Promise.race([Store.sync().catch(() => {}), new Promise(r => setTimeout(r, 6000))]);
+    const now = new Date();
+    const system = [
+      { type: "text", text: (CFG.brain || "") + "\n\n# Setup data: people, projects, the full programme, equipment\n" + JSON.stringify(clBrief()), cache_control: { type: "ephemeral" } },
+      { type: "text", text: `# Live data from Wanro's phone, read ${dmy(now)} ${hhmm(now)} (app version ${verLabel()})\n` + JSON.stringify(tzData(7)) }];
+    const messages = CL.msgs.slice(-16).map(m => ({ role: m.role, content: m.content }));
+    while (messages.length && messages[0].role !== "user") messages.shift();
+    const r = await fetch("https://api.anthropic.com/v1/messages", { method: "POST",
+      headers: { "content-type": "application/json", "x-api-key": CL.key, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
+      body: JSON.stringify({ model: CL_MODEL, max_tokens: 1500, system, messages }) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) { const m = (j.error && j.error.message) || `error ${r.status}`;
+      throw new Error(r.status === 401 ? "The key was not accepted. Tap Change key and paste it again." : /credit|balance|billing/i.test(m) ? "There is no credit left on the Claude account. Load credit at console.anthropic.com." : m); }
+    CL.msgs.push({ role: "assistant", content: (j.content || []).filter(c => c.type === "text").map(c => c.text).join("\n").trim() || "(no answer)", at: new Date().toISOString() });
+  } catch (e) {
+    const q = CL.msgs.pop(); CL.draft = q ? q.content : "";
+    showInfo("Claude did not answer", e && e.message && !/fetch|network/i.test(e.message) ? e.message : "Could not reach Claude. Check your signal and try again.");
+  }
+  CL.busy = false; Store.keepLocal("claudeChat", CL.msgs.slice(-60)); render(); clScroll();
+}
+function clScroll() { setTimeout(() => { const l = document.querySelector(".cl-msgs"); if (l) window.scrollTo(0, document.body.scrollHeight); }, 30); }
+function vClaude() {
+  if (!isAdmin(S.user)) { S.view = "projects"; return vProjects(); }
+  if (!CL.msgs) { clLoad().then(render); return [topbar("CLAUDE", "Opening...", true)]; }
+  const head = topbar("CLAUDE", "Ask anything about the app and the sites", true);
+  if (!CL.key) {
+    const inp = h("input", { type: "password", placeholder: "sk-ant-...", autocomplete: "off", style: "width:100%;font-size:16px;padding:10px;margin:8px 0" });
+    return [head, sheet("", h("div", { class: "band" }, "SET UP CLAUDE"),
+      h("div", { style: "padding:12px;line-height:1.5" },
+        h("p", {}, "Paste your Claude key once. It stays on this phone only, locked behind your PIN, and is never sent to the Fibraco server."),
+        h("p", {}, "Get it at console.anthropic.com, API Keys, Create Key. Load some credit there first."),
+        inp,
+        h("button", { class: "btn-w", type: "button", style: "padding:12px 22px", onclick: async () => {
+          const k = inp.value.trim(); if (!/^sk-ant-/.test(k)) return showInfo("Not a Claude key", "A Claude key starts with sk-ant-. Copy it again from console.anthropic.com.");
+          CL.key = k; await Store.keepLocal("claudeKey", k); render(); } }, "Save key")))];
+  }
+  const ask = h("textarea", { class: "cl-in", rows: 2, placeholder: "Ask Claude...", oninput: e => { CL.draft = e.target.value; } }, CL.draft);
+  const send = () => clAsk(ask.value);
+  const tips = ["How is Belle River going today?", "Who has not signed the register yet?", "Who is behind on his tasks today?", "What must Francois still approve?"];
+  const msgs = CL.msgs.map(m => {
+    const b = h("div", { class: "cl-msg " + (m.role === "user" ? "cl-me" : "cl-ai") }, h("div", { class: "cl-txt" }, ...clText(m.content)));
+    if (m.role === "assistant") { const c = h("button", { class: "cl-copy", type: "button" }, "Copy"); c.onclick = () => clCopy(m.content, c); b.append(c); }
+    return b; });
+  return [head,
+    h("div", { class: "cl-msgs" },
+      msgs.length ? null : h("div", { class: "cl-empty" }, h("p", {}, "Ask about anything in the app: who did what, who is behind, the programme, phones, how a screen works, or a WhatsApp message to one of the men."),
+        ...tips.map(t => h("button", { class: "cl-tip", type: "button", onclick: () => clAsk(t) }, t))),
+      ...msgs,
+      CL.busy ? h("div", { class: "cl-msg cl-ai cl-wait" }, "Claude is reading the app...") : null),
+    h("div", { class: "cl-bar" }, ask, h("button", { class: "btn-w cl-send", type: "button", disabled: CL.busy, onclick: send }, "Send")),
+    h("div", { class: "cl-tools" },
+      h("button", { class: "btn-g", type: "button", onclick: () => askYesNo("Clear the chat?", "The questions and answers on this screen are removed from this phone.", "Clear", async () => { CL.msgs = []; await Store.keepLocal("claudeChat", []); render(); }, true) }, "Clear chat"),
+      h("button", { class: "btn-g", type: "button", onclick: () => askYesNo("Change the Claude key?", "You will paste a new key.", "Change", async () => { CL.key = null; await Store.keepLocal("claudeKey", null); render(); }) }, "Change key"))];
 }
 function vMenu() {
   const d = S.date;
@@ -1683,7 +1765,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792479831"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792479831"); await loadJs("./js/pdf.js?v=1792479831");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792484850"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792484850"); await loadJs("./js/pdf.js?v=1792484850");
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
     // Phones only open the share menu straight after a tap, so the last step is one tap on Share.
@@ -1821,7 +1903,7 @@ function openEmergency() {
 // ---------- render ----------
 let render = function () {
   const v = S.view;
-  const views = { users: vUsers, projects: vProjects, calendar: vCalendar, menu: vMenu, inspections: vInspections, client: vClient, tests: vTests, link: vLink, logtest: vLogTest, biocheck: vBioCheck, allocate: vAllocate, mysection: vMySection, review: vReview, kpi: vKpi, rams: vRams, ramsdoc: vRamsDoc, drawings: vDrawings, drawing: vDrawing, diary: vDiary, dsti: vDsti, inspection: vInspection, check: vCheck, toolbox: vToolbox, incident: vIncident, si: vSI, order: vOrder, done: vDone, feedback: vFeedback, devices: vDevices, dash: vDash, qc: vQc, qcspot: vQcSpot, tsheets: vTsheets, tsheet: vTsheet, treport: vTreport, attendance: vAttendance };
+  const views = { users: vUsers, projects: vProjects, calendar: vCalendar, menu: vMenu, inspections: vInspections, client: vClient, tests: vTests, link: vLink, logtest: vLogTest, biocheck: vBioCheck, allocate: vAllocate, mysection: vMySection, review: vReview, kpi: vKpi, rams: vRams, ramsdoc: vRamsDoc, drawings: vDrawings, drawing: vDrawing, diary: vDiary, dsti: vDsti, inspection: vInspection, check: vCheck, toolbox: vToolbox, incident: vIncident, si: vSI, order: vOrder, done: vDone, feedback: vFeedback, devices: vDevices, dash: vDash, qc: vQc, qcspot: vQcSpot, tsheets: vTsheets, tsheet: vTsheet, treport: vTreport, attendance: vAttendance, claude: vClaude };
   app.replaceChildren(...[].concat((views[v] || vProjects)()).filter(Boolean));
 }
 
@@ -2297,7 +2379,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792479831"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792479831"); await loadJs("./js/pdf.js?v=1792479831");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792484850"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792484850"); await loadJs("./js/pdf.js?v=1792484850");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
@@ -2664,7 +2746,7 @@ document.addEventListener("visibilitychange", () => {
   else { if (hiddenAt && Date.now() - hiddenAt > 10 * 60e3 && CFG) location.reload(); else Store.kick(); }
 });
 const _render = render;
-render = function () { _render(); app.append(feedbackButton()); };
+render = function () { _render(); if (S.view !== "claude") app.append(feedbackButton()); };
 const splash = document.getElementById("splash");
 const leave = () => { splash.hidden = true; };
 splash.addEventListener("click", leave);
