@@ -364,3 +364,22 @@ html, body { overscroll-behavior-y: none; }
 
 .bio-btn{display:flex;flex-direction:column;align-items:center;gap:4px;margin:18px auto 0;background:none;border:0;color:#0069aa;font-size:15px;font-weight:600;cursor:pointer}
 .bio-btn svg{width:56px;height:56px;padding:10px;border:2px solid #0069aa;border-radius:50%;background:#fff}
+
+.idel-btn{display:flex !important;align-items:center;justify-content:space-between;gap:10px;background:#2b2f36 !important;color:#fff !important;border-color:#2b2f36 !important;text-align:left}
+.idel-btn small{color:#c9d0d8}
+.idel-btn-t{display:flex;flex-direction:column;letter-spacing:.06em;font-weight:800}
+.idel-chip{min-width:44px;height:44px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:20px}
+.idel-key{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 10px}
+.idel-key span{font-size:11px;font-weight:800;letter-spacing:.06em;padding:3px 8px;border-radius:4px}
+.idel-list{display:flex;flex-direction:column;gap:8px}
+.idel-row{display:flex;align-items:stretch;width:100%;padding:0;border:0;border-radius:8px;overflow:hidden;background:#2b2f36;color:#fff;text-align:left;cursor:pointer}
+.idel-row.sorted{opacity:.6}
+.idel-txt{flex:1;min-width:0;padding:10px 12px}
+.idel-top{font-size:11px;letter-spacing:.08em;color:#aeb6c1;font-weight:700}
+.idel-what{font-size:15px;font-weight:700;margin:3px 0;overflow-wrap:anywhere}
+.idel-who{font-size:12px;color:#c9d0d8}
+.idel-blk{width:86px;flex:none;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;letter-spacing:.06em;writing-mode:horizontal-tb;text-align:center}
+.idel-lv{font-weight:900;letter-spacing:.08em;text-align:center;padding:8px;border-radius:6px;margin:6px 0 10px}
+.idel-h{font-size:15px;margin:18px 0 8px;color:var(--muted)}
+.kvt{width:100%;border-collapse:collapse;margin-bottom:10px}
+.kvt td{padding:6px 4px;border-bottom:1px solid #e6e9ed;font-size:14px;vertical-align:top}

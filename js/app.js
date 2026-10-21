@@ -272,7 +272,9 @@ function vProjects() {
     h("h1", { class: "big" }, "Projects"),
     h("div", { class: "stack" },
       h("button", { class: "mbtn red-text", onclick: () => { S.project = null; startForm("inspection"); } }, "Site inspection", h("small", {}, "For new work and client site visits")),
-      PROJECTS.map(p => h("button", { class: "mbtn", onclick: () => { S.project = p; S.month = today(); go("calendar"); } }, p.name, h("small", {}, roleLabel(roleIn(S.user, p)))))),
+      PROJECTS.map(p => h("button", { class: "mbtn", onclick: () => { S.project = p; S.month = today(); go("calendar"); } }, p.name, h("small", {}, roleLabel(roleIn(S.user, p))))),
+      PROJECTS.length ? delaysButton() : null,
+      PROJECTS.length ? h("button", { class: "mbtn", onclick: frontOrder }, "MATERIAL ORDER", h("small", {}, "Order material, tools or PPE. It goes to Wanro as a PDF")) : null),
     h("p", { class: "note" }, "Only your active projects show here. When a project closes, the office removes it."),
     h("div", { style: "text-align:center;margin-top:14px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap" }, h("button", { class: "btn-g", type: "button", style: "padding:8px 14px;font-size:13px", onclick: changePin }, "Change my PIN"),
       h("button", { class: "btn-g bio-set", type: "button", style: "padding:8px 14px;font-size:13px", onclick: async () => {
@@ -281,7 +283,7 @@ function vProjects() {
         bioSetup(); } }, "Fingerprint")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1792497483";
+const APPV = "1792602041";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -354,7 +356,7 @@ async function sendRegister(p, d, days) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792497483"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792497483"); await loadJs("./js/pdf.js?v=1792497483");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792602041"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792602041"); await loadJs("./js/pdf.js?v=1792602041");
     const { html, title } = attDoc(p, d, days); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
@@ -458,7 +460,7 @@ async function timeZone() {
   try {
     try { Store.kick(); await refreshDevices(true); } catch (e) {}
     await new Promise(r => setTimeout(r, 1800));
-    await loadJs("./js/lib/html2canvas.min.js?v=1792497483"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792497483"); await loadJs("./js/pdf.js?v=1792497483");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792602041"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792602041"); await loadJs("./js/pdf.js?v=1792602041");
     const D = tzData(), stamp = `${dmy(new Date())} ${hhmm()}`, name = `FIBRACO - Time Zone (${stamp})`;
     const pdf = await window.FibPdf.diaryPdf(tzHtml(D), name);
     const json = new File([JSON.stringify(D, null, 1)], name.replace(/[\\/:*?"<>|]+/g, "-") + ".json", { type: "application/json" });
@@ -667,7 +669,10 @@ function vDiary() {
       h("tr", {}, h("th", {}, "Written ", h("small", {}, "(name, designation, time and details)"))), h("tr", {}, h("td", {}, txt(f.written, v => f.written = v, "None today"))),
       h("tr", {}, h("th", {}, "Verbal ", h("small", {}, "(name, designation, time and details)"))), h("tr", {}, h("td", {}, txt(f.verbal, v => f.verbal = v, "None today")))))),
     rowsTable("", ["No", "Material delivered to site"], f.mats, (r, i) => h("tr", {}, h("td", { class: "no" }, i + 1), h("td", {}, inp("text", r.m, v => r.m = v, "Material, qty and delivery note"))), "+ Add material", () => ({})),
-    rowsTable("", ["No", "Delays (weather, strikes, access etc.)", "Time lost"], f.delays, (r, i) => h("tr", {}, h("td", { class: "no" }, i + 1), h("td", {}, inp("text", r.c, v => r.c = v, "Cause")), h("td", { style: "width:96px" }, inp("text", r.t, v => r.t = v, "Hrs"))), "+ Add delay", () => ({})),
+    rowsTable("", ["No", "Delays (weather, strikes, access etc.)", "Time lost"], f.delays, (r, i) => h("tr", {}, h("td", { class: "no" }, i + 1), h("td", {}, inp("text", r.c, v => r.c = v, "Cause"),
+      f.combined ? h("div", { style: "margin-top:4px" }, h("div", { class: "hint", style: "margin:2px 0" }, "Client sees it on the diary, or Internal (Fibraco only)?"),
+        seg([["Client", "Client"], ["Internal", "Internal"]], (r.int !== undefined ? r.int : isInternal(r.c)) ? "Internal" : "Client", v => { r.int = v === "Internal"; })) : null),
+      h("td", { style: "width:96px" }, inp("text", r.t, v => r.t = v, "Hrs"))), "+ Add delay", () => ({})),
     sheet("", h("div", { class: "band" }, "Photo diary"), photoBlock(f.photos)),
     f.combined ? h("p", { class: "hint" }, "No signature here. You sign once, in step 3 on the review page. The client signs on his own link the next morning.") : sheet("", h("div", { class: "band" }, "Representative"), h("table", {}, h("thead", {}, h("tr", {}, h("th", {}, ""), h("th", {}, "Fibraco rep"), h("th", {}, "Client rep"))), h("tbody", {},
       h("tr", {}, h("td", { class: "lab", style: "width:24%" }, "Name"), h("td", { class: "ro" }, f.user), h("td", {}, inp("text", f.clientRep, v => f.clientRep = v, "Client name"))),
@@ -758,6 +763,9 @@ function vDone() {
     h("p", { class: "note", style: "margin-top:0" }, Store.online() ? "Saved and sent to the office." : "Saved on this phone. It sends by itself as soon as the phone has signal."),
     h("div", { class: "files" }, h("b", {}, "Where it is kept"), h("div", { style: "font-size:13px;margin-top:4px" }, `Safely in the app, under ${short} on ${dmy(f.date)}. The office sees it straight away.`)),
     f.type === "diary" && f.project && S.final[f.project.id + "|" + ymd(f.date)] ? h("button", { class: "submit", type: "button", style: "margin-top:12px", onclick: () => sendDiary(f.project.id + "|" + ymd(f.date), f.project, f.date) }, "Send diary") : null,
+    f.type === "order" ? h("div", { class: "err", style: "margin-top:12px;background:#fff4e0;border-color:#f29900;color:#8a4b00" }, "Not done yet. Send the order to Wanro now, or it is not ordered.") : null,
+    f.type === "order" ? h("button", { class: "submit", type: "button", style: "margin-top:8px", onclick: () => sendOrder(f) }, "Send order to Wanro") : null,
+    f.type === "order" ? h("p", { class: "note", style: "margin-top:6px" }, `Makes the PDF (${orderNo(f)}) and opens email and WhatsApp. Send it to wanro@fibraco.co.za.`) : null,
     f.type === "diary" && f.project && S.final[f.project.id + "|" + ymd(f.date)] ? h("p", { class: "note", style: "margin-top:6px" }, "Makes the PDF and opens WhatsApp, email and the rest. Send it the way the client agreed.") : null,
     h("div", { class: "stack" },
       f.type === "diary" && f.project && S.final[f.project.id + "|" + ymd(f.date)] ? h("button", { class: "mbtn", onclick: () => { S.hist = ["projects", "calendar", "menu"]; S.view = "review"; render(); window.scrollTo(0, 0); } }, "Back to diary review", h("small", {}, "Client sign-off and KPIs")) : null,
@@ -914,11 +922,54 @@ function vSI() {
     submitBtn(() => { const e = []; if (!f.by.trim()) e.push("Who gave the instruction?"); if (!f.text.trim()) e.push("Write the instruction."); if (!f.sigF) e.push("Fibraco must sign."); return e; })];
 }
 
+function orderNo(f) {
+  if (!f.no) { const d = new Date(), ini = String(f.user || S.user || "").split(" ").map(x => x[0] || "").join("").toUpperCase();
+    f.no = `OR-${String(d.getDate()).padStart(2, "0")}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getFullYear()).slice(2)}-${ini}${String(d.getHours()).padStart(2, "0")}${String(d.getMinutes()).padStart(2, "0")}`; }
+  return f.no;
+}
+// The order goes to Wanro as a PDF the man shares from his phone (email or WhatsApp).
+function orderDoc(f) {
+  const esc = x => String(x == null ? "" : x).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+  const row = (a, b) => `<tr><th>${esc(a)}</th><td>${esc(b) || "-"}</td></tr>`, p = f.project || {};
+  const items = (f.items || []).filter(r => r.d && r.q);
+  const html = `
+  <div class="pd-head"><img src="${LOGO}" alt="Fibraco"><div><h1>MATERIAL ORDER REQUEST</h1><div>${esc(p.name || "No project")}</div><div>${esc(orderNo(f))}</div></div></div>
+  <table class="kv">${row("Order request no", orderNo(f))}${row("Project", p.name)}${row("Requested by", f.user)}${row("Date", nice(f.date))}${row("Needed on site by", f.need ? nice(new Date(f.need + "T12:00:00")) : "")}${row("Reason", f.reason)}</table>
+  <h2>Items</h2><table class="g"><thead><tr><th>No</th><th>Description</th><th>Spec or part no</th><th>Unit</th><th>Qty</th></tr></thead><tbody>${items.map((r, i) => `<tr><td>${i + 1}</td><td>${esc(r.d)}</td><td>${esc(r.s) || "-"}</td><td>${esc(r.u) || "-"}</td><td>${esc(r.q)}</td></tr>`).join("")}</tbody></table>
+  <h2>Notes for the office</h2><p>${esc(f.notes) || "None"}</p>
+  <div class="sigs"><div><h3>Requested by</h3><div class="sigline">${f.sig ? `<img src="${f.sig}" alt="Signature">` : ""}</div><div>${esc(f.user)}</div></div>
+    <div><h3>Approved by (office)</h3><div class="sigline"></div><div>Name: ______________________</div><div>Date: ______________________</div></div></div>
+  <p class="foot">Fibraco (Pty) Ltd. Material order from Fibraco Field, made ${esc(new Date().toLocaleString("en-ZA"))}. Nothing is ordered from a supplier until the project manager approves it.</p>`;
+  return { html, title: `FIBRACO - Material Order ${orderNo(f)} - ${p.short || "No project"}` };
+}
+async function sendOrder(f) {
+  if (sending) return; sending = true;
+  const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
+  document.body.append(ov);
+  try {
+    await loadJs("./js/lib/html2canvas.min.js?v=1792602041"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792602041"); await loadJs("./js/pdf.js?v=1792602041");
+    const { html, title } = orderDoc(f);
+    const file = await window.FibPdf.diaryPdf(html, title);
+    const m = ov.querySelector(".modal"); m.innerHTML = "";
+    m.append(h("h2", {}, "Order PDF ready"), h("p", {}, "Tap Share, then choose Gmail or Outlook and send it to wanro@fibraco.co.za, or WhatsApp it to Wanro."),
+      h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
+        h("button", { class: "btn-w", type: "button", onclick: async () => { ov.remove(); const r = await window.FibPdf.shareFile(file, `Fibraco material order ${orderNo(f)}, ${(f.project || {}).short || ""}. To: wanro@fibraco.co.za`); if (r === "downloaded") showInfo("PDF saved", `${file.name} is in your downloads. Email it to wanro@fibraco.co.za.`); else if (r === "shared") { f.sent = new Date().toISOString(); try { saveForm(f); } catch (e) {} } } }, "Share")));
+  } catch (e) { ov.remove(); showInfo("Could not make the PDF", "This phone could not make the PDF. The order is still saved in the app. Phone Wanro with the order number " + orderNo(f) + "."); }
+  finally { sending = false; }
+}
+function frontOrder() {
+  const start = p => { S.project = p; S.date = today(); S.hist = []; startForm("order"); };
+  if (PROJECTS.length === 1) return start(PROJECTS[0]);
+  const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Which project" }, h("div", { class: "modal" }, h("h2", {}, "Order for which project?"),
+    ...PROJECTS.map(p => h("button", { class: "mbtn", type: "button", onclick: () => { ov.remove(); start(p); } }, p.name)),
+    h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Cancel"))));
+  document.body.append(ov);
+}
 function vOrder() {
-  const f = S.form;
+  const f = S.form; orderNo(f);
   return [...formHead("Material order", "Order material, consumables, PPE or tools from the office. Nothing is ordered from a supplier until the project manager approves it."),
     stdHeader(f, "Material and equipment order request", [
-      h("tr", {}, h("td", { class: "lab" }, "Order request no", h("span", { class: "auto" }, "auto")), h("td", { class: "ro" }, "OR-001")),
+      h("tr", {}, h("td", { class: "lab" }, "Order request no", h("span", { class: "auto" }, "auto")), h("td", { class: "ro" }, orderNo(f))),
       h("tr", {}, h("td", { class: "lab" }, "Needed on site by"), h("td", {}, inp("date", f.need, v => f.need = v, "Date"))),
       h("tr", {}, h("td", { class: "lab" }, "Reason"), h("td", {}, sel(["Project material", "Consumables", "Replacement or repair", "PPE", "Tools"], f.reason, v => f.reason = v, "Choose")))]),
     rowsTable("wide", ["No", "Description", "Spec or part no", "Unit", "Qty"], f.items, (r, i) => h("tr", {}, h("td", { class: "no" }, i + 1), h("td", { style: "min-width:200px" }, inp("text", r.d, v => r.d = v, "What is needed")), h("td", { style: "min-width:140px" }, inp("text", r.s, v => r.s = v, "If known")), h("td", { style: "width:90px" }, sel(["m", "ea", "roll", "box", "set", "pack"], r.u, v => r.u = v, "Unit")), h("td", { style: "width:80px" }, inp("number", r.q, v => r.q = v, "0"))), "+ Add item", () => ({})),
@@ -1032,8 +1083,22 @@ const CREW_OF = () => Object.keys(S.project.team || {}).filter(n => ["worker", "
 const smName = (p = S.project) => Object.keys(p.team || {}).find(n => p.team[n] === "sm") || "the site manager";
 const dayKey = () => S.project.id + "|" + ymd(S.date);
 S.alloc = {}; S.sections = {}; S.final = {}; S.client = {};
-const DELAY_CAUSES = ["Client: no access or permit", "Client: instruction or change", "Client: drawings or info late", "Client: free-issue material late", "Other contractor in the way", "Weather", "Safety stop", "Material late (Fibraco)", "Plant or tool breakdown", "Rework"];
-const INTERNAL = ["Material late (Fibraco)", "Plant or tool breakdown", "Rework"];
+// Client causes go on the diary the client signs. Every cause marked (Fibraco) is internal: it never reaches the
+// client, and it goes on the Internal delays board that the whole Fibraco team on that project sees.
+const CLIENT_CAUSES = ["Client: no access or permit", "Client: instruction or change", "Client: drawings or info late", "Client: free-issue material late", "Other contractor in the way", "Weather", "Safety stop"];
+const FIB_CAUSES = ["Material not on site (Fibraco)", "Tool or test equipment missing or broken (Fibraco)", "Vehicle or transport (Fibraco)", "Man late or absent (Fibraco)", "Waiting on a Fibraco colleague (Fibraco)", "Rework (Fibraco)", "Fibraco instruction unclear (Fibraco)"];
+const OTHER_FIB = "Other (Fibraco), type the reason";
+const DELAY_CAUSES = CLIENT_CAUSES.concat(FIB_CAUSES);
+const INTERNAL = ["Material late (Fibraco)", "Plant or tool breakdown", "Rework"]; // names used before 21 Oct
+const isInternal = c => !!c && (/\(Fibraco\)/.test(c) || INTERNAL.some(x => String(c).startsWith(x)));
+function delayCauses(p) {
+  const custom = p ? Store.list(`dcause|${p.id}|`).map(([, o]) => o && o.text).filter(c => c && !FIB_CAUSES.includes(c)) : [];
+  return CLIENT_CAUSES.concat(FIB_CAUSES, [...new Set(custom)].sort(), [OTHER_FIB]);
+}
+// who must react, by cause: the site manager unless the man must name a colleague
+const REACT_PICK = ["Waiting on a Fibraco colleague (Fibraco)", "Rework (Fibraco)"];
+function reactDefault(cause, p) { return REACT_PICK.includes(cause) || cause === OTHER_FIB ? "" : smName(p) || "Office (Wanro)"; }
+function reactPeople(p) { return Object.keys(p.team || {}).filter(n => p.team[n] !== "observer").concat(["Office (Wanro)"]); }
 const delayText = sec => (sec.delays || []).filter(d => d.cause).map(d => `${d.cause}, ${d.hrs || 0} hrs${d.what ? " (" + d.what + ")" : ""}`).join("  |  ");
 function workDaysBefore(d, n) { const out = []; const x = new Date(d); while (out.length < n) { x.setDate(x.getDate() - 1); if (x.getDay() !== 0 && x.getDay() !== 6) out.unshift(new Date(x)); } return out; }
 function projActs() { const a = S.project.area; return (a ? ACT[a] : ACT["SOLAR MV"]).map(x => ({ unit: x[0], act: x[1], area: a || "SOLAR MV" })); }
@@ -1659,7 +1724,14 @@ function vMySection() {
     otherBox(sec, locked),
     delayHint,
     rowsTable("", ["Delays (why you are behind)", "Hrs lost"], sec.delays, r => h("tr", {},
-      h("td", {}, locked ? ro(r.cause + (r.what ? `. ${r.what}` : "")) : h("div", {}, sel(DELAY_CAUSES, r.cause, v => { r.cause = v; delayHint.hidden = true; }, "Choose the cause"), inp("text", r.what, v => r.what = v, "Short detail, e.g. which WTG, who said what"))),
+      h("td", {}, locked ? ro(r.cause + (r.what ? `. ${r.what}` : "") + (isInternal(r.cause) && r.react ? `. Must react: ${r.react}` : "")) : (() => {
+        const other = inp("text", r.other, v => r.other = v, "Type the reason (it is added to the list)");
+        const otherBox = h("div", { hidden: r.cause !== OTHER_FIB, style: "margin-top:4px" }, other);
+        const reactSel = sel(reactPeople(S.project), r.react, v => r.react = v, "Who must react?");
+        const reactBox = h("div", { hidden: !(isInternal(r.cause) || r.cause === OTHER_FIB), style: "margin-top:4px" }, h("div", { class: "hint", style: "margin:2px 0" }, "Internal delay. Only Fibraco sees it, on the Internal delays board."), reactSel);
+        return h("div", {}, sel(delayCauses(S.project), r.cause, v => { r.cause = v; delayHint.hidden = true; const int = isInternal(v) || v === OTHER_FIB; otherBox.hidden = v !== OTHER_FIB; reactBox.hidden = !int;
+            if (int && !r.react) { r.react = reactDefault(v, S.project); reactSel.value = r.react; } }, "Choose the cause"),
+          otherBox, inp("text", r.what, v => r.what = v, "Short detail, e.g. which WTG, who said what"), reactBox); })()),
       h("td", { style: "width:86px" }, locked ? ro(r.hrs, 1) : sel(lostOpts, r.hrs, v => r.hrs = v, "Hrs"))), locked ? null : "+ Add delay", () => ({})),
     locked ? null : h("p", { class: "hint" }, "Client delays you log here go on the diary the client signs the next morning. That signature is our proof if time or standing time must be claimed."),
     sheet("", h("table", {}, h("tbody", {},
@@ -1671,8 +1743,10 @@ function vMySection() {
         h("button", { class: "mbtn", type: "button", onclick: () => askYesNo("Change my section?", `You can change your section until ${editUntil()} today. Then sign and submit it again.${sec.status === "approved" ? " The site manager approves it again after." : ""}`, "Change it", () => { sec.status = "draft"; sec.sig = ""; delete sec.at; persist(); render(); window.scrollTo(0, 0); }) }, "Change my section", h("small", {}, `Open until ${editUntil()} today, then it locks`))) : null) :
       submitBtn(() => { const e = []; if (tasks.some((t, i) => (sec.rows[i] || {}).done === undefined || (sec.rows[i] || {}).done === "")) e.push("Fill in what you did for every task, even if it is 0."); if (tasks.some((t, i) => /SPLICE|DOME JOINT/.test(t.act) && +((sec.rows[i] || {}).done || 0) > 0 && !(sec.rows[i] || {}).eq)) e.push("Choose the splice machine you used."); if (behind() && !sec.delays.some(d => d.cause && d.hrs)) e.push("You are behind the target. Add the delay cause and the hours lost."); if ((sec.other || []).some(o => (o.act || o.loc || o.what) && (!o.act || !o.loc))) e.push("Other work: choose what you did and write where. Remove a line you do not need."); tasks.forEach((t, i) => { const r = sec.rows[i] || {}; if (r.done !== undefined && r.done !== "" && +r.done === 0 && !(r.note || "").trim()) e.push(`${nice2(t.act)} is 0. Write in its note why it was not done.`); });
         if (sec.delays.some(d => d.cause && !(+d.hrs > 0))) e.push("Every delay needs its hours lost.");
+        if (sec.delays.some(d => d.cause === OTHER_FIB && !(d.other || "").trim())) e.push("Delay Other: type the reason.");
+        if (sec.delays.some(d => (isInternal(d.cause) || d.cause === OTHER_FIB) && !d.react)) e.push("Internal delay: choose who must react.");
         if (!sec.hrs) e.push("Choose your hours worked."); if (!sec.sig) e.push("Sign your section."); return e; },
-        { label: "Submit my section", onDone: () => { putProg(S.project.id, ymd(S.date), S.user, tasks, sec.rows, sec.other); sec.status = "submitted"; sec.at = new Date().toLocaleTimeString("en-ZA", { hour: "2-digit", minute: "2-digit" }).replace(":", "h"); showInfo("Submitted", "Your section is with the site manager for review."); goBack(); } })];
+        { label: "Submit my section", onDone: () => { putProg(S.project.id, ymd(S.date), S.user, tasks, sec.rows, sec.other); postDelays(S.project, S.date, S.user, tasks, sec); sec.status = "submitted"; sec.at = new Date().toLocaleTimeString("en-ZA", { hour: "2-digit", minute: "2-digit" }).replace(":", "h"); showInfo("Submitted", "Your section is with the site manager for review."); goBack(); } })];
 }
 
 function vReview() {
@@ -1745,7 +1819,7 @@ function diaryDoc(k, project, date) {
   const team = (site.team && site.team.some(r => r.name) ? site.team : people.map(p => ({ name: p, hrs: (secs[p] || {}).hrs })) ).filter(r => r.name);
   const acts = (site.acts && site.acts.some(r => r.act) ? site.acts : alloc.map((t, i) => { const idx = alloc.filter((a, j) => a.who === t.who && j < i).length; const r = ((secs[t.who] || {}).rows || [])[idx] || {}; return { area: project.area, act: t.act, unit: t.unit, loc: t.loc + (r.note ? ". " + r.note : ""), qty: r.done }; }).concat(people.flatMap(p => otherList(secs[p]).map(o => ({ area: project.area, act: o.act, unit: o.unit, loc: `${o.loc}${o.what ? ". " + o.what : ""}, not planned`, qty: o.qty }))))).filter(r => r.act);
   // client copy: Fibraco-side delays stay internal
-  const delays = (site.delays || []).filter(d => d.c && !INTERNAL.some(x => d.c.startsWith(x)));
+  const delays = (site.delays || []).filter(d => d.c && !(d.int !== undefined ? d.int : isInternal(d.c)));
   const noName = x => String(x || "").replace(/\s*\([A-Z][a-z]+\)\s*$/, ""); // the client copy shows no names against work
   const nz = o => Object.entries(o || {}).filter(([, v]) => +v > 0);
   const tbl = (head, rows) => rows.length ? `<table class="g"><thead><tr>${head.map(x => `<th>${esc(x)}</th>`).join("")}</tr></thead><tbody>${rows.map(r => `<tr>${r.map(c => `<td>${esc(c)}</td>`).join("")}</tr>`).join("")}</tbody></table>` : `<p class="none">None</p>`;
@@ -1788,7 +1862,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792497483"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792497483"); await loadJs("./js/pdf.js?v=1792497483");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792602041"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792602041"); await loadJs("./js/pdf.js?v=1792602041");
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
     // Phones only open the share menu straight after a tap, so the last step is one tap on Share.
@@ -1816,7 +1890,7 @@ function openCombined() {
   const people = [...new Set(alloc.map(a => a.who))];
   f.team = people.map(p => ({ name: p, hrs: (secs[p] || {}).hrs || "" }));
   f.acts = alloc.map((t, i) => { const idx = alloc.filter((a, j) => a.who === t.who && j < i).length; const r = ((secs[t.who] || {}).rows || [])[idx] || {}; return { area: S.project.area || "", act: t.act, unit: t.unit, loc: `${t.loc}${r.note ? ". " + r.note : ""} (${t.who.split(" ")[0]})`, qty: r.done || "" }; }).concat(people.flatMap(p => otherList(secs[p]).map(o => ({ area: S.project.area || "", act: o.act, unit: o.unit, loc: `${o.loc}${o.what ? ". " + o.what : ""}, not planned (${p.split(" ")[0]})`, qty: o.qty }))));
-  f.delays = alloc.map(t => t.who).filter((p, i, a) => a.indexOf(p) === i).flatMap(p => ((secs[p] || {}).delays || []).filter(d => d.cause).map(d => ({ c: `${d.cause}${d.what ? ". " + d.what : ""} (${p.split(" ")[0]})`, t: d.hrs }))); if (!f.delays.length) f.delays = [{}];
+  f.delays = alloc.map(t => t.who).filter((p, i, a) => a.indexOf(p) === i).flatMap(p => ((secs[p] || {}).delays || []).filter(d => d.cause).map(d => ({ c: `${d.cause}${d.what ? ". " + d.what : ""} (${p.split(" ")[0]})`, t: d.hrs, int: isInternal(d.cause) }))); if (!f.delays.length) f.delays = [{}];
   const pt = projectTotals(); if (pt) { f.sched = pt.done === pt.plan ? "On" : pt.done > pt.plan ? "Ahead" : "Behind"; f.schedWhy = `Project ${pt.done}% done against ${pt.plan}% planned for today.` + (f.sched === "Behind" ? " See delays below." : ""); }
   f.combined = true;
   render();
@@ -1852,7 +1926,7 @@ function vClient() {
   const people = [...new Set(alloc.map(a => a.who))];
   const work = alloc.map((t, i) => { const idx = alloc.filter((a, j) => a.who === t.who && j < i).length; const r = ((secs[t.who] || {}).rows || [])[idx] || {}; return { act: t.act, loc: t.loc.replace(/\s*\(.*\)$/, ""), unit: t.unit, qty: +r.done || 0 }; });
   const merged = []; work.forEach(w => { const m = merged.find(x => x.act === w.act && x.loc === w.loc); if (m) m.qty = Math.max(m.qty, w.qty); else merged.push({ ...w }); });
-  const delays = people.flatMap(p => ((secs[p] || {}).delays || []).filter(d => d.cause && !INTERNAL.includes(d.cause)));
+  const delays = people.flatMap(p => ((secs[p] || {}).delays || []).filter(d => d.cause && !isInternal(d.cause)));
   const st = { name: "", sig: "", comment: "", ok: "" };
   return [topbar("Client sign-off", `${S.project.short}  |  ${dmy(S.date)}`, true),
     h("p", { class: "form-sub" }, `This is what ${S.project.client}'s site manager sees when he opens his link the next morning. No app, no login, it opens in his phone's browser. He never sees targets, KPIs, names against output or any money.`),
@@ -1923,10 +1997,87 @@ function openEmergency() {
   }
 }
 
+// ---------- internal delays board (Fibraco only, per project) ----------
+// When a man submits his section, each internal delay becomes a row on the board that every Fibraco man on the
+// project sees. It stays open until the person who must react taps Sorted.
+function postDelays(p, date, who, tasks, sec) {
+  const d = ymd(date), pre = `idel|${p.id}|${d}|${who}|`;
+  const crit = tasks.some((t, i) => t.crit && +(((sec.rows || [])[i] || {}).done || 0) < +t.target);
+  const keep = new Set();
+  (sec.delays || []).forEach((x, i) => {
+    if (x.cause === OTHER_FIB && (x.other || "").trim()) {
+      const text = `${x.other.trim().replace(/\s*\(Fibraco\)\s*$/i, "")} (Fibraco)`; x.cause = text; delete x.other;
+      Store.put(`dcause|${p.id}|${text.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 60)}`, { text, by: who, at: new Date().toISOString() });
+    }
+    if (!isInternal(x.cause)) return;
+    const id = pre + i, old = Store.get(id) || {}; keep.add(id);
+    Store.put(id, Object.assign({}, old, { pid: p.id, date: d, by: who, cause: x.cause, what: x.what || "", hrs: +x.hrs || 0, react: x.react || smName(p) || "", crit,
+      status: old.status && old.status !== "withdrawn" ? old.status : "open", at: old.at || new Date().toISOString() }));
+  });
+  Store.list(pre).forEach(([id, o]) => { if (!keep.has(id) && o.status !== "withdrawn") Store.put(id, Object.assign({}, o, { status: "withdrawn" })); });
+}
+const DLV = [["#f5d000", "#15191e", "YELLOW"], ["#c9a227", "#15191e", "MUSTARD"], ["#f07c00", "#fff", "ORANGE"], ["#d0021b", "#fff", "RED"]];
+function delayDays(o) { const end = o.status === "sorted" && o.sortedAt ? new Date(o.sortedAt) : new Date(); return Math.max(0, Math.floor((end - new Date(o.date + "T12:00:00")) / 864e5)); }
+function delayLevel(o) {
+  const hrs = +o.hrs || 0; let s = hrs < 1 ? 0 : hrs <= 4 ? 1 : 2;
+  if (o.crit) s += 1;
+  const days = delayDays(o); if (days >= 1) s += Math.min(2, days);
+  return Math.min(3, s);
+}
+function myDelays() {
+  const ids = new Set(PROJECTS.map(p => p.id));
+  return Store.list("idel|").map(([id, o]) => Object.assign({ id }, o)).filter(o => o && ids.has(o.pid) && o.status !== "withdrawn");
+}
+function delaysButton() {
+  const open = myDelays().filter(o => o.status !== "sorted"), top = open.reduce((m, o) => Math.max(m, delayLevel(o)), -1);
+  return h("button", { class: "mbtn idel-btn", onclick: () => go("delays") },
+    h("span", { class: "idel-btn-t" }, "INTERNAL DELAYS", h("small", {}, open.length ? `${open.length} open on your project${PROJECTS.length > 1 ? "s" : ""}. Fibraco only` : "None open. Fibraco only, the client never sees this")),
+    h("span", { class: "idel-chip", style: top >= 0 ? `background:${DLV[top][0]};color:${DLV[top][1]}` : "background:#1e8e3e;color:#fff" }, String(open.length)));
+}
+function canSort(o) { const p = PROJECTS.find(x => x.id === o.pid); return isAdmin(S.user) || o.react === S.user || (p && smName(p) === S.user) || (o.react === "Office (Wanro)" && isAdmin(S.user)); }
+function delayOpen(o) {
+  const p = PROJECTS.find(x => x.id === o.pid) || {}, lv = delayLevel(o), days = delayDays(o);
+  const note = h("textarea", { placeholder: "What was done to sort it?", style: "width:100%;min-height:70px;border-radius:6px;border:1px solid #c9ced6;padding:8px;color:#15191e" });
+  const row = (a, b) => h("tr", {}, h("td", { class: "lab" }, a), h("td", { class: "ro" }, b || "-"));
+  const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Internal delay" }, h("div", { class: "modal", style: "max-height:88vh;overflow:auto" },
+    h("h2", {}, "Internal delay"),
+    h("div", { class: "idel-lv", style: `background:${DLV[lv][0]};color:${DLV[lv][1]}` }, o.status === "sorted" ? `SORTED  |  was ${DLV[lv][2]}` : DLV[lv][2]),
+    h("table", { class: "kvt" }, h("tbody", {},
+      row("Project", p.name || o.pid), row("Date", dmy(new Date(o.date + "T12:00:00"))), row("What happened", o.cause.replace(/\s*\(Fibraco\)$/, "") + (o.what ? `. ${o.what}` : "")),
+      row("Raised by", o.by), row("Must react", o.react), row("Hours lost", `${o.hrs || 0}`), row("Critical task hit", o.crit ? "Yes" : "No"),
+      row(o.status === "sorted" ? "Took" : "Open for", `${days} day${days === 1 ? "" : "s"}`),
+      o.status === "sorted" ? row("Sorted by", `${o.sortedBy || ""}${o.sortedNote ? ". " + o.sortedNote : ""}`) : null)),
+    o.status !== "sorted" && canSort(o) ? h("div", {}, h("p", { class: "hint" }, "Only tap Sorted when it is really fixed. Everyone on the project sees it."), note) : null,
+    h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
+      o.status !== "sorted" && canSort(o) ? h("button", { class: "btn-w", type: "button", onclick: () => {
+        if (!note.value.trim()) { note.style.borderColor = "#d0021b"; note.placeholder = "Write what was done first"; return; }
+        const cur = Store.get(o.id) || o; Store.put(o.id, Object.assign({}, cur, { status: "sorted", sortedBy: S.user, sortedAt: new Date().toISOString(), sortedNote: note.value.trim() })); ov.remove(); render(); toast("Marked sorted"); } }, "Sorted") : null)));
+  document.body.append(ov);
+}
+function vDelays() {
+  const all = myDelays(), cut = Date.now() - 14 * 864e5;
+  const open = all.filter(o => o.status !== "sorted").sort((a, b) => delayLevel(b) - delayLevel(a) || (a.date < b.date ? -1 : 1));
+  const done = all.filter(o => o.status === "sorted" && new Date(o.sortedAt || o.date).getTime() > cut).sort((a, b) => (a.sortedAt < b.sortedAt ? 1 : -1));
+  const line = o => { const lv = delayLevel(o), p = PROJECTS.find(x => x.id === o.pid) || {};
+    return h("button", { class: "idel-row" + (o.status === "sorted" ? " sorted" : ""), type: "button", onclick: () => delayOpen(o) },
+      h("div", { class: "idel-txt" },
+        h("div", { class: "idel-top" }, `${(p.short || o.pid).toUpperCase()}  |  ${dmy(new Date(o.date + "T12:00:00"))}`),
+        h("div", { class: "idel-what" }, o.cause.replace(/\s*\(Fibraco\)$/, "") + (o.what ? `. ${o.what}` : "")),
+        h("div", { class: "idel-who" }, `Raised by ${o.by}  |  Must react: ${o.react || "-"}  |  ${o.hrs || 0} h lost`)),
+      h("div", { class: "idel-blk", style: o.status === "sorted" ? "background:#1e8e3e;color:#fff" : `background:${DLV[lv][0]};color:${DLV[lv][1]}` }, o.status === "sorted" ? "SORTED" : DLV[lv][2])); };
+  return [topbar("Internal delays", "Fibraco only. The client never sees this", true),
+    h("p", { class: "form-sub" }, "Every delay we caused ourselves, on your project. It stays here, getting more urgent, until the person who must react sorts it."),
+    h("div", { class: "idel-key" }, ...DLV.map(([bg, fg, n]) => h("span", { style: `background:${bg};color:${fg}` }, n))),
+    open.length ? h("div", { class: "idel-list" }, ...open.map(line)) : h("p", { class: "note" }, "No open internal delays. Keep it that way."),
+    done.length ? h("h2", { class: "idel-h" }, "Sorted in the last 14 days") : null,
+    done.length ? h("div", { class: "idel-list" }, ...done.map(line)) : null,
+    h("p", { class: "hint", style: "margin-top:14px" }, "How the colour climbs, one step each: 1 to 4 hours lost (more than 4 hours is two steps), a critical task missed that day, and every day it stays open. No steps is yellow, then mustard, orange and red.")];
+}
+
 // ---------- render ----------
 let render = function () {
   const v = S.view;
-  const views = { users: vUsers, projects: vProjects, calendar: vCalendar, menu: vMenu, inspections: vInspections, client: vClient, tests: vTests, link: vLink, logtest: vLogTest, biocheck: vBioCheck, allocate: vAllocate, mysection: vMySection, review: vReview, kpi: vKpi, rams: vRams, ramsdoc: vRamsDoc, drawings: vDrawings, drawing: vDrawing, diary: vDiary, dsti: vDsti, inspection: vInspection, check: vCheck, toolbox: vToolbox, incident: vIncident, si: vSI, order: vOrder, done: vDone, feedback: vFeedback, devices: vDevices, dash: vDash, qc: vQc, qcspot: vQcSpot, tsheets: vTsheets, tsheet: vTsheet, treport: vTreport, attendance: vAttendance, claude: vClaude };
+  const views = { users: vUsers, projects: vProjects, calendar: vCalendar, menu: vMenu, inspections: vInspections, client: vClient, tests: vTests, link: vLink, logtest: vLogTest, biocheck: vBioCheck, allocate: vAllocate, mysection: vMySection, review: vReview, kpi: vKpi, rams: vRams, ramsdoc: vRamsDoc, drawings: vDrawings, drawing: vDrawing, diary: vDiary, dsti: vDsti, inspection: vInspection, check: vCheck, toolbox: vToolbox, incident: vIncident, si: vSI, order: vOrder, done: vDone, feedback: vFeedback, devices: vDevices, dash: vDash, qc: vQc, qcspot: vQcSpot, tsheets: vTsheets, tsheet: vTsheet, treport: vTreport, attendance: vAttendance, claude: vClaude, delays: vDelays };
   app.replaceChildren(...[].concat((views[v] || vProjects)()).filter(Boolean));
 }
 
@@ -2034,7 +2185,7 @@ Store.metaFor = (id, obj) => {
   if (kind === "help") return { tags: [`proj:${pid}`] };
   if (kind === "att") return { tags: [`user:${idOf(x.slice(3).join("|")) || me}`, `mgr:${pid}`] };
   if (kind === "final" || kind === "site" || kind === "qc") return { tags: [`mgr:${pid}`] };
-  if (kind === "link" || kind === "issue" || kind === "bio") return { shared: true, tags: [`proj:${pid}`] };
+  if (kind === "link" || kind === "issue" || kind === "bio" || kind === "idel" || kind === "dcause") return { shared: true, tags: [`proj:${pid}`] };
   if (kind === "form") return { tags: pid && pid !== "none" ? [`user:${me}`, `mgr:${pid}`] : [`user:${me}`] };
   if (kind === "alert") return { tags: obj && obj.project ? [`user:${me}`, `mgr:${obj.project}`] : [`user:${me}`] };
   if (kind === "ph") return { tags: S.project ? [`user:${me}`, `proj:${S.project.id}`] : [`user:${me}`] };
@@ -2402,7 +2553,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792497483"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792497483"); await loadJs("./js/pdf.js?v=1792497483");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792602041"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792602041"); await loadJs("./js/pdf.js?v=1792602041");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
