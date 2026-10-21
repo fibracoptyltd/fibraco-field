@@ -89,10 +89,38 @@ function leaveFormCheck(then) {
   if (!(FORM_VIEWS.includes(S.view) && S.formDirty)) return then();
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Leave this page" }, h("div", { class: "modal" }, h("h2", {}, "Leave this page?"),
     h("p", {}, S.view === "mysection" ? "Your diary section is kept on the phone. You can come back to it." : "What you filled in on this form is not submitted yet. If you leave, it is lost."),
-    h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Stay"), h("button", { class: "btn-w", type: "button", onclick: () => { ov.remove(); S.formDirty = false; then(); } }, "Leave"))));
+    h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Stay"), h("button", { class: "btn-w", type: "button", onclick: () => { ov.remove(); S.formDirty = false; clearDraft(); then(); } }, "Leave"))));
   document.body.append(ov);
 }
-addEventListener("input", () => { if (FORM_VIEWS.includes(S.view)) S.formDirty = true; }, true);
+addEventListener("input", () => { if (FORM_VIEWS.includes(S.view)) { S.formDirty = true; saveDraft(); } }, true);
+addEventListener("click", () => { if (FORM_VIEWS.includes(S.view) && S.formDirty) saveDraft(); }, true);
+addEventListener("change", () => { if (FORM_VIEWS.includes(S.view)) { S.formDirty = true; saveDraft(); } }, true);
+// An unfinished form is kept on the phone, so it survives the app closing (camera, WhatsApp, an update or the
+// 10 minute lock). When the app opens again it offers to carry on.
+const FORM_NAMES = { check: "an inspection checklist", toolbox: "a toolbox talk", incident: "an incident report", si: "a site instruction", order: "a material order", diary: "the diary", dsti: "a DSTI", inspection: "a site inspection" };
+let draftT = 0;
+function saveDraft() {
+  clearTimeout(draftT);
+  draftT = setTimeout(() => { try {
+    if (!S.form || !FORM_VIEWS.includes(S.view) || S.view === "mysection" || !Store.keepLocal) return;
+    const f = Object.assign({}, S.form, { project: S.form.project ? S.form.project.id : null, date: S.form.date ? new Date(S.form.date).toISOString() : null });
+    Store.keepLocal("draft", { view: S.view, at: Date.now(), f }).catch(() => {});
+  } catch (e) {} }, 600);
+}
+function clearDraft() { clearTimeout(draftT); try { Store.keepLocal("draft", null).catch(() => {}); } catch (e) {} }
+async function offerDraft() {
+  let d = null; try { d = await Store.readLocal("draft"); } catch (e) {}
+  if (!d || !d.f || Date.now() - d.at > 3 * 864e5) return;
+  const p = d.f.project ? PROJECTS.find(x => x.id === d.f.project) : null;
+  if (d.f.project && !p) return;
+  const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Carry on" }, h("div", { class: "modal" }, h("h2", {}, "Carry on where you were?"),
+    h("p", {}, `You were busy with ${FORM_NAMES[d.f.type] || "a form"}${p ? ` on ${p.short}` : ""} when the app closed. Everything you typed is still here.`),
+    h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => { ov.remove(); clearDraft(); } }, "Throw it away"),
+      h("button", { class: "btn-w", type: "button", onclick: () => { ov.remove();
+        S.form = Object.assign({}, d.f, { project: p, date: d.f.date ? new Date(d.f.date) : today() });
+        if (p) S.project = p; S.date = S.form.date; S.formDirty = true; S.hist = p ? ["projects", "calendar", "menu"] : ["projects"]; S.view = d.view; render(); window.scrollTo(0, 0); } }, "Carry on"))));
+  document.body.append(ov);
+}
 addEventListener("popstate", () => {
   if (!CFG) return;
   const ovs = document.querySelectorAll(".overlay");
@@ -283,7 +311,7 @@ function vProjects() {
         bioSetup(); } }, "Fingerprint")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1792602041";
+const APPV = "1792615486";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -356,7 +384,7 @@ async function sendRegister(p, d, days) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792602041"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792602041"); await loadJs("./js/pdf.js?v=1792602041");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792615486"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792615486"); await loadJs("./js/pdf.js?v=1792615486");
     const { html, title } = attDoc(p, d, days); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
@@ -460,7 +488,7 @@ async function timeZone() {
   try {
     try { Store.kick(); await refreshDevices(true); } catch (e) {}
     await new Promise(r => setTimeout(r, 1800));
-    await loadJs("./js/lib/html2canvas.min.js?v=1792602041"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792602041"); await loadJs("./js/pdf.js?v=1792602041");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792615486"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792615486"); await loadJs("./js/pdf.js?v=1792615486");
     const D = tzData(), stamp = `${dmy(new Date())} ${hhmm()}`, name = `FIBRACO - Time Zone (${stamp})`;
     const pdf = await window.FibPdf.diaryPdf(tzHtml(D), name);
     const json = new File([JSON.stringify(D, null, 1)], name.replace(/[\\/:*?"<>|]+/g, "-") + ".json", { type: "application/json" });
@@ -677,7 +705,7 @@ function vDiary() {
     f.combined ? h("p", { class: "hint" }, "No signature here. You sign once, in step 3 on the review page. The client signs on his own link the next morning.") : sheet("", h("div", { class: "band" }, "Representative"), h("table", {}, h("thead", {}, h("tr", {}, h("th", {}, ""), h("th", {}, "Fibraco rep"), h("th", {}, "Client rep"))), h("tbody", {},
       h("tr", {}, h("td", { class: "lab", style: "width:24%" }, "Name"), h("td", { class: "ro" }, f.user), h("td", {}, inp("text", f.clientRep, v => f.clientRep = v, "Client name"))),
       h("tr", {}, h("td", { class: "lab" }, "Signature"), h("td", {}, sigCell(() => f.sigF, v => f.sigF = v, "Fibraco rep signature", true)), h("td", {}, sigCell(() => f.sigC, v => f.sigC = v, "Client rep signature")))))),
-    f.combined ? submitBtn(() => [], { label: "Save and back to review", onDone: () => { S.siteDone[dayKey()] = true; Store.put("site|" + dayKey(), formRecord(f)); S.hist.pop(); S.view = "review"; render(); window.scrollTo(0, 0); } }) : submitBtn(() => { const e = []; if (!f.team.some(r => r.name)) e.push("Add at least one person to the project team."); if (!f.acts.some(r => r.act)) e.push("Add at least one activity."); if (!f.sigF) e.push("The Fibraco rep must sign."); return e; })];
+    f.combined ? submitBtn(() => [], { label: "Save and back to review", onDone: () => { S.siteDone[dayKey()] = true; Store.put("site|" + dayKey(), formRecord(f)); clearDraft(); S.formDirty = false; S.hist.pop(); S.view = "review"; render(); window.scrollTo(0, 0); } }) : submitBtn(() => { const e = []; if (!f.team.some(r => r.name)) e.push("Add at least one person to the project team."); if (!f.acts.some(r => r.act)) e.push("Add at least one activity."); if (!f.sigF) e.push("The Fibraco rep must sign."); return e; })];
 }
 
 function vDsti() {
@@ -947,7 +975,7 @@ async function sendOrder(f) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792602041"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792602041"); await loadJs("./js/pdf.js?v=1792602041");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792615486"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792615486"); await loadJs("./js/pdf.js?v=1792615486");
     const { html, title } = orderDoc(f);
     const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
@@ -1862,7 +1890,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792602041"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792602041"); await loadJs("./js/pdf.js?v=1792602041");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792615486"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792615486"); await loadJs("./js/pdf.js?v=1792615486");
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
     // Phones only open the share menu straight after a tap, so the last step is one tap on Share.
@@ -2123,6 +2151,7 @@ function shrinkPhoto(file) {
 }
 function formRecord(f) { return JSON.parse(J(Object.assign({}, f, { date: ymd(f.date), project: f.project ? f.project.id : null, savedBy: S.user, savedAt: new Date().toISOString() }))); }
 function saveForm(f) {
+  clearDraft(); S.formDirty = false;
   const id = `form|${f.project ? f.project.id : "none"}|${ymd(f.date)}|${f.type}|${Date.now().toString(36)}${rid()}`;
   Store.put(id, formRecord(f));
 }
@@ -2553,7 +2582,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792602041"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792602041"); await loadJs("./js/pdf.js?v=1792602041");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792615486"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792615486"); await loadJs("./js/pdf.js?v=1792615486");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
@@ -2629,8 +2658,10 @@ const qcId = (sheet, spot) => `qc|${S.project.id}|${sheet}|${spot}`;
 const qcGet = (sheet, spot) => Store.get(qcId(sheet, spot)) || { items: {} };
 function qcCount(sheet, spot) {
   const o = qcGet(sheet, spot), all = QC_SHEETS[sheet].sections.flatMap((s, si) => s[2].map((_, ii) => `${si}.${ii}`));
-  const v = all.map(k => (o.items[k] || {}).v);
-  return { total: all.length, done: v.filter(Boolean).length, fail: v.filter(x => x === "Fail").length, signed: o.signed };
+  const v = all.map(k => (o.items[k] || {}).v), done = v.filter(x => x && x !== "Not yet").length;
+  const legacy = o.signed && !all.some(k => (o.items[k] || {}).signedAt); // signed before Not yet existed: was complete
+  const full = !!o.signed && (legacy || (done === all.length && all.every(k => (o.items[k] || {}).signedAt)));
+  return { total: all.length, done, fail: v.filter(x => x === "Fail").length, later: v.filter(x => x === "Not yet").length, signed: full ? o.signed : null, part: o.signed && !full ? o.signed : null };
 }
 // who did that work at that spot: from the programme, else the site manager
 function qcResp(acts, spot) {
@@ -2646,7 +2677,7 @@ function vQc() {
     return h("button", { type: "button", class: "ts-route", onclick: () => { S.qc.spot = sp; go("qcspot"); } },
       h("div", { style: `width:7px;align-self:stretch;background:${col};border-radius:4px;box-shadow:0 0 8px ${col}` }),
       h("div", { style: "flex:1;text-align:left" }, h("div", { style: "font-weight:900;font-size:15.5px;color:#fff" }, sp),
-        h("div", { style: `font-size:13px;font-weight:800;margin-top:3px;color:${col}` }, c.signed ? `Signed ${c.signed.at}${c.fail ? `, ${c.fail} failed` : ", all passed"}` : `${c.done} of ${c.total} checked${c.fail ? `, ${c.fail} failed` : ""}`)),
+        h("div", { style: `font-size:13px;font-weight:800;margin-top:3px;color:${col}` }, c.signed ? `Signed ${c.signed.at}${c.fail ? `, ${c.fail} failed` : ", all passed"}` : c.part ? `Part signed ${c.part.at}, ${c.later} not built yet` : `${c.done} of ${c.total} checked${c.fail ? `, ${c.fail} failed` : ""}`)),
       h("div", { style: "color:#aeb6c1;font-size:22px;font-weight:900" }, "›")); };
   return [topbar("QC check sheets", `${S.project.short}  |  site manager`, true),
     h("p", { class: "form-sub" }, "Walk every spot and check the work yourself. Tick Pass, Fail or N/A. A Fail needs a comment and goes as a repair to the man who did that work. Only you and the office see these sheets."),
@@ -2657,8 +2688,11 @@ function vQcSpot() {
   const sh = S.qc.sheet, spot = S.qc.spot, def = QC_SHEETS[sh], id = qcId(sh, spot);
   const o = JSON.parse(JSON.stringify(qcGet(sh, spot))); o.items = o.items || {};
   const save = () => Store.put(id, o);
-  const locked = !!o.signed;
-  const cnt = () => { const c = { total: 0, done: 0, fail: 0 }; def.sections.forEach((s, si) => s[2].forEach((_, ii) => { c.total++; const v = (o.items[`${si}.${ii}`] || {}).v; if (v) c.done++; if (v === "Fail") c.fail++; })); return c; };
+  // A point is locked once it was signed. Points marked "Not yet" (work not built yet) stay open and are signed later.
+  if (o.signed && !Object.values(o.items).some(it => it && it.signedAt)) Object.values(o.items).forEach(it => { if (it && it.v && it.v !== "Not yet") it.signedAt = o.signed.at; });
+  const unsigned = () => def.sections.some((s, si) => s[2].some((_, ii) => { const it = o.items[`${si}.${ii}`] || {}; return !it.signedAt; }));
+  const locked = !!o.signed && !unsigned();
+  const cnt = () => { const c = { total: 0, done: 0, fail: 0, later: 0, open: 0 }; def.sections.forEach((s, si) => s[2].forEach((_, ii) => { c.total++; const it = o.items[`${si}.${ii}`] || {}, v = it.v; if (v && v !== "Not yet") c.done++; if (v === "Not yet") c.later++; if (v === "Fail") c.fail++; if (!it.signedAt && (!v || v === "Not yet")) c.open++; })); return c; };
   const bar = h("div");
   const drawBar = () => { const c = cnt(); bar.replaceChildren(h("div", { style: "display:flex;justify-content:space-between;font-weight:800;font-size:13px;margin-bottom:4px" }, h("span", {}, `${c.done} of ${c.total} checked`), h("span", { style: `color:${c.fail ? "#c8102e" : "#1e8e3e"}` }, c.fail ? `${c.fail} failed` : "No fails")), pill(c.total ? c.done / c.total * 100 : 0, c.fail ? { bg: "#c8102e" } : barColour(c.done / c.total * 100))); };
   drawBar();
@@ -2666,35 +2700,40 @@ function vQcSpot() {
     const k = `${si}.${ii}`, it = o.items[k] || (o.items[k] = {});
     const box = h("div", { class: "qc-item" + (it.v === "Fail" ? " fail" : it.v === "Pass" ? " pass" : "") });
     const draw = () => {
-      box.className = "qc-item" + (it.v === "Fail" ? " fail" : it.v === "Pass" ? " pass" : it.v === "N/A" ? " na" : "");
-      const btn = v => h("button", { type: "button", class: "qc-btn" + (it.v === v ? " on " + v.replace("/", "") : ""), disabled: locked, onclick: () => { it.v = it.v === v ? "" : v; it.by = S.user; it.at = new Date().toISOString(); save(); draw(); drawBar(); } }, v);
+      box.className = "qc-item" + (it.v === "Fail" ? " fail" : it.v === "Pass" ? " pass" : it.v === "N/A" ? " na" : it.v === "Not yet" ? " later" : "");
+      const btn = v => h("button", { type: "button", class: "qc-btn" + (it.v === v ? " on " + v.replace("/", "").replace(" ", "") : ""), disabled: locked || !!it.signedAt, onclick: () => { it.v = it.v === v ? "" : v; it.by = S.user; it.at = new Date().toISOString(); save(); draw(); drawBar(); } }, v);
       box.replaceChildren(...[h("div", { class: "qc-text" }, text),
-        h("div", { class: "qc-btns" }, btn("Pass"), btn("Fail"), btn("N/A")),
+        h("div", { class: "qc-btns" }, btn("Pass"), btn("Fail"), btn("N/A"), btn("Not yet")),
         it.v === "Fail" ? h("div", { style: "margin-top:8px" },
-          locked ? h("div", { style: "font-weight:700" }, it.note || "") : h("textarea", { class: "qc-note", placeholder: "What is wrong? The man who did the work gets this.", oninput: e => { it.note = e.target.value; save(); } }, it.note || ""),
+          locked || it.signedAt ? h("div", { style: "font-weight:700" }, it.note || "") : h("textarea", { class: "qc-note", placeholder: "What is wrong? The man who did the work gets this.", oninput: e => { it.note = e.target.value; save(); } }, it.note || ""),
           h("div", { style: "font-size:12px;color:#5b6470;margin-top:4px" }, `Goes to ${qcResp(def.sections[si][1], spot)} as a repair when you sign.`),
-          locked ? null : photoBlock(it.photos || (it.photos = []))) : null].filter(Boolean));
+          locked || it.signedAt ? null : photoBlock(it.photos || (it.photos = []))) : null].filter(Boolean));
     };
     draw(); return box;
   };
   const sign = () => {
     const c = cnt();
-    if (c.done < c.total) return showInfo("Not finished", "Tick every point, Pass, Fail or N/A, before you sign.");
+    if (c.done + c.later < c.total) return showInfo("Not finished", "Tick every point before you sign. Work that is not built yet: tick Not yet. You sign those points later, when the work is done.");
+    const fresh = def.sections.some((s, si) => s[2].some((_, ii) => { const it = o.items[`${si}.${ii}`] || {}; return !it.signedAt && it.v && it.v !== "Not yet"; }));
+    if (!fresh) return showInfo("Nothing new to sign", "Only Not yet points are left. Check them when the work is done, then sign.");
     const noNote = def.sections.some((s, si) => s[2].some((_, ii) => { const it = o.items[`${si}.${ii}`] || {}; return it.v === "Fail" && !(it.note || "").trim(); }));
     if (noNote) return showInfo("Comment missing", "Every Fail needs a comment saying what is wrong.");
     mySig(v => { if (!v) return;
-      o.signed = { by: S.user, at: new Date().toLocaleString("en-ZA", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }), sig: v }; save();
+      o.signed = { by: S.user, at: new Date().toLocaleString("en-ZA", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }), sig: v };
+      Object.values(o.items).forEach(it => { if (it && it.v && it.v !== "Not yet" && !it.signedAt) it.signedAt = o.signed.at; });
+      (o.signs = o.signs || []).push({ by: S.user, at: o.signed.at }); save();
       // fails go to the man who did the work
       const pid = S.project.id; S.issues[pid] = S.issues[pid] || []; let n = 0;
       def.sections.forEach((s, si) => s[2].forEach((txt, ii) => { const it = o.items[`${si}.${ii}`] || {}; if (it.v !== "Fail") return;
         const iid = `qc-${sh}-${spot}-${si}-${ii}`; if (S.issues[pid].some(x => x.id === iid && x.status === "open")) return;
         S.issues[pid].push({ id: iid, title: `QC failed at ${spot}: ${s[0]}`, detail: `${txt}. ${it.note}`, found: S.user, foundOn: ymd(S.date || new Date()), resp: qcResp(s[1], spot), status: "open" }); n++; }));
-      persist(); showInfo("Signed", n ? `${n} fail${n > 1 ? "s" : ""} sent as repairs to the men who did the work.` : "Everything passed at this spot."); goBack(); });
+      const left = cnt().later; persist(); showInfo("Signed", (n ? `${n} fail${n > 1 ? "s" : ""} sent as repairs to the men who did the work.` : "Everything you checked passed.") + (left ? ` ${left} point${left > 1 ? "s" : ""} not built yet stay open. Come back and sign them when the work is done.` : "")); goBack(); });
   };
   return [topbar(`${def.title} QC: ${spot}`, `${S.project.short}  |  ${dmy(S.date || new Date())}`, true),
     h("div", { class: "sheet", style: "padding:10px 12px" }, bar),
     ...def.sections.map((s, si) => sheet("", h("div", { class: "band" }, s[0]), ...s[2].map((t, ii) => item(si, ii, t)))),
-    locked ? h("div", { style: "text-align:center;font-weight:800;margin:12px 0;color:#1e8e3e" }, `Signed by ${o.signed.by}, ${o.signed.at}`) : h("button", { class: "submit", type: "button", onclick: sign }, "Sign this check")];
+    o.signed && !locked ? h("div", { style: "text-align:center;font-weight:700;margin:12px 0 4px;color:#8a4b00" }, `Part signed by ${o.signed.by}, ${o.signed.at}. Points marked Not yet are still open.`) : null,
+    locked ? h("div", { style: "text-align:center;font-weight:800;margin:12px 0;color:#1e8e3e" }, `Signed by ${o.signed.by}, ${o.signed.at}`) : h("button", { class: "submit", type: "button", onclick: sign }, o.signed ? "Sign the points done since" : "Sign what is checked")];
 }
 
 // ---------- Wanro's dashboard (office only) ----------
@@ -2895,6 +2934,7 @@ async function startApp() {
   Store.sync();
   setInterval(() => Store.sync(), 30000);
   if (me.admin) { refreshDevices(true); setInterval(() => refreshDevices(), 30000); }
+  setTimeout(offerDraft, 600);
 }
 // Ask the phone to keep the app's data for good, so Chrome never clears it to free up space.
 try { if (navigator.storage && navigator.storage.persist) navigator.storage.persisted().then(p => { if (!p) navigator.storage.persist(); }); } catch (e) {}
@@ -2958,7 +2998,7 @@ setTimeout(leave, 1500);
 // It never reloads in the middle of a form, only on the main screen or the PIN screen.
 let updateReady = false;
 // Only switch when nobody is looking (app in the background) or before he has typed his PIN, so nobody gets kicked out.
-function applyUpdate() { if (!updateReady) return; if (!CFG || document.visibilityState === "hidden") { updateReady = false; location.reload(); } else updateBar(); }
+function applyUpdate() { if (!updateReady) return; const busy = FORM_VIEWS.includes(S.view) && S.formDirty; if (!CFG || (document.visibilityState === "hidden" && !busy)) { updateReady = false; location.reload(); } else if (document.visibilityState !== "hidden") updateBar(); }
 // While he is busy in the app, a green bar at the top offers the new version. He taps it when it suits him.
 function updateBar() {
   if (document.getElementById("updbar")) return;

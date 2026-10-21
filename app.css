@@ -383,3 +383,7 @@ html, body { overscroll-behavior-y: none; }
 .idel-h{font-size:15px;margin:18px 0 8px;color:var(--muted)}
 .kvt{width:100%;border-collapse:collapse;margin-bottom:10px}
 .kvt td{padding:6px 4px;border-bottom:1px solid #e6e9ed;font-size:14px;vertical-align:top}
+
+.qc-btn.on.Notyet { background: #f29900; border-color: #f29900; color: #15191e; }
+.qc-item.later { border-left-color: #f29900; background: #fffaf0; }
+.qc-btns { flex-wrap: wrap; }
