@@ -387,3 +387,5 @@ html, body { overscroll-behavior-y: none; }
 .qc-btn.on.Notyet { background: #f29900; border-color: #f29900; color: #15191e; }
 .qc-item.later { border-left-color: #f29900; background: #fffaf0; }
 .qc-btns { flex-wrap: wrap; }
+
+.cl-me{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;cursor:pointer}
