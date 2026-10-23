@@ -484,3 +484,4 @@ body.paged .fb-btn{bottom:calc(84px + env(safe-area-inset-bottom))}
 .core-pick button.on{background:var(--blue);border-color:var(--blue);color:#fff}
 .adj-row{position:relative}
 .adj-x{position:absolute;top:50%;right:10px;transform:translateY(-50%);width:40px;height:40px;border-radius:50%;border:0;background:#c8102e;color:#fff;font-size:24px;font-weight:900;line-height:1}
+.adj-new{display:inline-block;margin-top:6px;background:#c8102e;color:#fff;font-family:var(--body);font-size:11px;font-weight:800;letter-spacing:.04em;padding:3px 8px;border-radius:10px}
