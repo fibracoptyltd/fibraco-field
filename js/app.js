@@ -311,7 +311,7 @@ function vProjects() {
         bioSetup(); } }, "Fingerprint")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1792731138";
+const APPV = "1792731465";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -363,8 +363,9 @@ function attButton() {
     if (out) Object.assign(rec, { out: hhmm(now), outAt: now.toISOString(), outSig: v, outGps: gps });
     else Object.assign(rec, { in: hhmm(now), inAt: now.toISOString(), sig: v, gps });
     Store.put(attId(S.project, S.date, S.user), rec); render(); showInfo(out ? "Signed out" : "Signed in", out ? `You signed out at ${rec.out}. Safe travels.` : `You are on the register at ${rec.in}. Sign out here when you leave site.`); });
+  const unsent = a.in && Store.isDirty && Store.isDirty(attId(S.project, S.date, S.user));
   return a.in
-    ? h("button", { class: "mbtn att-out", type: "button", onclick: () => sign(true) }, `SIGNED IN ${a.in}. TAP TO SIGN OUT`, h("small", {}, "When you leave site. Type your PIN."))
+    ? h("button", { class: "mbtn att-out", type: "button", onclick: () => sign(true) }, `SIGNED IN ${a.in}. TAP TO SIGN OUT`, h("small", {}, unsent ? "NOT SENT YET. Switch on your mobile data so the site manager gets it." : "Sent to the site manager. Sign out here when you leave site."))
     : h("button", { class: "mbtn att-in", type: "button", onclick: () => sign(false) }, "SIGN THE ATTENDANCE REGISTER", h("small", {}, "Tap when you get to site and type your PIN. Time and place are recorded."));
 }
 function attDoc(p, d, days) {
@@ -384,7 +385,7 @@ async function sendRegister(p, d, days) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792731138"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792731138"); await loadJs("./js/pdf.js?v=1792731138");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792731465"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792731465"); await loadJs("./js/pdf.js?v=1792731465");
     const { html, title } = attDoc(p, d, days); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
@@ -488,7 +489,7 @@ async function timeZone() {
   try {
     try { Store.kick(); await refreshDevices(true); } catch (e) {}
     await new Promise(r => setTimeout(r, 1800));
-    await loadJs("./js/lib/html2canvas.min.js?v=1792731138"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792731138"); await loadJs("./js/pdf.js?v=1792731138");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792731465"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792731465"); await loadJs("./js/pdf.js?v=1792731465");
     const D = tzData(), stamp = `${dmy(new Date())} ${hhmm()}`, name = `FIBRACO - Time Zone (${stamp})`;
     const pdf = await window.FibPdf.diaryPdf(tzHtml(D), name);
     const json = new File([JSON.stringify(D, null, 1)], name.replace(/[\\/:*?"<>|]+/g, "-") + ".json", { type: "application/json" });
@@ -587,7 +588,10 @@ function vClaude() {
 function vMenu() {
   const d = S.date;
   const later = (name, what) => h("button", { class: "mbtn later", onclick: () => showInfo(name, what) }, name);
-  return [topbar(S.project.short, nice(d), true), attButton(), projCard(S.project), todayCard(),
+  const idle = isMgr(S.user) ? idleMen(S.project, ymd(d)) : [];
+  return [topbar(S.project.short, nice(d), true), attButton(),
+    idle.length ? h("button", { class: "mbtn", style: "background:#c8102e;color:#fff;border-color:#c8102e", onclick: () => go("allocate") }, `NO WORK FOR ${idle.map(n => n.split(" ")[0].toUpperCase()).join(" AND ")} TODAY`, h("small", { style: "color:#ffe1e1" }, "Tap, give him tasks and tap Send to crew")) : null,
+    projCard(S.project), todayCard(),
     h("div", { class: "stack" },
       myRepairs(S.user).length ? (() => { const rp = myRepairs(S.user), t = rp.every(x => /^Splice failed/.test(x.title || "")) ? "SPLICE FAILED" : rp.every(x => /^QC failed/.test(x.title || "")) ? "QC FAILED" : "REPAIRS";
         return h("button", { class: "mbtn", style: "background:#c8102e;color:#fff;border-color:#c8102e", onclick: () => go("mysection") }, `${t}: ${rp.length} TO FIX`, h("small", { style: "color:#ffe1e1" }, "Fix it, then tap Repaired")); })() : null,
@@ -975,7 +979,7 @@ async function sendOrder(f) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792731138"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792731138"); await loadJs("./js/pdf.js?v=1792731138");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792731465"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792731465"); await loadJs("./js/pdf.js?v=1792731465");
     const { html, title } = orderDoc(f);
     const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
@@ -1134,13 +1138,54 @@ const KEEP = { qc: "QC", pcs: "PCS", foc: "FOC", rmu: "RMU", db: "DB", cat6a: "C
 function nice2(s) { const t = s.toLowerCase().split(" ").map(w => KEEP[w] || w).join(" "); return t.charAt(0).toUpperCase() + t.slice(1); }
 // The week's work comes from the programme, so nobody has to type it on site.
 // A day the site manager has changed and sent is used instead of the programme.
-function planFor(k) {
-  const [pid, ds] = k.split("|"), p = PROJECTS.find(x => x.id === pid) || (S.project && S.project.id === pid ? S.project : null);
+function planBase(p, ds) {
   const rows = p && p.plan && p.plan[ds]; if (!rows) return null;
   const acts = p.acts || [];
-  const out = rows.map(r => ({ who: r.who, act: r.act, loc: r.loc, target: String(r.target), unit: (acts.find(a => a[1] === r.act) || [])[0] || "ea", crit: !!r.crit, area: p.area, key: r.key }));
+  return rows.map(r => ({ who: r.who, act: r.act, loc: r.loc, target: String(r.target), unit: (acts.find(a => a[1] === r.act) || [])[0] || "ea", crit: !!r.crit, area: p.area, key: r.key }));
+}
+// The programme runs itself: work a man did not finish on an earlier day comes back on his next day by itself,
+// with only what is left, until it is done. A note saying it was done before or is not needed stops it.
+const AUTO_FROM = "2026-10-23";
+const NOCARRY = /done before|al+ready|al+redy|previous|not needed|not required|cancel|n\/a|nvt|klaar|reeds/i;
+function prevDays(ds, n) { const out = [], x = new Date(ds + "T12:00:00"); while (out.length < n) { x.setDate(x.getDate() - 1); if (x.getDay() !== 0) out.push(ymd(x)); } return out; }
+function carryFor(p, ds, today) {
+  if (ds < AUTO_FROM) return [];
+  const days = prevDays(ds, 5).filter(d => d >= "2026-10-19"), groups = {};
+  for (const d of days) {
+    const base = (Store.get(`alloc|${p.id}|${d}`) || planBase(p, d) || []);
+    const secs = {}; for (const [id, o] of Store.list(`sec|${p.id}|${d}|`)) secs[id.slice(`sec|${p.id}|${d}|`.length)] = o;
+    const seen = {};
+    base.forEach(t => {
+      const w = t.who, j = (seen[w] = (seen[w] || 0) + 1) - 1, sec = secs[w] || {}, rows = sec.rows || [];
+      const r = rows.find(x => x && x.k === t.act + "|" + t.loc) || (rows.some(x => x && x.k) ? {} : rows[j] || {});
+      const g = groups[w + "§" + keyOf(t)] || (groups[w + "§" + keyOf(t)] = { w, t, target: 0, crit: false, from: d, stop: false });
+      g.target += +t.target || 0; g.crit = g.crit || !!t.crit; if (d < g.from) g.from = d; if (d >= g.from) g.t = t;
+      if (NOCARRY.test(r.note || "")) g.stop = true;
+    });
+  }
+  const out = [];
+  for (const g of Object.values(groups)) {
+    if (g.stop || today.some(t => t.who === g.w && keyOf(t) === keyOf(g.t))) continue;
+    let booked = 0; for (const d of days) { if (d < g.from) continue; const pr = Store.get(`prog|${p.id}|${d}|${g.w}`); booked += +(((pr || {}).k || {})[keyOf(g.t)] || 0); }
+    let left = g.target - booked;
+    const gt = grandTotal(p, keyOf(g.t)); if (gt != null) left = Math.min(left, gt - doneToDate(p, keyOf(g.t), ds, "", 0));
+    if (left <= 0) continue;
+    out.push({ who: g.w, act: g.t.act, loc: `${g.t.loc.replace(/\s*\(carried over.*\)$/i, "")} (carried over from ${dmy(new Date(g.from + "T12:00:00")).slice(0, 5)})`, target: String(left), unit: g.t.unit, crit: g.crit, area: p.area, key: keyOf(g.t), carry: true });
+  }
+  return out;
+}
+function planFor(k) {
+  const [pid, ds] = k.split("|"), p = PROJECTS.find(x => x.id === pid) || (S.project && S.project.id === pid ? S.project : null);
+  const base = planBase(p, ds); if (!base) return null;
+  let out = base; try { out = base.concat(carryFor(p, ds, base)); } catch (e) {}
   Object.defineProperty(out, "_plan", { value: true, writable: true, enumerable: false });
   return out;
+}
+// who on the project has nothing to do today (the site manager and office are told)
+function idleMen(p, ds) {
+  const d = new Date(ds + "T12:00:00"); if (d.getDay() === 0 || !(p.plan && Object.keys(p.plan).some(x => x <= ds)) || ds > Object.keys(p.plan).sort().slice(-1)[0]) return [];
+  const list = Store.get(`alloc|${p.id}|${ds}`) || planFor(`${p.id}|${ds}`) || [];
+  return Object.keys(p.team || {}).filter(n => p.team[n] === "worker" && !list.some(t => t.who === n));
 }
 const allocOf = k => Store.get("alloc|" + k) || planFor(k);
 // ---------- the four blocks: Today, To date, Remaining, G Total ----------
@@ -1890,7 +1935,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792731138"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792731138"); await loadJs("./js/pdf.js?v=1792731138");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792731465"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792731465"); await loadJs("./js/pdf.js?v=1792731465");
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
     // Phones only open the share menu straight after a tap, so the last step is one tap on Share.
@@ -2582,7 +2627,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792731138"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792731138"); await loadJs("./js/pdf.js?v=1792731138");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792731465"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792731465"); await loadJs("./js/pdf.js?v=1792731465");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),

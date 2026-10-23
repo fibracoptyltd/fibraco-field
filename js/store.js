@@ -216,6 +216,7 @@ const Store = (() => {
     // kept on this phone only, scrambled, never sent to the server
     async keepLocal(k, v) { await metaSet("loc_" + k, v == null ? null : await seal(v)); },
     async readLocal(k) { const b = await metaGet("loc_" + k).catch(() => null); if (!b) return null; try { return await open(b.iv, b.data); } catch (e) { return null; } },
+    isDirty(id) { const v = mem.get(id); return !!(v && v.dirty); },
     removeDevice: (member, dev) => rpc("remove_device", { p_member: member, p_dev: dev }),
     setMember: (member, active) => rpc("set_member", { p_member: member, p_active: active }),
     get(id) { const v = mem.get(id); return v ? v.obj : undefined; },
