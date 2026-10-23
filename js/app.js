@@ -311,7 +311,7 @@ function vProjects() {
         bioSetup(); } }, "Fingerprint")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1792735288";
+const APPV = "1792742076";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -385,7 +385,7 @@ async function sendRegister(p, d, days) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792735288"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792735288"); await loadJs("./js/pdf.js?v=1792735288");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792742076"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792742076"); await loadJs("./js/pdf.js?v=1792742076");
     const { html, title } = attDoc(p, d, days); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
@@ -489,7 +489,7 @@ async function timeZone() {
   try {
     try { Store.kick(); await refreshDevices(true); } catch (e) {}
     await new Promise(r => setTimeout(r, 1800));
-    await loadJs("./js/lib/html2canvas.min.js?v=1792735288"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792735288"); await loadJs("./js/pdf.js?v=1792735288");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792742076"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792742076"); await loadJs("./js/pdf.js?v=1792742076");
     const D = tzData(), stamp = `${dmy(new Date())} ${hhmm()}`, name = `FIBRACO - Time Zone (${stamp})`;
     const pdf = await window.FibPdf.diaryPdf(tzHtml(D), name);
     const json = new File([JSON.stringify(D, null, 1)], name.replace(/[\\/:*?"<>|]+/g, "-") + ".json", { type: "application/json" });
@@ -1007,7 +1007,7 @@ async function sendOrder(f) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792735288"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792735288"); await loadJs("./js/pdf.js?v=1792735288");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792742076"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792742076"); await loadJs("./js/pdf.js?v=1792742076");
     const { html, title } = orderDoc(f);
     const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
@@ -1963,7 +1963,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792735288"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792735288"); await loadJs("./js/pdf.js?v=1792735288");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792742076"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792742076"); await loadJs("./js/pdf.js?v=1792742076");
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
     // Phones only open the share menu straight after a tap, so the last step is one tap on Share.
@@ -2540,9 +2540,12 @@ function vTsheet() {
     const s2 = h("select", { class: "ts-sel", onchange: e => { meta[k] = e.target.value; tsSave(r.id, "meta", meta); render(); } }, h("option", { value: "" }, `Choose the ${lab}`), ...list.map(e => h("option", { value: e.id, selected: meta[k] === e.id }, `${e.name}, S/N ${e.serial}`)));
     const cs = calState(eqById(meta[k]));
     return h("div", { style: "margin:6px 0" }, h("div", { style: "font-size:12.5px;font-weight:800;color:#aeb6c1;margin-bottom:3px" }, lab), s2, meta[k] ? h("div", { style: `font-size:12.5px;font-weight:800;margin-top:3px;color:${cs.c}` }, cs.t) : null); };
-  const details = h("details", { class: "ts-details", open: !(meta.otdr && meta.olts && meta.splicer) },
-    h("summary", {}, meta.otdr && meta.olts ? `Equipment: ${(eqById(meta.otdr) || {}).name || ""}  |  ${(eqById(meta.olts) || {}).name || ""}` : "Test details: choose the equipment first"),
-    eqSel("OTDR", "otdr", "OTDR used"), eqSel("OLTS", "olts", "OLTS or power meter used"), eqSel("Splicer", "splicer", "Splice machine used on this section"));
+  tsSetupDefaults(r, meta);
+  const missing = tsSetupMissing(meta, tab, wl);
+  const details = h("details", { class: "ts-details", open: !(meta.otdr && meta.olts && meta.splicer) || missing.length > 0 },
+    h("summary", {}, missing.length ? `Test details: ${missing.length} setting${missing.length > 1 ? "s" : ""} still to fill in` : `Equipment: ${(eqById(meta.otdr) || {}).name || ""}  |  ${(eqById(meta.olts) || {}).name || ""}  |  IOR ${meta.ior || "-"}`),
+    eqSel("OTDR", "otdr", "OTDR used"), eqSel("OLTS", "olts", "OLTS or power meter used"), eqSel("Splicer", "splicer", "Splice machine used on this section"),
+    tsSetupBox(r, meta, L));
   return [topbar(`${r.a} to ${r.b}`, `${S.project.short}  |  ${n} cores`, true),
     details,
     h("div", { class: "ts-bar" }, ...L.wls.map(wlBtn)),
@@ -2550,10 +2553,137 @@ function vTsheet() {
     h("p", { class: "form-sub", style: "margin-top:6px" }, tab === "ab" ? `Standing at ${r.a}, shooting to ${r.b}. Type the loss at each joint and the total loss.` : tab === "ba" ? `Standing at ${r.b}, shooting back to ${r.a}. The joints are listed from your side.` : "Type the OLTS loss in both directions for each core."),
     J.length || tab === "olts" ? null : h("p", { class: "hint" }, "No joints on this section. Only the total loss is needed."),
     h("div", { class: "ts-grid-wrap" }, h("table", { class: "ts-grid" }, h("thead", {}, head), h("tbody", {}, ...rows))),
-    h("p", { class: "hint" }, "Everything saves by itself as you type. Leave a box empty if it is not tested yet."),
+    (() => { const st = (all._stored || {})[wl]; return h("p", { class: "hint" }, st ? `Stored by ${st.by.split(" ")[0]} at ${st.time}. Change a number and tap STORE RESULT again.` : "Type all 12 cores, then tap STORE RESULT. Leave a box empty if that core is not tested yet."); })(),
+    h("button", { class: "submit ts-store", type: "button", onclick: () => tsStore(r, wl, tab, all, meta) }, "STORE RESULT"),
     h("div", { style: "display:flex;gap:8px;flex-wrap:wrap;margin:10px 0" },
       h("button", { class: "submit", type: "button", style: "flex:2", onclick: () => { tsFlush(); go("treport"); } }, "Generate report"),
       h("button", { class: "mbtn ghost", type: "button", style: "flex:1;margin:0", onclick: () => tsEditRoute(r) }, "Change section"))];
+}
+
+// The values typed into the tester before a shot are kept with the section, so the report shows how it was tested.
+// OTDR: EXFO OX1 settings. OLTS: light source and FPM-300 power meter (the meter keeps no results of its own).
+const TS_SET = {
+  mode: ["OTDR test mode", "sel", ["Flash Advisor", "Fault Xplorer", "Link Mapper"]],
+  ior: ["IOR at 1550 nm (from the cable datasheet)", "num", "e.g. 1.4682"],
+  cable: ["Fibre type", "txt", "e.g. 12F single mode G.652D"],
+  cords: ["Launch and receive cords (Test cords)", "sel", ["On", "Off"]],
+  launch: ["Launch cord length (m)", "num", "e.g. 20"],
+  receive: ["Receive cord length (m)", "num", "e.g. 20"],
+  thr: ["Pass and fail on the OTDR", "sel", ["Custom thresholds", "EXFO Advisor"]],
+  thSplice: ["Splice loss threshold (dB)", "num", "0.15"],
+  thConn: ["Connector loss threshold (dB)", "num", "0.50"],
+  thRefl: ["Connector reflectance threshold (dB)", "num", "e.g. -35"],
+  thLink: ["Link loss threshold (dB)", "num", "optional"],
+  thOrl: ["ORL threshold (dB)", "num", "optional"],
+  job: ["OTDR job name (as saved on the tester)", "txt", "e.g. BR RMU1-RMU3"],
+  firstId: ["First test point on the tester", "txt", "e.g. F01"],
+  refMethod: ["OLTS reference method", "sel", ["1 jumper", "2 jumpers", "3 jumpers"]],
+  mod: ["Light source modulation", "sel", ["CW", "270 Hz", "1 kHz", "2 kHz", "Auto"]],
+};
+function tsSetupDefaults(r, meta) {
+  if (meta._def) return;
+  // start from the last section that was set up, so the man does not type the same tester settings again
+  const others = tsRoutes().filter(x => x.id !== r.id).map(x => tsGet(x.id, "meta")).filter(m => m && m.ior).sort((a, b) => (a.at || "") < (b.at || "") ? 1 : -1);
+  const src = others[0] || {};
+  for (const k of Object.keys(TS_SET)) if (meta[k] == null && src[k] != null) meta[k] = src[k];
+  if (meta.thSplice == null) meta.thSplice = String(tsLim().spliceMax);
+  if (meta.thr == null) meta.thr = "Custom thresholds";
+  if (meta.cords == null) meta.cords = "On";
+  meta._def = 1;
+}
+function tsSetupMissing(meta, tab, wl) {
+  const m = [];
+  if (tab === "olts") { if (!meta.refMethod) m.push("OLTS reference method"); if (meta["ref" + wl] == null || meta["ref" + wl] === "") m.push(`Reference at ${wl} nm`); if (!meta.mod) m.push("Modulation"); }
+  else { if (!meta.mode) m.push("OTDR test mode"); if (!meta.ior) m.push("IOR"); if (!meta.cords) m.push("Test cords");
+    if (meta.cords === "On" && (!meta.launch || !meta.receive)) m.push("Cord lengths"); if (!meta.thr) m.push("Pass and fail"); if (meta.thr === "Custom thresholds" && !meta.thSplice) m.push("Splice threshold"); if (!meta.job) m.push("Job name"); }
+  return m;
+}
+function tsSetupBox(r, meta, L) {
+  const box = h("div", { class: "ts-setup" });
+  const save = () => { meta.at = new Date().toISOString(); tsSave(r.id, "meta", meta); };
+  const field = k => { const [lab, kind, opt] = TS_SET[k];
+    const el = kind === "sel" ? h("select", { class: "ts-sel", onchange: e => { meta[k] = e.target.value; save(); draw(); } }, h("option", { value: "" }, "Choose"), ...opt.map(o => h("option", { value: o, selected: meta[k] === o }, o)))
+      : h("input", { class: "ts-set-in", type: kind === "num" ? "number" : "text", step: "any", inputmode: kind === "num" ? "decimal" : "text", value: meta[k] ?? "", placeholder: opt, oninput: e => { meta[k] = e.target.value.trim(); save(); } });
+    return h("label", { class: "ts-set" }, h("span", {}, lab), el); };
+  const draw = () => box.replaceChildren(
+    h("div", { class: "ts-set-h" }, "OTDR settings, as typed into the tester"),
+    field("mode"), field("ior"), field("cable"), field("cords"),
+    meta.cords === "On" ? field("launch") : null, meta.cords === "On" ? field("receive") : null,
+    field("thr"),
+    meta.thr === "Custom thresholds" ? h("div", {}, field("thSplice"), field("thConn"), field("thRefl"), field("thLink"), field("thOrl")) : null,
+    +meta.thSplice && +meta.thSplice !== L.spliceMax ? h("div", { class: "tsp-note" }, `The app grades joints at ${L.spliceMax} dB maximum. Set the same splice threshold on the tester so both agree.`) : null,
+    field("job"), field("firstId"),
+    h("div", { class: "ts-set-h" }, "OLTS settings, light source and power meter"),
+    field("refMethod"), field("mod"),
+    ...L.wls.map(w => h("label", { class: "ts-set" }, h("span", {}, `Reference at ${w} nm (dBm, after pressing REF)`),
+      h("input", { class: "ts-set-in", type: "number", step: "any", inputmode: "decimal", value: meta["ref" + w] ?? "", placeholder: "e.g. -5.20", oninput: e => { meta["ref" + w] = e.target.value.trim(); meta["refAt" + w] = new Date().toISOString(); save(); } }))));
+  draw(); return box;
+}
+
+// STORE RESULT, like the tester's Save: one press stores the whole run (one direction, one wavelength, all cores),
+// then a summary pops up. As soon as both OTDR directions are stored the joints are averaged and a failed joint
+// goes to the splicer straight away.
+const TS_STEPS = ["ab", "ba", "olts"], TS_NAMES = { ab: "OTDR A to B", ba: "OTDR B to A", olts: "OLTS" };
+function tsStore(r, wl, tab, all, meta) {
+  const part = tab, d = all[wl] || {}, n = +r.cores || 12;
+  const filled = Object.values(d).filter(o => o && (o.t != null && o.t !== "" || o.a != null && o.a !== "" || o.b != null && o.b !== "" || (o.j || []).some(v => v != null && v !== ""))).length;
+  if (!filled) return showInfo("Nothing to store", "Type the readings first, then tap STORE RESULT.");
+  if (tab !== "olts" && !meta.otdr) return showInfo("Choose the OTDR first", "Open Test details at the top and choose the OTDR you used. Its serial and calibration go on the report.");
+  if (tab === "olts" && !meta.olts) return showInfo("Choose the power meter first", "Open Test details at the top and choose the OLTS or power meter you used.");
+  const miss = tsSetupMissing(meta, tab, wl);
+  if (miss.length) return showInfo("Tester settings missing", `Fill in what you set on the tester first, under Test details at the top: ${miss.join(", ")}.`);
+  const now = new Date();
+  all._stored = all._stored || {}; all._stored[wl] = { by: S.user, at: now.toISOString(), time: hhmm(now), cores: filled };
+  tsSave(r.id, part, all); tsFlush();
+  const an = tsAnalyse(r, wl), st = p => !!((tsGet(r.id, p)._stored || {})[wl]);
+  const both = tab === "olts" ? true : st("ab") && st("ba");
+  const sent = !r.practice && both ? tsRouteFaults(r, wl, an) : [];
+  tsSummaryPop(r, wl, tab, an, both, sent, filled, n, meta);
+}
+function tsSummaryPop(r, wl, tab, an, both, sent, filled, n, meta) {
+  const L = an.L, gradeJ = v => v == null ? "none" : v <= L.spliceGood ? "good" : v <= L.spliceMax ? "ok" : "bad";
+  // colour per core: final when both directions are in, else from this run alone
+  const coreSt = c => {
+    if (tab === "olts") return c.oSt === "half" ? ((c.oa ?? c.ob) == null ? "none" : (c.oa ?? c.ob) <= an.budget ? "good" : "bad") : c.oSt;
+    const vals = c.joints.map(j => both ? j.avg : (tab === "ab" ? j.a : j.b)).filter(v => v != null);
+    const tot = tab === "ab" ? c.ta : c.tb;
+    if (!vals.length) return tot == null ? "none" : "good";
+    const order = ["good", "ok", "bad"]; return vals.map(gradeJ).reduce((m, x) => order.indexOf(x) > order.indexOf(m) ? x : m, "good");
+  };
+  const blocks = an.cores.map(c => { const k = coreSt(c); return h("div", { class: "tsp-core " + k }, String(c.c)); });
+  let worstTxt = "-";
+  if (tab === "olts") { const v = an.cores.map(c => c.oAvg ?? c.oa ?? c.ob).filter(x => x != null); if (v.length) worstTxt = `${f2(Math.max(...v))} dB (budget ${f2(an.budget)} dB)`; }
+  else { let w = null; an.cores.forEach(c => c.joints.forEach((j, k) => { const v = both ? j.avg : (tab === "ab" ? j.a : j.b); if (v != null && (!w || v > w.v)) w = { v, c: c.c, k }; }));
+    if (w) worstTxt = `${f3(w.v)} dB, core ${w.c} at ${(r.joints[w.k] || {}).name || "joint " + (w.k + 1)}`; }
+  const tots = an.cores.map(c => tab === "ab" ? c.ta : tab === "ba" ? c.tb : null).filter(v => v != null);
+  const faults = an.issues.filter(i => i.sev === "bad" && (tab === "olts" ? i.joint == null : i.joint != null));
+  const bad = an.cores.filter(c => coreSt(c) === "bad").length;
+  const who = [...new Set(sent.filter(x => x.joint != null || tab === "olts").map(x => x.resp))];
+  // next step, the way the tester leads you
+  const i = TS_STEPS.indexOf(tab), wls = L.wls, wi = wls.indexOf(wl);
+  const next = i < 2 ? { tab: TS_STEPS[i + 1], wl, lab: `Next: ${TS_NAMES[TS_STEPS[i + 1]]}` } : wi < wls.length - 1 ? { tab: "ab", wl: wls[wi + 1], lab: `Next: ${wls[wi + 1]} nm` } : null;
+  const eq = eqById(tab === "olts" ? meta.olts : meta.otdr) || {};
+  const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Stored" });
+  const close = () => ov.remove();
+  ov.append(h("div", { class: "modal tsp" },
+    h("button", { class: "tsp-x", type: "button", "aria-label": "Close", onclick: close }, "×"),
+    h("div", { class: "tsp-ok" }, "STORED"),
+    h("div", { class: "tsp-h" }, `${r.a} to ${r.b}`),
+    h("div", { class: "tsp-s" }, `${wl} nm  |  ${TS_NAMES[tab]}  |  ${filled} of ${n} cores`),
+    h("div", { class: "tsp-s" }, `${eq.name || ""}${S.user ? "  |  " + S.user.split(" ")[0] + " " + hhmm(new Date()) : ""}`),
+    h("div", { class: "tsp-s" }, tab === "olts" ? `Reference ${meta["ref" + wl]} dBm  |  ${meta.refMethod}  |  ${meta.mod}` : `IOR ${meta.ior}  |  ${meta.mode}  |  cords ${meta.cords === "On" ? `${meta.launch} m and ${meta.receive} m` : "off"}  |  job ${meta.job}`),
+    h("div", { class: "tsp-grid" }, ...blocks),
+    h("div", { class: "tsp-line" }, h("b", {}, tab === "olts" ? "Highest loss " : both ? "Worst joint (average) " : "Worst joint "), worstTxt),
+    tots.length ? h("div", { class: "tsp-line" }, h("b", {}, "Highest total "), `${f2(Math.max(...tots))} dB`) : null,
+    h("div", { class: "tsp-line " + (bad ? "bad" : "good") }, bad ? `${bad} core${bad > 1 ? "s" : ""} over the limit` : "No core over the limit"),
+    tab !== "olts" && !both ? h("div", { class: "tsp-note" }, `Only one direction so far. Store ${tab === "ab" ? "B to A" : "A to B"} too, then the joints are averaged and any failed joint goes to the splicer.`) : null,
+    faults.length && both ? h("div", { class: "tsp-faults" }, ...faults.slice(0, 3).map(f => h("div", {}, f.text.split(". ")[0] + ".")), faults.length > 3 ? h("div", {}, `Plus ${faults.length - 3} more on the report.`) : null) : null,
+    who.length && !r.practice ? h("div", { class: "tsp-sent" }, `SPLICE FAILED sent to ${who.join(" and ")}.`) : null,
+    r.practice ? h("div", { class: "tsp-note" }, "Practice section. Nothing goes to the splicers or the report.") : null,
+    h("div", { class: "row", style: "margin-top:10px" },
+      next ? h("button", { class: "btn-w", type: "button", onclick: () => { close(); S.ts.tab = next.tab; S.ts.wl = next.wl; render(); window.scrollTo(0, 0); } }, next.lab)
+        : h("button", { class: "btn-w", type: "button", onclick: () => { close(); tsFlush(); go("treport"); } }, "Generate report"))));
+  document.body.append(ov);
 }
 
 function tsGridHtml(r, an, forPdf) {
@@ -2638,6 +2768,9 @@ function tsPdfHtml(r) {
   let html = `<div class="pd-head"><img src="${LOGO}" alt="Fibraco"><div><h1>FIBRE TEST REPORT</h1><div>${esc(S.project.name)}</div><div>${esc(r.a)} to ${esc(r.b)}  |  ${esc(r.cores)} cores  |  ${r.m ? esc(r.m) + " m" : "length not set"}</div></div></div>`;
   const meta = tsGet(r.id, "meta");
   html += `<h2>Test details</h2><table class="kv"><tr><th>Tested by</th><td>${esc(meta.by || S.user)}</td></tr><tr><th>Site manager</th><td>${esc(smName())}</td></tr></table>`;
+  const setRows = Object.entries(TS_SET).filter(([k]) => meta[k] != null && meta[k] !== "" && !(meta.cords === "Off" && (k === "launch" || k === "receive")) && !(meta.thr !== "Custom thresholds" && /^th[A-Z]/.test(k))).map(([k, [lab]]) => `<tr><th>${esc(lab)}</th><td>${esc(meta[k])}</td></tr>`)
+    .concat(L.wls.filter(w => meta["ref" + w]).map(w => `<tr><th>OLTS reference at ${w} nm</th><td>${esc(meta["ref" + w])} dBm${meta["refAt" + w] ? ", set " + esc(new Date(meta["refAt" + w]).toLocaleString("en-ZA")) : ""}</td></tr>`));
+  if (setRows.length) html += `<h2>Tester settings</h2><table class="kv">${setRows.join("")}</table>`;
   html += `<h2>Equipment used</h2><table class="g"><thead><tr><th>Use</th><th>Make and model</th><th>Serial</th><th>Calibrated</th><th>Certificate</th><th>Status</th></tr></thead><tbody>` +
     [["OTDR", meta.otdr], ["OLTS", meta.olts], ["Splicer", meta.splicer]].filter(x => x[1]).map(([t, id]) => { const e = eqById(id) || {}; return `<tr><td>${t}</td><td>${esc(e.name)}</td><td>${esc(e.serial)}</td><td>${esc(e.cal)}</td><td>${esc(e.cert || "-")}</td><td>${esc(calState(e).t)}</td></tr>`; }).join("") + `</tbody></table>`;
   for (const wl of L.wls.filter(w => ["ab", "ba", "olts"].some(p => JSON.stringify(tsGet(r.id, p)[w] || {}).match(/\d/)))) {
@@ -2655,7 +2788,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792735288"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792735288"); await loadJs("./js/pdf.js?v=1792735288");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792742076"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792742076"); await loadJs("./js/pdf.js?v=1792742076");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
