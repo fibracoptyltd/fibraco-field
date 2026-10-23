@@ -311,7 +311,7 @@ function vProjects() {
         bioSetup(); } }, "Fingerprint")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1792735099";
+const APPV = "1792735288";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -385,7 +385,7 @@ async function sendRegister(p, d, days) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792735099"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792735099"); await loadJs("./js/pdf.js?v=1792735099");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792735288"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792735288"); await loadJs("./js/pdf.js?v=1792735288");
     const { html, title } = attDoc(p, d, days); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
@@ -489,7 +489,7 @@ async function timeZone() {
   try {
     try { Store.kick(); await refreshDevices(true); } catch (e) {}
     await new Promise(r => setTimeout(r, 1800));
-    await loadJs("./js/lib/html2canvas.min.js?v=1792735099"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792735099"); await loadJs("./js/pdf.js?v=1792735099");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792735288"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792735288"); await loadJs("./js/pdf.js?v=1792735288");
     const D = tzData(), stamp = `${dmy(new Date())} ${hhmm()}`, name = `FIBRACO - Time Zone (${stamp})`;
     const pdf = await window.FibPdf.diaryPdf(tzHtml(D), name);
     const json = new File([JSON.stringify(D, null, 1)], name.replace(/[\\/:*?"<>|]+/g, "-") + ".json", { type: "application/json" });
@@ -557,6 +557,21 @@ async function clAsk(text) {
   }
   CL.busy = false; Store.keepLocal("claudeChat", CL.msgs.slice(-60)); render(); clScroll();
 }
+// press and hold one of Claude's answers: it is selected and a bar offers Share (WhatsApp, email, anything) and Copy
+function clSelect(b, text) {
+  document.querySelectorAll(".cl-msg.sel").forEach(x => x.classList.remove("sel")); document.querySelectorAll(".cl-act").forEach(x => x.remove());
+  b.classList.add("sel"); if (navigator.vibrate) try { navigator.vibrate(30); } catch (e) {}
+  const plain = text.replace(/\*\*([^*]+)\*\*/g, "*$1*");
+  const close = () => { b.classList.remove("sel"); bar.remove(); };
+  const share = async () => {
+    if (navigator.share) { try { await navigator.share({ text: plain }); close(); return; } catch (e) { if (e && e.name === "AbortError") return close(); } }
+    clCopy(plain, cp); toast("Copied. Paste it in WhatsApp"); setTimeout(close, 800);
+  };
+  const cp = h("button", { type: "button", class: "btn-g", onclick: () => { clCopy(plain, cp); toast("Copied"); setTimeout(close, 800); } }, "Copy");
+  const bar = h("div", { class: "cl-act", role: "toolbar", "aria-label": "Message actions" },
+    h("button", { type: "button", class: "btn-g", onclick: close }, "Cancel"), cp, h("button", { type: "button", class: "btn-w", onclick: share }, "Share"));
+  document.body.append(bar);
+}
 function clScroll() { setTimeout(() => { const l = document.querySelector(".cl-msgs"); if (l) window.scrollTo(0, document.body.scrollHeight); }, 30); }
 function vClaude() {
   if (!isAdmin(S.user)) { S.view = "projects"; return vProjects(); }
@@ -578,17 +593,18 @@ function vClaude() {
   const tips = ["How is Belle River going today?", "Who has not signed the register yet?", "Who is behind on his tasks today?", "What must Francois still approve?"];
   // press and hold one of your own questions: it goes back into the box, ready to send again
   const reuse = text => { CL.draft = text; ask.value = text; ask.focus(); try { ask.setSelectionRange(text.length, text.length); } catch (e) {} if (navigator.vibrate) try { navigator.vibrate(30); } catch (e) {} toast("In the box. Tap Send"); };
-  const holdable = (el, text) => { let t = 0; const start = () => { clearTimeout(t); t = setTimeout(() => reuse(text), 450); }, stop = () => clearTimeout(t);
+  const holdable = (el, text, act) => { let t = 0; const start = () => { clearTimeout(t); t = setTimeout(() => act ? act() : reuse(text), 450); }, stop = () => clearTimeout(t);
     el.addEventListener("pointerdown", start); ["pointerup", "pointerleave", "pointercancel", "pointermove"].forEach(ev => el.addEventListener(ev, ev === "pointermove" ? (e => { if (Math.abs(e.movementY) > 6) stop(); }) : stop));
     el.addEventListener("contextmenu", e => e.preventDefault()); return el; };
   const msgs = CL.msgs.map(m => {
     const b = h("div", { class: "cl-msg " + (m.role === "user" ? "cl-me" : "cl-ai") }, h("div", { class: "cl-txt" }, ...clText(m.content)));
     if (m.role === "user") { holdable(b, m.content); b.title = "Press and hold to ask again"; }
+    else holdable(b, null, () => clSelect(b, m.content));
     if (m.role === "assistant") { const c = h("button", { class: "cl-copy", type: "button" }, "Copy"); c.onclick = () => clCopy(m.content, c); b.append(c); }
     return b; });
   return [head,
     h("div", { class: "cl-msgs" },
-      msgs.length ? h("p", { class: "hint", style: "text-align:center;margin:0 0 4px" }, "Press and hold one of your questions to ask it again.") : h("div", { class: "cl-empty" }, h("p", {}, "Ask about anything in the app: who did what, who is behind, the programme, phones, how a screen works, or a WhatsApp message to one of the men."),
+      msgs.length ? h("p", { class: "hint", style: "text-align:center;margin:0 0 4px" }, "Press and hold a question to ask it again, or an answer to share it.") : h("div", { class: "cl-empty" }, h("p", {}, "Ask about anything in the app: who did what, who is behind, the programme, phones, how a screen works, or a WhatsApp message to one of the men."),
         ...tips.map(t => h("button", { class: "cl-tip", type: "button", onclick: () => clAsk(t) }, t))),
       ...msgs,
       CL.busy ? h("div", { class: "cl-msg cl-ai cl-wait" }, "Claude is reading the app...") : null),
@@ -991,7 +1007,7 @@ async function sendOrder(f) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792735099"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792735099"); await loadJs("./js/pdf.js?v=1792735099");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792735288"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792735288"); await loadJs("./js/pdf.js?v=1792735288");
     const { html, title } = orderDoc(f);
     const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
@@ -1947,7 +1963,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792735099"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792735099"); await loadJs("./js/pdf.js?v=1792735099");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792735288"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792735288"); await loadJs("./js/pdf.js?v=1792735288");
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
     // Phones only open the share menu straight after a tap, so the last step is one tap on Share.
@@ -2639,7 +2655,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792735099"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792735099"); await loadJs("./js/pdf.js?v=1792735099");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792735288"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792735288"); await loadJs("./js/pdf.js?v=1792735288");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
