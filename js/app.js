@@ -312,7 +312,7 @@ function vProjects() {
         bioSetup(); } }, "Fingerprint")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1792771624";
+const APPV = "1792771844";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -386,7 +386,7 @@ async function sendRegister(p, d, days) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792771624"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792771624"); await loadJs("./js/pdf.js?v=1792771624");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792771844"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792771844"); await loadJs("./js/pdf.js?v=1792771844");
     const { html, title } = attDoc(p, d, days); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
@@ -490,7 +490,7 @@ async function timeZone() {
   try {
     try { Store.kick(); await refreshDevices(true); } catch (e) {}
     await new Promise(r => setTimeout(r, 1800));
-    await loadJs("./js/lib/html2canvas.min.js?v=1792771624"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792771624"); await loadJs("./js/pdf.js?v=1792771624");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792771844"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792771844"); await loadJs("./js/pdf.js?v=1792771844");
     const D = tzData(), stamp = `${dmy(new Date())} ${hhmm()}`, name = `FIBRACO - Time Zone (${stamp})`;
     const pdf = await window.FibPdf.diaryPdf(tzHtml(D), name);
     const json = new File([JSON.stringify(D, null, 1)], name.replace(/[\\/:*?"<>|]+/g, "-") + ".json", { type: "application/json" });
@@ -1272,7 +1272,7 @@ async function sendOrder(f) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792771624"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792771624"); await loadJs("./js/pdf.js?v=1792771624");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792771844"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792771844"); await loadJs("./js/pdf.js?v=1792771844");
     const { html, title } = orderDoc(f);
     const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
@@ -2228,7 +2228,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792771624"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792771624"); await loadJs("./js/pdf.js?v=1792771624");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792771844"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792771844"); await loadJs("./js/pdf.js?v=1792771844");
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
     // Phones only open the share menu straight after a tap, so the last step is one tap on Share.
@@ -2773,7 +2773,7 @@ const FIB_COL = [["Blue", "#1f6fd1"], ["Orange", "#f28c28"], ["Green", "#2fa84f"
 const tubeSize = r => Math.max(1, +r.tube || 12);
 const tubeOf = (r, c) => Math.floor((c - 1) / tubeSize(r));
 const fibCol = i => FIB_COL[i % 12];
-const tubeLab = (r, t) => `Tube ${t + 1} ${fibCol(t)[0]}, cores ${t * tubeSize(r) + 1} to ${Math.min(+r.cores || 12, (t + 1) * tubeSize(r))}`;
+const tubeLab = (r, t) => `Tube ${t + 1} ${fibCol(t)[0]}${t >= 12 ? " stripe" : ""}, cores ${t * tubeSize(r) + 1} to ${Math.min(+r.cores || 12, (t + 1) * tubeSize(r))}`;
 const TS_COL = { good: "#39ff14", ok: "#ffd60a", bad: "#ff3b3b", half: "#5b6470", none: "#2c323c" };
 
 // one section in a few numbers: cores fully tested, cores with a problem, colour
@@ -2859,9 +2859,18 @@ function tsEditRoute(r) {
     h("button", { type: "button", class: "btn-g", style: "padding:8px 10px", onclick: () => { r.joints.splice(k, 1); drawJ(); } }, "Remove"))),
     h("button", { type: "button", class: "btn-g", style: "margin-top:8px;padding:8px 12px", onclick: () => { r.joints.push({ name: "" }); drawJ(); } }, "+ Add a joint"));
   drawJ();
+  // core count as tap blocks; the sheet is built for exactly that many cores
+  const CORES = [4, 8, 12, 24, 48, 72, 96, 144, 192];
+  const tubeIn = h("input", { type: "number", value: r.tube || Math.min(+r.cores || 12, 12), oninput: e => r.tube = +e.target.value || "", style: "display:block;width:100%;margin-top:4px;padding:10px;border:1px solid #c9ced6;border-radius:6px;font-size:15px" });
+  const tubeFld = h("label", { style: "display:block;margin:8px 0 2px;font-size:13px;font-weight:700" }, "Cores per tube (set by itself, change only if the cable is different)", tubeIn);
+  const coreGrid = h("div", { class: "core-pick" });
+  const drawCores = () => coreGrid.replaceChildren(...CORES.map(c => h("button", { type: "button", class: +r.cores === c ? "on" : "", onclick: () => { r.cores = c; r.tube = Math.min(c, 12); tubeIn.value = r.tube; drawCores(); } }, String(c))));
+  if (!r.tube) r.tube = Math.min(+r.cores || 12, 12);
+  drawCores();
+  const coreBox = h("div", { style: "margin:10px 0 2px" }, h("div", { style: "font-size:13px;font-weight:700;margin-bottom:6px" }, "Number of cores"), coreGrid);
   const fld = (lab, k, ph, type) => h("label", { style: "display:block;margin:8px 0 2px;font-size:13px;font-weight:700" }, lab, h("input", { type: type || "text", value: r[k] ?? "", placeholder: ph, oninput: e => r[k] = e.target.value.trim(), style: "display:block;width:100%;margin-top:4px;padding:10px;border:1px solid #c9ced6;border-radius:6px;font-size:15px" }));
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Section" }, h("div", { class: "modal", style: "max-height:86vh;overflow:auto" }, h("h2", {}, isNew ? "New section" : "Change this section"),
-    fld("Point A", "a", "e.g. RMU 1"), fld("Point B", "b", "e.g. RMU 3"), fld("Length in metres", "m", "e.g. 845", "number"), fld("Number of cores", "cores", "12", "number"), fld("Cores per tube", "tube", "12", "number"),
+    fld("Point A", "a", "e.g. RMU 1"), fld("Point B", "b", "e.g. RMU 3"), fld("Length in metres", "m", "e.g. 845", "number"), coreBox, tubeFld,
     h("div", { style: "margin-top:10px;font-size:13px;font-weight:700" }, "Joints between A and B, in order from point A"), jbox,
     h("div", { class: "row", style: "margin-top:14px" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Cancel"),
       h("button", { class: "btn-w", type: "button", onclick: () => {
@@ -2884,7 +2893,7 @@ function vTsheet() {
   const coreTh = c => { const [nm, hx] = fibCol((c - 1) % TS); return h("th", {}, h("span", { class: "fdot", style: `background:${hx}`, title: nm }), String(c)); };
   const tubeDone = t => { let f = 0, tot = 0; for (let c = t * TS + 1; c <= Math.min(n, (t + 1) * TS); c++) { tot++; const o = data[c] || {}; if (tab === "olts" ? (o.a !== undefined && o.a !== "") || (o.b !== undefined && o.b !== "") : (o.t !== undefined && o.t !== "") || (o.j || []).some(v => v !== undefined && v !== "")) f++; } return [f, tot]; };
   const tubeBar = multi ? h("div", { class: "ts-tubes" }, ...Array.from({ length: nT }, (_, t) => { const [f, tot] = tubeDone(t), [nm, hx] = fibCol(t);
-    return h("button", { type: "button", class: "ts-tube" + (t === tb ? " on" : ""), onclick: () => { S.ts.tube = t; render(); } }, h("span", { class: "fdot", style: `background:${hx}` }), `T${t + 1}`, h("small", {}, f === tot ? "done" : f ? `${f}/${tot}` : nm)); })) : null;
+    return h("button", { type: "button", class: "ts-tube" + (t === tb ? " on" : ""), onclick: () => { S.ts.tube = t; render(); } }, h("span", { class: "fdot", style: t >= 12 ? `background:linear-gradient(90deg,${hx} 38%,#000 38% 62%,${hx} 62%)` : `background:${hx}` }), `T${t + 1}`, h("small", {}, f === tot ? "done" : f ? `${f}/${tot}` : nm)); })) : null;
   let head, rows;
   if (tab === "olts") {
     head = h("tr", {}, h("th", {}, "Core"), h("th", {}, "Loss A to B (dB)"), h("th", {}, "Loss B to A (dB)"));
@@ -3155,7 +3164,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792771624"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792771624"); await loadJs("./js/pdf.js?v=1792771624");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792771844"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792771844"); await loadJs("./js/pdf.js?v=1792771844");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),

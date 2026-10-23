@@ -479,3 +479,6 @@ body.paged .fb-btn{bottom:calc(84px + env(safe-area-inset-bottom))}
 .ts-tube-row{background:#2c323c;color:#00e5ff;text-align:left;font-size:12.5px;padding:6px 8px}
 .tsp-grid.big{grid-template-columns:repeat(12,1fr);gap:3px}
 .tsp-grid.big .tsp-core{font-size:9.5px;padding:5px 0;border-radius:4px}
+.core-pick{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.core-pick button{min-height:46px;border-radius:8px;border:2px solid var(--line);background:#fff;color:var(--text);font-family:var(--display);font-weight:900;font-size:16px}
+.core-pick button.on{background:var(--blue);border-color:var(--blue);color:#fff}
