@@ -468,3 +468,14 @@ body.paged .fb-btn{bottom:calc(84px + env(safe-area-inset-bottom))}
 .pcount{flex:none;font-size:12px;font-weight:700;color:var(--muted);text-align:center;min-width:70px}
 .psub > button.submit, button.submit.psub { display: none; }
 .fb-btn.fb-inline{position:static;display:block;margin:4px auto 0;box-shadow:none;opacity:.85}
+/* big cables: tubes in the fibre colour code */
+.fdot{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:6px;vertical-align:middle;border:1px solid rgba(255,255,255,.55)}
+.ts-tubes{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:6px;margin:8px 0}
+.ts-tube{background:#1b1f26;color:#fff;border:2px solid #2c323c;border-radius:8px;padding:6px 2px;font-weight:900;font-size:14px;line-height:1.1}
+.ts-tube small{display:block;font-size:10.5px;font-weight:700;color:#aeb6c1;margin-top:2px}
+.ts-tube.on{border-color:#00e5ff;box-shadow:0 0 8px #00e5ff}
+.ts-tube-h{font-weight:900;font-size:14px;margin:6px 0;color:var(--text)}
+.ts-nexttube{width:100%;margin-top:10px;min-height:48px;border:0;border-radius:10px;background:#1e8e3e;color:#fff;font-weight:900;font-size:14px;letter-spacing:.03em}
+.ts-tube-row{background:#2c323c;color:#00e5ff;text-align:left;font-size:12.5px;padding:6px 8px}
+.tsp-grid.big{grid-template-columns:repeat(12,1fr);gap:3px}
+.tsp-grid.big .tsp-core{font-size:9.5px;padding:5px 0;border-radius:4px}

@@ -312,7 +312,7 @@ function vProjects() {
         bioSetup(); } }, "Fingerprint")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1792771012";
+const APPV = "1792771624";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -386,7 +386,7 @@ async function sendRegister(p, d, days) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792771012"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792771012"); await loadJs("./js/pdf.js?v=1792771012");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792771624"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792771624"); await loadJs("./js/pdf.js?v=1792771624");
     const { html, title } = attDoc(p, d, days); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
@@ -490,7 +490,7 @@ async function timeZone() {
   try {
     try { Store.kick(); await refreshDevices(true); } catch (e) {}
     await new Promise(r => setTimeout(r, 1800));
-    await loadJs("./js/lib/html2canvas.min.js?v=1792771012"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792771012"); await loadJs("./js/pdf.js?v=1792771012");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792771624"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792771624"); await loadJs("./js/pdf.js?v=1792771624");
     const D = tzData(), stamp = `${dmy(new Date())} ${hhmm()}`, name = `FIBRACO - Time Zone (${stamp})`;
     const pdf = await window.FibPdf.diaryPdf(tzHtml(D), name);
     const json = new File([JSON.stringify(D, null, 1)], name.replace(/[\\/:*?"<>|]+/g, "-") + ".json", { type: "application/json" });
@@ -1272,7 +1272,7 @@ async function sendOrder(f) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792771012"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792771012"); await loadJs("./js/pdf.js?v=1792771012");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792771624"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792771624"); await loadJs("./js/pdf.js?v=1792771624");
     const { html, title } = orderDoc(f);
     const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
@@ -2228,7 +2228,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792771012"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792771012"); await loadJs("./js/pdf.js?v=1792771012");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792771624"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792771624"); await loadJs("./js/pdf.js?v=1792771624");
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
     // Phones only open the share menu straight after a tap, so the last step is one tap on Share.
@@ -2768,6 +2768,12 @@ function tsAnalyse(r, wl) {
   const vals = cores.flatMap(x => x.joints.map(j => j.avg)).filter(v => v != null);
   return { cores, issues, budget, tested, bad, mean: vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null, worst: vals.length ? Math.max(...vals) : null, wl, L };
 }
+// fibre colour code (TIA-598), used for tubes and for the fibres inside a tube
+const FIB_COL = [["Blue", "#1f6fd1"], ["Orange", "#f28c28"], ["Green", "#2fa84f"], ["Brown", "#8b5a2b"], ["Slate", "#7a8590"], ["White", "#ffffff"], ["Red", "#e0262b"], ["Black", "#111111"], ["Yellow", "#f5d000"], ["Violet", "#8e44ad"], ["Rose", "#f4a6c0"], ["Aqua", "#21c7d9"]];
+const tubeSize = r => Math.max(1, +r.tube || 12);
+const tubeOf = (r, c) => Math.floor((c - 1) / tubeSize(r));
+const fibCol = i => FIB_COL[i % 12];
+const tubeLab = (r, t) => `Tube ${t + 1} ${fibCol(t)[0]}, cores ${t * tubeSize(r) + 1} to ${Math.min(+r.cores || 12, (t + 1) * tubeSize(r))}`;
 const TS_COL = { good: "#39ff14", ok: "#ffd60a", bad: "#ff3b3b", half: "#5b6470", none: "#2c323c" };
 
 // one section in a few numbers: cores fully tested, cores with a problem, colour
@@ -2855,12 +2861,12 @@ function tsEditRoute(r) {
   drawJ();
   const fld = (lab, k, ph, type) => h("label", { style: "display:block;margin:8px 0 2px;font-size:13px;font-weight:700" }, lab, h("input", { type: type || "text", value: r[k] ?? "", placeholder: ph, oninput: e => r[k] = e.target.value.trim(), style: "display:block;width:100%;margin-top:4px;padding:10px;border:1px solid #c9ced6;border-radius:6px;font-size:15px" }));
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Section" }, h("div", { class: "modal", style: "max-height:86vh;overflow:auto" }, h("h2", {}, isNew ? "New section" : "Change this section"),
-    fld("Point A", "a", "e.g. RMU 1"), fld("Point B", "b", "e.g. RMU 3"), fld("Length in metres", "m", "e.g. 845", "number"), fld("Number of cores", "cores", "12", "number"),
+    fld("Point A", "a", "e.g. RMU 1"), fld("Point B", "b", "e.g. RMU 3"), fld("Length in metres", "m", "e.g. 845", "number"), fld("Number of cores", "cores", "12", "number"), fld("Cores per tube", "tube", "12", "number"),
     h("div", { style: "margin-top:10px;font-size:13px;font-weight:700" }, "Joints between A and B, in order from point A"), jbox,
     h("div", { class: "row", style: "margin-top:14px" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Cancel"),
       h("button", { class: "btn-w", type: "button", onclick: () => {
         if (!r.a || !r.b) return showInfo("Not finished", "Type point A and point B.");
-        r.joints = r.joints.filter(j => (j.name || "").trim()); r.cores = +r.cores || 12; tsSaveRoute(r); ov.remove(); render(); } }, "Save"))));
+        r.joints = r.joints.filter(j => (j.name || "").trim()); r.cores = +r.cores || 12; r.tube = +r.tube || 12; tsSaveRoute(r); ov.remove(); render(); } }, "Save"))));
   document.body.append(ov);
 }
 
@@ -2871,14 +2877,22 @@ function vTsheet() {
   const cell = (val, onv, ph) => h("input", { class: "ts-in", type: "number", step: "any", inputmode: "decimal", value: val ?? "", placeholder: ph || "", oninput: e => { onv(e.target.value); tsSave(r.id, part, all); } });
   // B to A: the tester stands at point B, so the joints are listed from B's side
   const order = tab === "ba" ? J.map((_, k) => k).reverse() : J.map((_, k) => k);
+  // 24, 48, 96 cores and up: one tube on the screen at a time, in the fibre colour code
+  const TS = tubeSize(r), nT = Math.ceil(n / TS), multi = n > TS;
+  if (!S.ts.tube || S.ts.tube >= nT) S.ts.tube = 0;
+  const tb = S.ts.tube, coreList = Array.from({ length: multi ? Math.min(TS, n - tb * TS) : n }, (_, i) => (multi ? tb * TS : 0) + i + 1);
+  const coreTh = c => { const [nm, hx] = fibCol((c - 1) % TS); return h("th", {}, h("span", { class: "fdot", style: `background:${hx}`, title: nm }), String(c)); };
+  const tubeDone = t => { let f = 0, tot = 0; for (let c = t * TS + 1; c <= Math.min(n, (t + 1) * TS); c++) { tot++; const o = data[c] || {}; if (tab === "olts" ? (o.a !== undefined && o.a !== "") || (o.b !== undefined && o.b !== "") : (o.t !== undefined && o.t !== "") || (o.j || []).some(v => v !== undefined && v !== "")) f++; } return [f, tot]; };
+  const tubeBar = multi ? h("div", { class: "ts-tubes" }, ...Array.from({ length: nT }, (_, t) => { const [f, tot] = tubeDone(t), [nm, hx] = fibCol(t);
+    return h("button", { type: "button", class: "ts-tube" + (t === tb ? " on" : ""), onclick: () => { S.ts.tube = t; render(); } }, h("span", { class: "fdot", style: `background:${hx}` }), `T${t + 1}`, h("small", {}, f === tot ? "done" : f ? `${f}/${tot}` : nm)); })) : null;
   let head, rows;
   if (tab === "olts") {
     head = h("tr", {}, h("th", {}, "Core"), h("th", {}, "Loss A to B (dB)"), h("th", {}, "Loss B to A (dB)"));
-    rows = Array.from({ length: n }, (_, i) => { const c = i + 1, o = data[c] || (data[c] = {}); return h("tr", {}, h("th", {}, c), h("td", {}, cell(o.a, v => o.a = v)), h("td", {}, cell(o.b, v => o.b = v))); });
+    rows = coreList.map(c => { const o = data[c] || (data[c] = {}); return h("tr", {}, coreTh(c), h("td", {}, cell(o.a, v => o.a = v)), h("td", {}, cell(o.b, v => o.b = v))); });
   } else {
     head = h("tr", {}, h("th", {}, "Core"), ...order.map(k => h("th", {}, J[k].name || `Joint ${k + 1}`)), h("th", {}, "Total loss"));
-    rows = Array.from({ length: n }, (_, i) => { const c = i + 1, o = data[c] || (data[c] = { j: [] }); if (!o.j) o.j = [];
-      return h("tr", {}, h("th", {}, c), ...order.map(k => h("td", {}, cell(o.j[k], v => o.j[k] = v))), h("td", {}, cell(o.t, v => o.t = v))); });
+    rows = coreList.map(c => { const o = data[c] || (data[c] = { j: [] }); if (!o.j) o.j = [];
+      return h("tr", {}, coreTh(c), ...order.map(k => h("td", {}, cell(o.j[k], v => o.j[k] = v))), h("td", {}, cell(o.t, v => o.t = v))); });
   }
   const tabBtn = (k, lab) => h("button", { type: "button", class: "ts-tab" + (tab === k ? " on" : ""), onclick: () => { S.ts.tab = k; render(); } }, lab);
   const wlBtn = w => h("button", { type: "button", class: "ts-tab" + (wl === w ? " on" : ""), onclick: () => { S.ts.wl = w; render(); } }, `${w} nm`);
@@ -2899,8 +2913,10 @@ function vTsheet() {
     h("div", { class: "ts-bar" }, tabBtn("ab", "OTDR A to B"), tabBtn("ba", "OTDR B to A"), tabBtn("olts", "OLTS")),
     h("p", { class: "form-sub", style: "margin-top:6px" }, tab === "ab" ? `Standing at ${r.a}, shooting to ${r.b}. Type the loss at each joint and the total loss.` : tab === "ba" ? `Standing at ${r.b}, shooting back to ${r.a}. The joints are listed from your side.` : "Type the OLTS loss in both directions for each core."),
     J.length || tab === "olts" ? null : h("p", { class: "hint" }, "No joints on this section. Only the total loss is needed."),
+    tubeBar, multi ? h("div", { class: "ts-tube-h" }, tubeLab(r, tb)) : null,
     h("div", { class: "ts-grid-wrap" }, h("table", { class: "ts-grid" }, h("thead", {}, head), h("tbody", {}, ...rows))),
-    (() => { const st = (all._stored || {})[wl]; return h("p", { class: "hint", style: "margin-top:10px" }, st ? `Stored by ${st.by.split(" ")[0]} at ${st.time}. Change a number and tap STORE RESULT again.` : `Type all ${n} cores, then tap STORE RESULT. Leave a box empty if that core is not tested yet.`); })(),
+    multi && tb < nT - 1 ? h("button", { type: "button", class: "ts-nexttube", onclick: () => { S.ts.tube = tb + 1; render(); window.scrollTo(0, 0); } }, `NEXT TUBE  ›  ${tubeLab(r, tb + 1)}`) : null,
+    (() => { const st = (all._stored || {})[wl]; return h("p", { class: "hint", style: "margin-top:10px" }, st ? `Stored by ${st.by.split(" ")[0]} at ${st.time}. Change a number and tap STORE RESULT again.` : `${multi ? `Type every tube (${n} cores), then tap STORE RESULT once.` : `Type all ${n} cores, then tap STORE RESULT.`} Leave a box empty if that core is not tested yet.`); })(),
     h("button", { class: "submit ts-store", type: "button", onclick: () => tsStore(r, wl, tab, all, meta) }, "STORE RESULT"),
     h("div", { style: "display:flex;gap:8px;flex-wrap:wrap;margin:10px 0" },
       h("button", { class: "submit", type: "button", style: "flex:2", onclick: () => { tsFlush(); go("treport"); } }, "Generate report"),
@@ -3019,7 +3035,7 @@ function tsSummaryPop(r, wl, tab, an, both, sent, filled, n, meta) {
     h("div", { class: "tsp-s" }, `${wl} nm  |  ${TS_NAMES[tab]}  |  ${filled} of ${n} cores`),
     h("div", { class: "tsp-s" }, `${eq.name || ""}${S.user ? "  |  " + S.user.split(" ")[0] + " " + hhmm(new Date()) : ""}`),
     h("div", { class: "tsp-s" }, tab === "olts" ? `Reference ${meta["ref" + wl]} dBm  |  ${meta.refMethod}  |  ${meta.mod}` : `IOR ${meta.ior}  |  ${meta.mode}  |  cords ${meta.cords === "On" ? `${meta.launch} m and ${meta.receive} m` : "off"}  |  job ${meta.job}`),
-    h("div", { class: "tsp-grid" }, ...blocks),
+    h("div", { class: "tsp-grid" + (n > 24 ? " big" : "") }, ...blocks),
     h("div", { class: "tsp-line" }, h("b", {}, tab === "olts" ? "Highest loss " : both ? "Worst joint (average) " : "Worst joint "), worstTxt),
     tots.length ? h("div", { class: "tsp-line" }, h("b", {}, "Highest total "), `${f2(Math.max(...tots))} dB`) : null,
     h("div", { class: "tsp-line " + (bad ? "bad" : "good") }, bad ? `${bad} core${bad > 1 ? "s" : ""} over the limit` : "No core over the limit"),
@@ -3042,8 +3058,10 @@ function tsGridHtml(r, an, forPdf) {
     const oc = sq(x.oSt, x.oAvg != null ? f2(x.oAvg) : x.oSt === "half" ? "1 side" : "");
     return forPdf ? `<tr><th>${x.c}</th>${jc.join("")}${J.length ? "" : `<td style="text-align:center">${f2(x.tAvg)}</td>`}${oc}</tr>` : h("tr", {}, h("th", {}, x.c), ...jc, J.length ? null : h("td", { class: "ts-sq", style: "background:#2c323c;color:#fff" }, f2(x.tAvg)), oc);
   };
-  if (forPdf) return `<table class="g"><thead><tr><th>Core</th>${J.map(j => `<th>${j.name}</th>`).join("")}${J.length ? "" : "<th>OTDR total (avg)</th>"}<th>OLTS (avg)</th></tr></thead><tbody>${an.cores.map(row).join("")}</tbody></table>`;
-  return h("div", { class: "ts-grid-wrap" }, h("table", { class: "ts-heat" }, h("thead", {}, h("tr", {}, h("th", {}, "Core"), ...J.map(j => h("th", {}, j.name)), J.length ? null : h("th", {}, "OTDR total"), h("th", {}, "OLTS"))), h("tbody", {}, ...an.cores.map(row))));
+  const multi = (+r.cores || 12) > tubeSize(r), span = J.length + 2;
+  const tubeRow = x => multi && (x.c - 1) % tubeSize(r) === 0 ? (forPdf ? `<tr><th colspan="${span}" style="text-align:left;background:#e8eef5">${tubeLab(r, tubeOf(r, x.c))}</th></tr>` : h("tr", {}, h("th", { colspan: span, class: "ts-tube-row" }, tubeLab(r, tubeOf(r, x.c))))) : (forPdf ? "" : null);
+  if (forPdf) return `<table class="g"><thead><tr><th>Core</th>${J.map(j => `<th>${j.name}</th>`).join("")}${J.length ? "" : "<th>OTDR total (avg)</th>"}<th>OLTS (avg)</th></tr></thead><tbody>${an.cores.map(x => tubeRow(x) + row(x)).join("")}</tbody></table>`;
+  return h("div", { class: "ts-grid-wrap" }, h("table", { class: "ts-heat" }, h("thead", {}, h("tr", {}, h("th", {}, "Core"), ...J.map(j => h("th", {}, j.name)), J.length ? null : h("th", {}, "OTDR total"), h("th", {}, "OLTS"))), h("tbody", {}, ...an.cores.flatMap(x => [tubeRow(x), row(x)]).filter(Boolean))));
 }
 
 function vTreport() {
@@ -3137,7 +3155,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792771012"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792771012"); await loadJs("./js/pdf.js?v=1792771012");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792771624"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792771624"); await loadJs("./js/pdf.js?v=1792771624");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
