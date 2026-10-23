@@ -311,7 +311,7 @@ function vProjects() {
         bioSetup(); } }, "Fingerprint")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1792731465";
+const APPV = "1792734646";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -385,7 +385,7 @@ async function sendRegister(p, d, days) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792731465"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792731465"); await loadJs("./js/pdf.js?v=1792731465");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792734646"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792734646"); await loadJs("./js/pdf.js?v=1792734646");
     const { html, title } = attDoc(p, d, days); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
@@ -489,7 +489,7 @@ async function timeZone() {
   try {
     try { Store.kick(); await refreshDevices(true); } catch (e) {}
     await new Promise(r => setTimeout(r, 1800));
-    await loadJs("./js/lib/html2canvas.min.js?v=1792731465"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792731465"); await loadJs("./js/pdf.js?v=1792731465");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792734646"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792734646"); await loadJs("./js/pdf.js?v=1792734646");
     const D = tzData(), stamp = `${dmy(new Date())} ${hhmm()}`, name = `FIBRACO - Time Zone (${stamp})`;
     const pdf = await window.FibPdf.diaryPdf(tzHtml(D), name);
     const json = new File([JSON.stringify(D, null, 1)], name.replace(/[\\/:*?"<>|]+/g, "-") + ".json", { type: "application/json" });
@@ -540,11 +540,14 @@ async function clAsk(text) {
     while (messages.length && messages[0].role !== "user") messages.shift();
     const r = await fetch("https://api.anthropic.com/v1/messages", { method: "POST",
       headers: { "content-type": "application/json", "x-api-key": CL.key, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
-      body: JSON.stringify({ model: CL_MODEL, max_tokens: 1500, system, messages }) });
+      body: JSON.stringify({ model: CL_MODEL, max_tokens: 6000, thinking: { type: "between_tools" }, system, messages }) });
     const j = await r.json().catch(() => ({}));
     if (!r.ok) { const m = (j.error && j.error.message) || `error ${r.status}`;
       throw new Error(r.status === 401 ? "The key was not accepted. Tap Change key and paste it again." : /credit|balance|billing/i.test(m) ? "There is no credit left on the Claude account. Load credit at console.anthropic.com." : m); }
-    CL.msgs.push({ role: "assistant", content: (j.content || []).filter(c => c.type === "text").map(c => c.text).join("\n").trim() || "(no answer)", at: new Date().toISOString() });
+    let ans = (j.content || []).filter(c => c.type === "text").map(c => c.text).join("\n").trim();
+    if (j.stop_reason === "max_tokens") ans = (ans ? ans + "\n\n" : "") + "(The answer was too long and got cut off. Ask me to continue, or ask a narrower question.)";
+    if (!ans) throw new Error("Claude sent back an empty answer. Ask again, or ask a shorter question.");
+    CL.msgs.push({ role: "assistant", content: ans, at: new Date().toISOString() });
   } catch (e) {
     const q = CL.msgs.pop(); CL.draft = q ? q.content : "";
     showInfo("Claude did not answer", e && e.message && !/fetch|network/i.test(e.message) ? e.message : "Could not reach Claude. Check your signal and try again.");
@@ -979,7 +982,7 @@ async function sendOrder(f) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792731465"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792731465"); await loadJs("./js/pdf.js?v=1792731465");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792734646"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792734646"); await loadJs("./js/pdf.js?v=1792734646");
     const { html, title } = orderDoc(f);
     const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
@@ -1935,7 +1938,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792731465"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792731465"); await loadJs("./js/pdf.js?v=1792731465");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792734646"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792734646"); await loadJs("./js/pdf.js?v=1792734646");
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
     // Phones only open the share menu straight after a tap, so the last step is one tap on Share.
@@ -2627,7 +2630,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792731465"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792731465"); await loadJs("./js/pdf.js?v=1792731465");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792734646"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792734646"); await loadJs("./js/pdf.js?v=1792734646");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
