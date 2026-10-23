@@ -76,7 +76,7 @@ function goBack() { S.view = S.hist.pop() || "projects"; render(); window.scroll
 // ---------- the phone's back button ----------
 // Back goes one screen back inside the app. It never drops a man straight out of the app.
 // On the main screen it takes three presses to close, with a message each time.
-const FORM_VIEWS = ["check", "toolbox", "incident", "si", "order", "diary", "dsti", "inspection", "mysection"];
+const FORM_VIEWS = ["check", "toolbox", "incident", "nearmiss", "jobobs", "si", "order", "diary", "dsti", "inspection", "mysection"];
 const ROOT_VIEWS = ["projects", "users", "signature", "waiting", "removed"];
 let backPresses = 0, backAt = 0;
 function guardBack() { if (!(history.state && history.state.fib === "top")) { history.replaceState({ fib: "base" }, ""); history.pushState({ fib: "top" }, ""); } }
@@ -97,7 +97,7 @@ addEventListener("click", () => { if (FORM_VIEWS.includes(S.view) && S.formDirty
 addEventListener("change", () => { if (FORM_VIEWS.includes(S.view)) { S.formDirty = true; saveDraft(); } }, true);
 // An unfinished form is kept on the phone, so it survives the app closing (camera, WhatsApp, an update or the
 // 10 minute lock). When the app opens again it offers to carry on.
-const FORM_NAMES = { check: "an inspection checklist", toolbox: "a toolbox talk", incident: "an incident report", si: "a site instruction", order: "a material order", diary: "the diary", dsti: "a DSTI", inspection: "a site inspection" };
+const FORM_NAMES = { check: "an inspection checklist", toolbox: "a toolbox talk", incident: "an incident report", nearmiss: "a near-miss report", jobobs: "a job observation", si: "a site instruction", order: "a material order", diary: "the diary", dsti: "a DSTI", inspection: "a site inspection" };
 let draftT = 0;
 function saveDraft() {
   clearTimeout(draftT);
@@ -291,6 +291,7 @@ function installCard() {
     h("p", { class: "note", style: "margin-top:6px;text-align:center" }, "One tap. After that, open Fibraco from its icon like WhatsApp."));
 }
 function vProjects() {
+  if (TILES()) return vProjectsTiles();
   return [topbar("Fibraco", S.user, false), h("div", { class: "who" }, h("span", {}, "Signed in as ", h("b", {}, S.user), ` (${ROLE[S.user]})`), null),
     installCard(),
     isAdmin(S.user) ? h("button", { class: "mbtn", style: `background:${CH.bg};color:#fff;border-color:${CH.bg};margin-bottom:12px`, onclick: () => go("dash") }, "MY DASHBOARD", h("small", { style: "color:#c9d0d8" }, "Who is in, who is behind, colour first")) : null,
@@ -311,7 +312,7 @@ function vProjects() {
         bioSetup(); } }, "Fingerprint")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1792742076";
+const APPV = "1792770411";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -385,7 +386,7 @@ async function sendRegister(p, d, days) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792742076"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792742076"); await loadJs("./js/pdf.js?v=1792742076");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792770411"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792770411"); await loadJs("./js/pdf.js?v=1792770411");
     const { html, title } = attDoc(p, d, days); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
@@ -489,7 +490,7 @@ async function timeZone() {
   try {
     try { Store.kick(); await refreshDevices(true); } catch (e) {}
     await new Promise(r => setTimeout(r, 1800));
-    await loadJs("./js/lib/html2canvas.min.js?v=1792742076"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792742076"); await loadJs("./js/pdf.js?v=1792742076");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792770411"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792770411"); await loadJs("./js/pdf.js?v=1792770411");
     const D = tzData(), stamp = `${dmy(new Date())} ${hhmm()}`, name = `FIBRACO - Time Zone (${stamp})`;
     const pdf = await window.FibPdf.diaryPdf(tzHtml(D), name);
     const json = new File([JSON.stringify(D, null, 1)], name.replace(/[\\/:*?"<>|]+/g, "-") + ".json", { type: "application/json" });
@@ -613,7 +614,189 @@ function vClaude() {
       h("button", { class: "btn-g", type: "button", onclick: () => askYesNo("Clear the chat?", "The questions and answers on this screen are removed from this phone.", "Clear", async () => { CL.msgs = []; await Store.keepLocal("claudeChat", []); render(); }, true) }, "Clear chat"),
       h("button", { class: "btn-g", type: "button", onclick: () => askYesNo("Change the Claude key?", "You will paste a new key.", "Change", async () => { CL.key = null; await Store.keepLocal("claudeKey", null); render(); }) }, "Change key"))];
 }
+// ---------- one-screen tile menus (CFG.ui === "tiles"). Approved by Wanro 23 Oct 2026, goes live in one go ----------
+// "tiles" for everyone, "admin" for Wanro's phone only (to try it before the crew gets it)
+const TILES = () => typeof CFG !== "undefined" && CFG && (CFG.ui === "tiles" || (CFG.ui === "admin" && isAdmin(S.user)));
+const TI = {
+  pen: '<path d="M4 20h4l10-10-4-4L4 16z"/><path d="M14 6l4 4"/>',
+  book: '<path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11"/><path d="M9 8h6"/>',
+  shield: '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/>',
+  eye: '<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  wave: '<path d="M3 18h18"/><path d="M3 15l3-6 3 4 3-8 3 10 3-5 3 5"/>',
+  doc: '<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/><path d="M9 13h7M9 17h5"/>',
+  warn: '<path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.5"/>',
+  near: '<path d="M12 3l10 18H2z"/><path d="M9 15.5c1-1.4 2-1.4 3 0s2 1.4 3 0"/><path d="M12 9v2.5"/>',
+  map: '<path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z"/><path d="M9 3v15M15 6v15"/>',
+  rams: '<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V2h6v2"/><path d="M9 11l2 2 4-4M9 17h6"/>',
+  search: '<circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  phone: '<path d="M5 4h4l2 5-3 2a11 11 0 0 0 5 5l2-3 5 2v4a2 2 0 0 1-2 2A17 17 0 0 1 3 6a2 2 0 0 1 2-2z"/>',
+  users: '<circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14a5 5 0 0 1 5 5"/>',
+  check: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 9l2 2 4-4M8 16h8"/>',
+  list: '<path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/>',
+  sos: '<circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16v.5"/>',
+  cart: '<path d="M3 4h2l2 12h11l2-8H6"/><circle cx="9" cy="20" r="1.5"/><circle cx="17" cy="20" r="1.5"/>',
+  dash: '<rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="5" rx="1.5"/><rect x="13" y="10" width="8" height="11" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/>',
+  cam: '<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
+  chat: '<path d="M4 5h16v11H9l-5 4z"/><path d="M8 10h8M8 13h5"/>',
+  key: '<circle cx="8" cy="14" r="4"/><path d="M11 11l9-9M17 5l2 2M15 7l2 2"/>',
+  obs: '<circle cx="10" cy="10" r="6"/><path d="M20 20l-5.5-5.5"/><path d="M7.5 10l2 2 3.5-3.5"/>',
+  cal: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  turb: '<path d="M12 12v9M9 21h6"/><path d="M12 12l-1-8 2 0z"/><path d="M12 12l7 4-1 1.7z"/><path d="M12 12l-7 4 1 1.7z"/>'
+};
+function ticon(name) { const sp = h("span", { class: "ti-ic", "aria-hidden": "true" }); sp.innerHTML = `<svg viewBox="0 0 24 24">${TI[name] || TI.doc}</svg>`; return sp; }
+function tile(icon, label, onclick, opt = {}) {
+  return h("button", { type: "button", class: "tile" + (opt.cls ? " " + opt.cls : ""), onclick, "aria-label": label.replace("\n", " ") + (opt.badge ? `, ${opt.badge}` : "") },
+    opt.badge != null && opt.badge !== "" ? h("span", { class: "tbadge" + (opt.bc ? " " + opt.bc : "") }, String(opt.badge)) : null,
+    ticon(icon), h("span", { class: "tl" }, ...label.split("\n").flatMap((x, i) => i ? [h("br"), x] : [x])));
+}
+function pinMenu() {
+  const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "PIN and fingerprint" }, h("div", { class: "modal" }, h("h2", {}, "PIN and fingerprint"),
+    h("button", { class: "mbtn", type: "button", onclick: () => { ov.remove(); changePin(); } }, "Change my PIN"),
+    h("button", { class: "mbtn", type: "button", onclick: async () => { ov.remove();
+      if (await Store.hasBio()) return askYesNo("Switch fingerprint off?", "Fibraco will only ask for your PIN.", "Switch off", async () => { await Store.bioOff(); showInfo("Fingerprint is off", "Fibraco asks for your PIN only."); });
+      if (!(await Store.bioAvailable())) return showInfo("Not on this phone", "This phone has no fingerprint set up in its own settings. Set it up there first (Settings, Security, Fingerprints).");
+      bioSetup(); } }, "Fingerprint", h("small", {}, "Open the app with your finger instead of the PIN")),
+    h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"))));
+  document.body.append(ov);
+}
+function frontPick(title, fn) {
+  if (PROJECTS.length === 1) return fn(PROJECTS[0]);
+  const ov = h("div", { class: "overlay", role: "dialog", "aria-label": title }, h("div", { class: "modal" }, h("h2", {}, title),
+    ...PROJECTS.map(p => h("button", { class: "mbtn", type: "button", onclick: () => { ov.remove(); fn(p); } }, p.name)),
+    h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Cancel"))));
+  document.body.append(ov);
+}
+const frontForm = type => frontPick(type === "nearmiss" ? "Near miss on which project?" : "Which project?", p => { S.project = p; S.date = today(); S.hist = []; startForm(type); });
+// one line per project on the front screen: what is waiting today
+function projStatus(p) {
+  const keep = [S.project, S.date]; S.project = p; S.date = today();
+  try {
+    if (!roleIn(S.user, p) && !isAdmin(S.user)) return ["Not on this project", "#8a8f98"];
+    ensureDay(); const k = dayKey(), alloc = S.alloc[k] || [];
+    if (isMgr(S.user)) {
+      const men = [...new Set(alloc.map(a => a.who))], inn = men.filter(n => ["submitted", "approved"].includes(((S.sections[k] || {})[n] || {}).status)).length;
+      if (!alloc.length) return ["No work given out today", "#8a8f98"];
+      return [`${alloc.length} tasks for ${men.length} men | ${inn} of ${men.length} diaries in${S.final[k] ? " | signed" : ""}`, S.final[k] ? "#1e8e3e" : inn === men.length ? "#0069aa" : "#f29900"];
+    }
+    const t = myTasks(S.user), st = (((S.sections[k] || {})[S.user]) || {}).status || "draft";
+    if (!t.length) return ["Nothing given to you today", "#8a8f98"];
+    const stl = { draft: "diary not submitted", submitted: "diary submitted", returned: "diary SENT BACK", approved: "diary approved" }[st];
+    return [`${t.length} task${t.length === 1 ? "" : "s"} today | ${stl}`, { draft: "#f29900", submitted: "#0069aa", returned: "#c8102e", approved: "#1e8e3e" }[st]];
+  } catch (e) { return ["Tap to open", "#8a8f98"]; }
+  finally { [S.project, S.date] = keep; }
+}
+// near misses and incidents of the last 7 days, for the office and the site manager (front screen, tile layout)
+function safetyBanner() {
+  const mine = new Set(PROJECTS.filter(p => isAdmin(S.user) || ["sm", "pm"].includes(roleIn(S.user, p))).map(p => p.id));
+  if (!mine.size) return null;
+  const since = Date.now() - 7 * 864e5;
+  const list = Store.list("form|").map(([, o]) => o).filter(o => o && ["nearmiss", "incident"].includes(o.type) && mine.has(o.project) && Date.parse(o.savedAt || 0) > since).sort((a, b) => (b.savedAt || "").localeCompare(a.savedAt || ""));
+  if (!list.length) return null;
+  const pn = id => (CFG.projects.find(p => p.id === id) || {}).short || id;
+  return sheet("", h("div", { class: "band", style: "background:#c76a00" }, `SAFETY REPORTS, LAST 7 DAYS (${list.length})`),
+    ...list.slice(0, 4).map(o => { const pr = o.type === "nearmiss" ? nmPriority(o) : "";
+      return h("button", { type: "button", style: "display:flex;gap:10px;align-items:center;width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--line);padding:9px 12px;font-size:13px;color:var(--text)",
+        onclick: () => showInfo(o.type === "nearmiss" ? `Near miss, ${pn(o.project)}` : `Incident, ${pn(o.project)}`, `${o.savedBy} on ${dmy(new Date(o.date + "T12:00:00"))}${o.time ? " at " + o.time : ""}. ${o.where ? "Where: " + o.where + ". " : ""}${o.what || ""}${pr ? ` Priority ${pr}.` : ""}`) },
+        h("span", { style: `flex:none;font-size:10.5px;font-weight:800;color:#fff;border-radius:10px;padding:3px 8px;background:${pr ? NM_COL[pr] : "#c8102e"}` }, o.type === "nearmiss" ? (pr || "NEAR MISS").toUpperCase() : "INCIDENT"),
+        h("span", { style: "min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" }, h("b", {}, o.savedBy.split(" ")[0]), ` ${pn(o.project)}: ${o.what || ""}`)); }));
+}
+
+function vProjectsTiles() {
+  const open = myDelays().filter(o => o.status !== "sorted"), top = open.reduce((m, o) => Math.max(m, delayLevel(o)), -1);
+  const admin = isAdmin(S.user);
+  return [topbar("Fibraco", S.user, false),
+    h("div", { class: "tw" },
+      h("div", { class: "who", style: "margin:0" }, h("span", {}, "Signed in as ", h("b", {}, S.user), ` (${ROLE[S.user]})`)),
+      installCard(),
+      ...(alertsBanner() || []),
+      safetyBanner(),
+      admin ? h("div", { class: "tgrid" },
+        tile("dash", "My\ndashboard", () => go("dash"), { cls: "dark" }),
+        tile("cam", "Time\nzone", timeZone, { cls: "dark" }),
+        tile("chat", "Claude", () => go("claude"), { cls: "dark" })) : null,
+      ...PROJECTS.map(p => { const [line, col] = projStatus(p);
+        return h("button", { type: "button", class: "tproj", onclick: () => { S.project = p; S.date = today(); S.month = today(); go("menu"); } },
+          h("span", { class: "tdot", style: `background:${col}` }), h("span", { class: "tpt" }, h("b", {}, p.name.toUpperCase()), h("small", {}, line)), h("span", { class: "tgo", "aria-hidden": "true" }, "›")); }),
+      PROJECTS.length ? null : h("p", { class: "note" }, "No active projects yet. The office adds you to a project."),
+      h("div", { class: "tgrid" },
+        PROJECTS.length ? tile("near", "Near\nmiss", () => frontForm("nearmiss"), { cls: "nm" }) : null,
+        tile("wave", "Test\nsheets", () => go("adhoc")),
+        PROJECTS.length ? tile("clock", "Internal\ndelays", () => go("delays"), { cls: "dark", badge: open.length, bc: top < 0 ? "g" : top >= 3 ? "" : "o" }) : null,
+        PROJECTS.length ? tile("cart", "Material\norder", frontOrder) : null,
+        tile("search", "Site\ninspection", () => { S.project = null; startForm("inspection"); }),
+        tile("key", "PIN and\nfingerprint", pinMenu)),
+      h("div", { class: "tfoot", style: "justify-content:center" }, h("span", {}, `App version ${verLabel()}`)),
+      h("button", { type: "button", class: "tsos", onclick: () => { if (!S.project && PROJECTS.length === 1) S.project = PROJECTS[0]; openEmergency(); } }, ticon("sos"), "EMERGENCY"))];
+}
+function vMenuTiles() {
+  const p = S.project, d = S.date, k = (ensureDay(), dayKey()), alloc = S.alloc[k] || [], mgr = isMgr(S.user), sm = isSM(S.user) || isAdmin(S.user);
+  const idle = mgr ? idleMen(p, ymd(d)) : [], rp = myRepairs(S.user);
+  const open = myDelays().filter(o => o.status !== "sorted" && o.pid === p.id), top = open.reduce((m, o) => Math.max(m, delayLevel(o)), -1);
+  const dl = { badge: open.length || "", bc: top >= 3 ? "" : "o", cls: "dark" };
+  const tests = p.routes ? tile("wave", "Test\nsheets", () => go("tsheets")) : tile(p.kind === "turbines" ? "turb" : "wave", p.kind === "turbines" ? "Turbines" : p.kind === "opgw" ? "Joint and\ntests" : "Cable\ntests", () => go("tests"));
+  const contacts = tile("phone", "Client\ncontacts", () => { const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Client contacts" }, h("div", { class: "modal" }, projCard(p), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close")))); document.body.append(ov); });
+  const red = (t, sub, fn) => h("button", { class: "mbtn tred", type: "button", onclick: fn }, t, h("small", {}, sub));
+  let work, grid;
+  if (mgr) {
+    const men = [...new Set(alloc.map(a => a.who))], inn = men.filter(n => ["submitted", "approved"].includes(((S.sections[k] || {})[n] || {}).status)).length;
+    const waiting = men.filter(n => ((S.sections[k] || {})[n] || {}).status === "submitted").length;
+    const ppl = attPeople(p), notIn = ymd(d) === ymd(today()) ? ppl.filter(x => !(attGet(p, d, x) || {}).in).length : 0;
+    work = h("div", { class: "twork" }, h("span", { class: "tn" }, `${inn}/${men.length}`), h("span", { class: "tpt" }, h("b", {}, "TODAY'S WORK"), h("small", {}, alloc.length ? `${alloc.length} tasks for ${men.length} men | ${inn} diaries in${S.final[k] ? " | signed " + S.final[k] : ""}` : "No work given out yet")),
+      isSM(S.user) && !S.final[k] ? h("button", { type: "button", class: "tst blue", onclick: () => go("allocate") }, alloc.length ? "CHANGE" : "GIVE OUT") : null);
+    const list = [tile("book", "Daily\ndiaries", () => go("review"), { cls: "hi", badge: waiting || "" }),
+      tile("users", "Register", () => { S.attDate = S.date; go("attendance"); }, { badge: notIn || "", bc: "o" }),
+      myTasks(S.user).length ? tile("list", "My\ntasks", () => go("mysection")) : null,
+      sm && p.qcSpots ? tile("check", "QC\nsheets", () => go("qc"), { cls: "qc" }) : null,
+      tests,
+      tile("shield", "DSTI", () => startForm("dsti")),
+      tile("eye", "Inspec-\ntions", () => go("inspections")),
+      tile("doc", "Site\ninstruction", () => startForm("si")),
+      tile("cart", "Material\norder", () => startForm("order")),
+      tile("warn", "Incident", () => startForm("incident")),
+      tile("near", "Near\nmiss", () => startForm("nearmiss"), { cls: "nm" }),
+      tile("obs", "Job\nobservation", () => startForm("jobobs")),
+      tile("map", "Drawings", () => go("drawings")),
+      tile("rams", "RAMS", () => go("rams")),
+      tile("clock", "Internal\ndelays", () => go("delays"), dl),
+      contacts].filter(Boolean);
+    if (list.length < 16) list.splice(list.length - 1, 0, tile("search", "Site\ninspection", () => startForm("inspection")));
+    grid = h("div", { class: "tgrid g4" }, ...list);
+  } else {
+    const t = myTasks(S.user), sec = sectionOf(S.user);
+    const stc = { draft: ["NOT SUBMITTED", "grey"], submitted: ["SUBMITTED", "blue"], returned: ["SENT BACK", "red"], approved: ["APPROVED", "green"] }[sec.status || "draft"];
+    work = h("button", { type: "button", class: "twork", onclick: () => go("mysection") }, h("span", { class: "tn" }, String(t.length)),
+      h("span", { class: "tpt" }, h("b", {}, "MY WORK TODAY"), h("small", {}, t.length ? t.map(x => `${nice2(x.act)} ${x.target}`).join(" | ") : "Nothing given to you yet. Ask the site manager.")),
+      h("span", { class: "tst " + stc[1] }, stc[0]));
+    grid = h("div", { class: "tgrid" },
+      tile("book", "Daily\ndiary", () => go("mysection"), { cls: "hi" }),
+      tile("shield", "DSTI", () => startForm("dsti")),
+      tile("eye", "Daily\ninspections", () => go("inspections")),
+      tests,
+      tile("cart", "Material\norder", () => startForm("order")),
+      tile("doc", "Site\ninstruction", () => startForm("si")),
+      tile("warn", "Incident\nreport", () => startForm("incident")),
+      tile("near", "Near\nmiss", () => startForm("nearmiss"), { cls: "nm" }),
+      tile("map", "Drawings", () => go("drawings")),
+      tile("rams", "RAMS", () => go("rams")),
+      tile("clock", "Internal\ndelays", () => go("delays"), dl),
+      contacts);
+  }
+  const isTodayD = ymd(d) === ymd(today());
+  const tb = topbar(p.short, nice(d), true), dsp = tb.querySelector(".t span");
+  if (dsp) { dsp.classList.add("tdate"); dsp.setAttribute("role", "button"); dsp.setAttribute("tabindex", "0"); dsp.textContent = nice(d) + "  ▾"; dsp.onclick = () => { S.month = new Date(d); go("calendar"); }; }
+  return [tb,
+    h("div", { class: "tw" },
+      isTodayD ? null : h("button", { type: "button", class: "tday", onclick: () => { S.date = today(); render(); } }, `You are looking at ${nice(d)}. Tap to go back to today.`),
+      h("div", { class: "treg" }, attButton()),
+      rp.length ? red(`${rp.every(x => /^Splice failed/.test(x.title || "")) ? "SPLICE FAILED" : rp.every(x => /^QC failed/.test(x.title || "")) ? "QC FAILED" : "REPAIRS"}: ${rp.length} TO FIX`, "Fix it, then tap Repaired", () => go("mysection")) : null,
+      idle.length ? red(`NO WORK FOR ${idle.map(n => n.split(" ")[0].toUpperCase()).join(" AND ")} TODAY`, "Tap, give him tasks and tap Send to crew", () => go("allocate")) : null,
+      work, grid,
+      h("button", { type: "button", class: "tsos", onclick: openEmergency }, ticon("sos"), "EMERGENCY"))];
+}
+
 function vMenu() {
+  if (TILES()) return vMenuTiles();
   const d = S.date;
   const later = (name, what) => h("button", { class: "mbtn later", onclick: () => showInfo(name, what) }, name);
   const idle = isMgr(S.user) ? idleMen(S.project, ymd(d)) : [];
@@ -649,6 +832,8 @@ function startForm(type, key) {
   const base = { type, key, date: S.date || today(), project: S.project, user: S.user, photos: [] };
   if (type === "check") Object.assign(base, { d: {}, outcome: "", sig: "", items: CHECKS[key].groups.map(g => g[1].map(n => ({ name: n }))) });
   if (type === "toolbox") Object.assign(base, { talk: "", talkLabel: "", att: [{ name: S.user }, {}, {}, {}], q: "" });
+  if (type === "jobobs") Object.assign(base, { time: "", dur: "", area: "", seen: "", safe: "", groups: [], acts: [], other: "", good: "", state: "", unsafe: [], why: [], follow: [{}], sig: "" });
+  if (type === "nearmiss") Object.assign(base, { time: "", where: "", task: "", dsti: "", what: "", cons: "", like: "", people: [{}], repeat: "", acts: [], other: "", wit: "", sig: "" });
   if (type === "incident") Object.assign(base, { time: "", types: [], acts: [], where: "", people: [{}], what: "", wit: "", sig: "" });
   if (type === "si") Object.assign(base, { by: "", co: "", kind: "", ref: "", text: "", cost: "", sigC: "", sigF: "" });
   if (type === "order") Object.assign(base, { need: "", reason: "", items: [{}, {}, {}], notes: "", sig: "" });
@@ -812,7 +997,7 @@ function vDone() {
   const f = S.form;
   const names = { diary: ["1. Daily Diaries", "Daily Diary", "xlsx", "x"], dsti: ["2. DSTI", "DSTI", "docx", "w"], inspection: ["3. Site Inspections", "Site Inspection", "docx", "w"],
     toolbox: ["5. Toolbox Talks", "Toolbox Talk", "docx", "w"], check: ["7. Inspection Checklists", f.key ? CHECKS[f.key].title : "Inspection", "docx", "w"],
-    incident: ["8. Incidents", "Incident Report", "docx", "w"], si: ["9. Site Instructions", "Site Instruction SI-001", "docx", "w"], order: ["10. Orders", "Material Order OR-001", "docx", "w"] }[f.type];
+    incident: ["8. Incidents", "Incident Report", "docx", "w"], nearmiss: ["8. Incidents", "Near-Miss Report", "docx", "w"], jobobs: ["6. Behavioural Observations", "Behavioural Observation", "docx", "w"], si: ["9. Site Instructions", "Site Instruction SI-001", "docx", "w"], order: ["10. Orders", "Material Order OR-001", "docx", "w"] }[f.type];
   const proj = f.project ? f.project.name : "Site inspections (no project yet)";
   const short = f.project ? f.project.short : (f.company || "New site");
   const base = `FIBRACO - ${names[1]} - ${short} (${dmy(f.date)})`;
@@ -945,10 +1130,10 @@ function vToolbox() {
 
 function vIncident() {
   const f = S.form;
-  const types = ["Near miss", "First aid case", "Medical treatment", "Lost time injury", "Property or equipment damage", "Vehicle incident", "Environmental", "Fire", "Member of the public"];
+  const types = [...(TILES() ? [] : ["Near miss"]), "First aid case", "Medical treatment", "Lost time injury", "Property or equipment damage", "Vehicle incident", "Environmental", "Fire", "Member of the public"];
   const acts = ["Emergency care given", "Area barricaded", "Work stopped", "Evidence left in place", "Photos taken", "Equipment tagged out"];
   const chips = (list, key) => h("div", { class: "chips" }, list.map(p => { const b = h("button", { type: "button", class: f[key].includes(p) ? "on" : "", onclick: () => { const on = f[key].includes(p); f[key] = on ? f[key].filter(x => x !== p) : [...f[key], p]; b.classList.toggle("on", !on); } }, p); return b; }));
-  return [...formHead("Incident report", "Report every incident and near miss straight away, no matter how small. Follows FIBRASE0010."),
+  return [...formHead("Incident report", TILES() ? "Someone got hurt, or something was damaged. Report it straight away. If nobody was hurt and nothing broke, use Near miss instead. Follows FIBRASE0010." : "Report every incident and near miss straight away, no matter how small. Follows FIBRASE0010."),
     stdHeader(f, "Incident and near-miss report", [h("tr", {}, h("td", { class: "lab" }, "Time of incident"), h("td", {}, sel(TIMES, f.time, v => f.time = v, "Time")))]),
     sheet("", h("div", { class: "band" }, "Type of incident (tick all that apply)"), chips(types, "types")),
     sheet("", h("div", { class: "band" }, "Where"), gpsBlock(f, "gps"), inp("text", f.where, v => f.where = v, "Exact location, tower or ITS no")),
@@ -959,6 +1144,86 @@ function vIncident() {
     sheet("", h("table", {}, h("tbody", {}, h("tr", {}, h("td", { class: "lab" }, "Witness"), h("td", {}, inp("text", f.wit, v => f.wit = v, "Name and cell no"))), h("tr", {}, h("td", { class: "lab" }, "Reported by signature"), h("td", {}, sigCell(() => f.sig, v => f.sig = v, "Reporter signature", true)))))),
     h("p", { class: "hint" }, `Submitting sends this to ${adminName()} and the site manager straight away. The investigation part is done later by the office.`),
     submitBtn(() => { const e = []; if (!f.types.length) e.push("Tick the type of incident."); if (!f.what.trim()) e.push("Describe what happened."); if (!f.sig) e.push("Sign the report."); return e; })];
+}
+
+// Near miss: something that did not hurt anyone or break anything, but could have.
+// From FIB-HSE-FOR-001 and the SHE Incident Management Procedure FIBRASE0010 Rev 2, sections 16 to 18.
+const NM_CONS = [["Low", "First aid or a doctor visit"], ["Minor", "Off work under 14 days"], ["Moderate", "Off 14 days or more, or disabled"], ["Major", "One death or a serious incident"], ["Critical", "More than one death"]];
+
+const NM_LIKE = [["Frequent", "Again within weeks"], ["Likely", "About once a month"], ["Possible", "Once in 1 to 2 years"], ["Unlikely", "Once in 2 to 5 years"], ["Rare", "Once in 10 years or more"]];
+
+const NM_MATRIX = { Frequent: ["Moderate", "Moderate", "High", "Extreme", "Extreme"], Likely: ["Low", "Moderate", "High", "Extreme", "Extreme"], Possible: ["Low", "Moderate", "Moderate", "Extreme", "Extreme"], Unlikely: ["Low", "Low", "Moderate", "Extreme", "Extreme"], Rare: ["Low", "Low", "Moderate", "Extreme", "Extreme"] };
+const NM_COL = { Low: "#1e8e3e", Moderate: "#f29900", High: "#e8590c", Extreme: "#c8102e" };
+const nmPriority = f => f.cons && f.like ? NM_MATRIX[f.like][NM_CONS.findIndex(c => c[0] === f.cons)] : "";
+function vNearMiss() {
+  const f = S.form;
+  const acts = ["Work stopped", "Area made safe and barricaded", "Hazard removed or fixed", "Equipment tagged out", "Photos taken", "Toolbox talk held"];
+  const chips = (list, key) => h("div", { class: "chips" }, list.map(p => { const b = h("button", { type: "button", class: f[key].includes(p) ? "on" : "", onclick: () => { const on = f[key].includes(p); f[key] = on ? f[key].filter(x => x !== p) : [...f[key], p]; b.classList.toggle("on", !on); } }, p); return b; }));
+  const pri = h("div");
+  const drawPri = () => { const v = nmPriority(f); pri.replaceChildren(v ? h("div", { class: "nm-pri", style: `background:${NM_COL[v]}` }, `PRIORITY: ${v.toUpperCase()}`) : h("div", { class: "hint", style: "margin:6px 0" }, "Choose both and the priority works itself out (FIBRASE0010 section 18).")); };
+  drawPri();
+  const pick = (list, key, ph) => h("select", { "aria-label": ph, onchange: e => { f[key] = e.target.value; drawPri(); } }, h("option", { value: "" }, ph), ...list.map(([v, d]) => h("option", { value: v, selected: f[key] === v }, `${v}: ${d}`)));
+  return [...formHead("Near-miss report", "Report every near miss straight away, no matter how small. Nobody was hurt and nothing broke, but it could have. Follows FIBRASE0010."),
+    stdHeader(f, "Near-miss report", [h("tr", {}, h("td", { class: "lab" }, "Time it happened"), h("td", {}, sel(TIMES, f.time, v => f.time = v, "Time")))]),
+    sheet("", h("div", { class: "band" }, "Where"), gpsBlock(f, "gps"), inp("text", f.where, v => f.where = v, "Exact location, e.g. RMU 4, battery 2, tower no")),
+    sheet("", h("table", {}, h("tbody", {},
+      h("tr", {}, h("td", { class: "lab" }, "Task being done"), h("td", {}, inp("text", f.task, v => f.task = v, "e.g. pulling CAT6a into battery 3"))),
+      h("tr", {}, h("td", { class: "lab" }, "DSTI ref"), h("td", {}, inp("text", f.dsti, v => f.dsti = v, "If there is one")))))),
+    sheet("", h("div", { class: "band" }, "What happened"), txt(f.what, v => f.what = v, "Describe what happened, in order. Stick to the facts.")),
+    sheet("", h("div", { class: "band" }, "How bad could it have been"), h("div", { style: "padding:10px 12px;display:flex;flex-direction:column;gap:8px" },
+      pick(NM_CONS, "cons", "What could it have caused?"), pick(NM_LIKE, "like", "How likely is it to happen again?"), pri)),
+    rowsTable("", ["People involved", "Company"], f.people, r => h("tr", {}, h("td", { style: "min-width:130px" }, sel(STAFF.concat(["Other (name in notes)"]), r.name, v => r.name = v, "Name")), h("td", {}, inp("text", r.co, v => r.co = v, "Fibraco or other"))), "+ Add person", () => ({})),
+    sheet("", h("table", {}, h("tbody", {}, h("tr", {}, h("td", { class: "lab" }, "Happened before?"), h("td", {}, seg([["Yes", "Yes"], ["No", "No"]], f.repeat, v => f.repeat = v)))))),
+    sheet("", h("div", { class: "band" }, "What was done straight away"), chips(acts, "acts"), inp("text", f.other, v => f.other = v, "Anything else that was done")),
+    sheet("", h("div", { class: "band" }, "Photos"), photoBlock(f.photos)),
+    sheet("", h("table", {}, h("tbody", {}, h("tr", {}, h("td", { class: "lab" }, "Witness"), h("td", {}, inp("text", f.wit, v => f.wit = v, "Name and cell no"))), h("tr", {}, h("td", { class: "lab" }, "Reported by signature"), h("td", {}, sigCell(() => f.sig, v => f.sig = v, "Reporter signature", true)))))),
+    h("p", { class: "hint" }, `Submitting sends this to ${adminName()} and the site manager straight away. There can only be one near-miss report per event, even if more people were involved.`),
+    submitBtn(() => { const e = []; if (!f.what.trim()) e.push("Describe what happened."); if (!f.cons || !f.like) e.push("Choose how bad it could have been and how likely it is."); if (!f.where.trim()) e.push("Write where it happened."); if (!f.sig) e.push("Sign the report."); return e; })];
+}
+
+// Job observation: Fibraco Behavioural Observation checklist Rev 05 as a tap form. Filed under 6. Behavioural Observations.
+const JO_ACTS = ["Cabling", "FOC prep work", "FOC routing", "FOC splicing", "FOC testing", "Commissioning", "Excavation", "Backfilling", "Lifting and rigging", "Loading and off-loading", "Transporting of material", "Opening crates", "Erecting", "Clamping", "Stringing", "Structure torqueing", "Earthing", "Earthmat installation", "Rebar setting", "Shuttering", "Concrete mixing", "Concreting", "Brickwork", "Spacing", "Punching and painting", "Ground assembly", "Bridge building", "Waste removal"];
+const JO_UNSAFE = [["Personal protective equipment", ["Eyes and face", "Ears", "Head", "Hands and arms", "Feet and legs", "Respiratory system", "Trunk"]],
+  ["Positions of people", ["Ergonomics (posture, repetition)", "Work area not barricaded", "Risk of getting caught in or by something", "Risk of striking against or being struck by something", "Extreme temperatures"]],
+  ["Reactions of people", ["Adjusting PPE when seen", "Adjusting position when seen"]],
+  ["Tools and equipment", ["Tools not right for the job", "Not in good, safe condition", "Not used correctly"]],
+  ["Procedures", ["No procedure for the job", "Procedure not understood", "Procedure not followed", "Procedure not adequate or practical"]],
+  ["Orderliness", ["Housekeeping standards not agreed", "Housekeeping standards not followed"]]];
+const JO_WHY = ["Not available", "Uncomfortable", "Knowledge and training", "Time pressure", "Unclear responsibility", "Unaware of risk", "Cost", "Not practical"];
+function vJobObs() {
+  const f = S.form;
+  const chips = (list, key) => h("div", { class: "chips" }, list.map(p => { const b = h("button", { type: "button", class: f[key].includes(p) ? "on" : "", onclick: () => { const on = f[key].includes(p); f[key] = on ? f[key].filter(x => x !== p) : [...f[key], p]; b.classList.toggle("on", !on); } }, p); return b; }));
+  const unsafeBox = h("div");
+  const drawUnsafe = () => unsafeBox.replaceChildren(...(f.state === "Some unsafe" ? [
+    sheet("", h("div", { class: "band", style: "background:#c8102e" }, "UNSAFE ACTIONS SEEN"), ...JO_UNSAFE.flatMap(([g, list]) => [h("div", { style: "padding:8px 12px 0;font-weight:800;font-size:13px" }, g), chips(list, "unsafe")])),
+    sheet("", h("div", { class: "band" }, "Reasons for the unsafe behaviour"), chips(JO_WHY, "why")),
+    rowsTable("", ["What must be followed up", "Responsible", "By when"], f.follow, r => h("tr", {},
+      h("td", { style: "min-width:150px" }, inp("text", r.c, v => r.c = v, "What was unsafe and what must change")),
+      h("td", { style: "min-width:120px" }, sel(STAFF, r.who, v => r.who = v, "Who")),
+      h("td", { style: "width:130px" }, inp("date", r.d, v => r.d = v, "Date"))), "+ Add follow-up", () => ({}))] : []));
+  drawUnsafe();
+  return [...formHead("Job observation", "Watch the team work for a while, then fill this in. Note the good and the unsafe. Fibraco Behavioural Observation checklist Rev 05."),
+    stdHeader(f, "Behavioural observation checklist", [
+      h("tr", {}, h("td", { class: "lab" }, "Time"), h("td", {}, sel(TIMES, f.time, v => f.time = v, "Time"))),
+      h("tr", {}, h("td", { class: "lab" }, "How long you watched"), h("td", {}, sel(["15 minutes", "30 minutes", "45 minutes", "1 hour", "More than 1 hour"], f.dur, v => f.dur = v, "Duration"))),
+      h("tr", {}, h("td", { class: "lab" }, "Area or team"), h("td", {}, inp("text", f.area, v => f.area = v, "e.g. RMU 4 splicing team")))]),
+    sheet("", h("div", { class: "band" }, "People observed"), h("table", {}, h("tbody", {},
+      h("tr", {}, h("td", { class: "lab" }, "Number of people observed"), h("td", {}, inp("number", f.seen, v => f.seen = v, "0"))),
+      h("tr", {}, h("td", { class: "lab" }, "Number working safely"), h("td", {}, inp("number", f.safe, v => f.safe = v, "0"))))),
+      h("div", { style: "padding:8px 12px 0;font-weight:800;font-size:13px" }, "Group observed"), chips(["Employee", "Principal contractor", "Sub-contractor"], "groups")),
+    sheet("", h("div", { class: "band" }, "Type of activity observed"), chips(JO_ACTS, "acts"), inp("text", f.other, v => f.other = v, "Other activity, type it here")),
+    sheet("", h("div", { class: "band" }, "Safe actions observed"), txt(f.good, v => f.good = v, "Commendable safety performance. Who did what well?")),
+    sheet("", h("table", {}, h("tbody", {}, h("tr", {}, h("td", { class: "lab" }, "The activity is"), h("td", {}, seg([["All safe", "All safe"], ["Some unsafe", "Some unsafe"]], f.state, v => { f.state = v; drawUnsafe(); })))))),
+    unsafeBox,
+    sheet("", h("table", {}, h("tbody", {}, h("tr", {}, h("td", { class: "lab" }, "Observer signature"), h("td", {}, sigCell(() => f.sig, v => f.sig = v, "Observer signature", true)))))),
+    h("p", { class: "hint" }, `Goes to ${adminName()} for review. If you choose All safe, nothing else is needed.`),
+    submitBtn(() => { const e = [];
+      if (!f.acts.length && !f.other.trim()) e.push("Tick the activity you watched.");
+      if (!(+f.seen > 0)) e.push("Type how many people you watched.");
+      if (f.safe === "" || +f.safe > +f.seen) e.push("Type how many were working safely (not more than you watched).");
+      if (!f.state) e.push("Choose All safe or Some unsafe.");
+      if (f.state === "Some unsafe") { if (!f.unsafe.length) e.push("Tick what was unsafe."); if (!f.follow.some(r => (r.c || "").trim() && r.who && r.d)) e.push("Add a follow-up with who and by when."); }
+      if (!f.sig) e.push("Sign the observation."); return e; })];
 }
 
 function vSI() {
@@ -1007,7 +1272,7 @@ async function sendOrder(f) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792742076"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792742076"); await loadJs("./js/pdf.js?v=1792742076");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792770411"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792770411"); await loadJs("./js/pdf.js?v=1792770411");
     const { html, title } = orderDoc(f);
     const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
@@ -1963,7 +2228,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792742076"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792742076"); await loadJs("./js/pdf.js?v=1792742076");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792770411"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792770411"); await loadJs("./js/pdf.js?v=1792770411");
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
     // Phones only open the share menu straight after a tap, so the last step is one tap on Share.
@@ -2178,9 +2443,43 @@ function vDelays() {
 // ---------- render ----------
 let render = function () {
   const v = S.view;
-  const views = { users: vUsers, projects: vProjects, calendar: vCalendar, menu: vMenu, inspections: vInspections, client: vClient, tests: vTests, link: vLink, logtest: vLogTest, biocheck: vBioCheck, allocate: vAllocate, mysection: vMySection, review: vReview, kpi: vKpi, rams: vRams, ramsdoc: vRamsDoc, drawings: vDrawings, drawing: vDrawing, diary: vDiary, dsti: vDsti, inspection: vInspection, check: vCheck, toolbox: vToolbox, incident: vIncident, si: vSI, order: vOrder, done: vDone, feedback: vFeedback, devices: vDevices, dash: vDash, qc: vQc, qcspot: vQcSpot, tsheets: vTsheets, tsheet: vTsheet, treport: vTreport, attendance: vAttendance, claude: vClaude, delays: vDelays };
+  const views = { users: vUsers, projects: vProjects, calendar: vCalendar, menu: vMenu, inspections: vInspections, client: vClient, tests: vTests, link: vLink, logtest: vLogTest, biocheck: vBioCheck, allocate: vAllocate, mysection: vMySection, review: vReview, kpi: vKpi, rams: vRams, ramsdoc: vRamsDoc, drawings: vDrawings, drawing: vDrawing, diary: vDiary, dsti: vDsti, inspection: vInspection, check: vCheck, toolbox: vToolbox, incident: vIncident, si: vSI, order: vOrder, done: vDone, feedback: vFeedback, devices: vDevices, dash: vDash, qc: vQc, qcspot: vQcSpot, tsheets: vTsheets, tsheet: vTsheet, treport: vTreport, attendance: vAttendance, claude: vClaude, delays: vDelays, nearmiss: vNearMiss, jobobs: vJobObs, adhoc: vAdhoc, adhocjob: vAdhocJob };
   app.replaceChildren(...[].concat((views[v] || vProjects)()).filter(Boolean));
+  pageForm();
 }
+// ---------- page-by-page forms (tile layout): what fits on the screen, green NEXT and yellow BACK at the bottom ----------
+const PAGED_VIEWS = ["nearmiss", "jobobs", "incident", "si", "order", "dsti", "inspection", "toolbox", "check", "adhocjob"];
+let PG = { key: null, i: 0 };
+function pageForm(step) {
+  document.querySelectorAll(".pnav").forEach(x => x.remove()); document.body.classList.remove("paged");
+  if (!TILES() || !PAGED_VIEWS.includes(S.view)) return;
+  const key = S.view === "adhocjob" ? S.adj : S.form;
+  if (PG.key !== key) PG = { key, i: 0 };
+  const kids = [...app.children].filter(k => !k.classList.contains("fb-btn")), head = kids[0] && kids[0].classList.contains("bar") ? kids.shift() : null;
+  kids.forEach(k => k.hidden = false);
+  // the form's own Submit moves into the green button on the last page; its error list stays on the page
+  const sub = kids.length && (kids[kids.length - 1].matches("button.submit") || kids[kids.length - 1].querySelector(":scope > button.submit")) ? kids.pop() : null;
+  const subBtn = sub && (sub.matches("button.submit") ? sub : sub.querySelector(":scope > button.submit"));
+  if (sub) sub.classList.add("psub");
+  document.body.classList.add("paged");
+  const nav = h("div", { class: "pnav" }); document.body.append(nav);
+  const avail = innerHeight - (head ? head.getBoundingClientRect().height + 18 : 0) - 96;
+  const pages = [[]]; let used = 0;
+  kids.forEach((k, n) => { const r = k.getBoundingClientRect(), cs = getComputedStyle(k), hh = r.height + parseFloat(cs.marginTop || 0) + parseFloat(cs.marginBottom || 0) + 12;
+    if (pages[pages.length - 1].length && used + hh > avail) { pages.push([]); used = 0; }
+    pages[pages.length - 1].push(k); used += hh; });
+  if (step) PG.i += step;
+  PG.i = Math.max(0, Math.min(PG.i, pages.length - 1));
+  pages.forEach((pg, n) => pg.forEach(k => k.hidden = n !== PG.i));
+  const last = PG.i === pages.length - 1;
+  if (sub) sub.hidden = !last;
+  nav.append(
+    PG.i ? h("button", { type: "button", class: "pback", onclick: () => { pageForm(-1); window.scrollTo(0, 0); } }, "‹  BACK") : h("span", { class: "pfill" }),
+    h("span", { class: "pcount" }, `Page ${PG.i + 1} of ${pages.length}`),
+    last ? (subBtn ? h("button", { type: "button", class: "pnext", onclick: () => subBtn.click() }, (subBtn.textContent || "Submit").toUpperCase()) : h("span", { class: "pfill" }))
+      : h("button", { type: "button", class: "pnext", onclick: () => { pageForm(1); window.scrollTo(0, 0); } }, "NEXT  ›"));
+}
+addEventListener("resize", () => { if (document.body.classList.contains("paged")) pageForm(); });
 
 // ---------- live layer: identity, PIN, saving, sync, feedback ----------
 const CONF = { url: "https://ahbcixfknqgqvmauhnyo.supabase.co", anon: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFoYmNpeGZrbnFncXZtYXVobnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIxNzI0NDMsImV4cCI6MjEwNzc0ODQ0M30.n58qy_PcGFoi9-JGzUecra9ggxUn_Yprsg9kO_2M02c" };
@@ -2257,7 +2556,7 @@ function persistSoon() { clearTimeout(persistT); persistT = setTimeout(persist, 
 const saveLink = () => persist();
 ["input", "change", "click"].forEach(t => document.addEventListener(t, persistSoon, true));
 // Changes from other phones
-const SAFE_VIEWS = ["projects", "calendar", "menu", "review", "kpi", "tests", "link", "client", "drawings", "rams"];
+const SAFE_VIEWS = ["projects", "calendar", "menu", "adhoc", "review", "kpi", "tests", "link", "client", "drawings", "rams"];
 function hydrate(ids) {
   let touched = false;
   for (const id of ids) {
@@ -2427,11 +2726,12 @@ function tsRoutes() {
   return base.filter(r => !r.removed).sort((x, y) => (x.practice ? 1 : 0) - (y.practice ? 1 : 0));
 }
 const tsRoute = rid => tsRoutes().find(r => r.id === rid);
-const tsSaveRoute = r => Store.put(`tsr|${S.project.id}|${r.id}`, r, "r", { shared: true, tags: [`proj:${S.project.id}`] });
+const tsMeta = pid => /^adhoc-/.test(pid) ? adhocMeta(pid) : { shared: true, tags: [`proj:${pid}`] };
+const tsSaveRoute = r => Store.put(`tsr|${S.project.id}|${r.id}`, r, "r", tsMeta(S.project.id));
 // typing keeps the numbers on the phone at once and sends them a moment later
 const tsCache = {}, tsTimer = {};
 const tsGet = (rid, part) => { const id = `tsd|${S.project.id}|${rid}|${part}`; return tsCache[id] || Store.get(id) || {}; };
-function tsPut(id) { clearTimeout(tsTimer[id]); delete tsTimer[id]; const d = tsCache[id]; if (d) Store.put(id, Object.assign(d, { by: S.user, at: new Date().toISOString() }), "r", { shared: true, tags: [`proj:${id.split("|")[1]}`] }); }
+function tsPut(id) { clearTimeout(tsTimer[id]); delete tsTimer[id]; const d = tsCache[id]; if (d) Store.put(id, Object.assign(d, { by: S.user, at: new Date().toISOString() }), "r", tsMeta(id.split("|")[1])); }
 function tsSave(rid, part, data) { const id = `tsd|${S.project.id}|${rid}|${part}`; tsCache[id] = data; clearTimeout(tsTimer[id]); tsTimer[id] = setTimeout(() => tsPut(id), 600); }
 const tsFlush = () => Object.keys(tsTimer).forEach(tsPut);
 const num = v => v === "" || v == null || isNaN(+v) ? null : +v;
@@ -2479,6 +2779,53 @@ function tsSummary(r) {
   const col = bad ? "#ff3b3b" : tested === n ? "#39ff14" : tested ? "#ffd60a" : "#5b6470";
   return { used, tested, bad, n, col };
 }
+// ---------- ad hoc test jobs: quick field tests on sites that are not a Fibraco project ----------
+// The site and client details are filled in before testing starts. Each job then works like a project's test sheets.
+const adhocJobs = () => Store.list("adj|").map(([, o]) => o).filter(o => o && !o.removed).sort((a, b) => (b.at || "").localeCompare(a.at || ""));
+function adhocMeta(pid, job) {
+  const j = job || Store.get(`adj|${pid}`) || {}, me = (Store.me() || {}).member;
+  const ids = [...new Set([me, ...(j.crew || []).map(n => (PEOPLE.find(p => p.name === n) || {}).id)].filter(Boolean))];
+  return { shared: true, tags: ids.map(i => `user:${i}`) };
+}
+function adhocProj(j) {
+  const team = {}; (j.crew || []).forEach(n => team[n] = "worker"); team[j.lead || j.by] = "sm"; if (!team[S.user]) team[S.user] = "worker";
+  return { id: j.id, adhoc: true, job: j, name: `Ad hoc test - ${j.site}`, short: j.site, kind: "cable", client: j.client, pm: [j.pm, j.pmc].filter(Boolean).join(", "), sm: [j.sm, j.smc].filter(Boolean).join(", "), sheq: [j.sheq, j.sheqc].filter(Boolean).join(", "), routes: [], team };
+}
+function adhocOpen(j) { S.project = adhocProj(j); S.date = today(); go("tsheets"); if (!tsRoutes().length) setTimeout(() => tsEditRoute(null), 300); }
+function vAdhoc() {
+  const jobs = adhocJobs();
+  return [topbar("Test sheets", "Ad hoc tests in the field", true),
+    h("p", { class: "form-sub" }, "For quick tests on a site that is not one of our projects. Fill in the site and client first, then test. The report carries all of it."),
+    h("button", { class: "submit", type: "button", style: "margin-bottom:14px", onclick: () => { S.adj = { id: "adhoc-" + Date.now().toString(36) + rid(), date: ymd(today()), crew: [S.user], by: S.user, lead: S.user }; go("adhocjob"); } }, "+ NEW TEST JOB"),
+    jobs.length ? h("div", { class: "stack" }, ...jobs.map(j => h("button", { class: "mbtn", type: "button", style: "text-align:left", onclick: () => adhocOpen(j) },
+      j.site, h("small", {}, `${j.client}  |  ${dmy(new Date(j.date + "T12:00:00"))}  |  ${(j.crew || []).map(n => n.split(" ")[0]).join(", ")}`)))) : h("p", { class: "note" }, "No ad hoc test jobs yet.")];
+}
+function vAdhocJob() {
+  const j = S.adj; if (!j) { S.view = "adhoc"; return vAdhoc(); }
+  const row = (lab, k, ph, req, type) => h("tr", {}, h("td", { class: "lab" }, lab, req ? h("span", { style: "color:#c8102e" }, " *") : null), h("td", {}, inp(type || "text", j[k], v => j[k] = v, ph)));
+  const crewBox = h("div", { class: "chips" }, STAFF.map(n => { const b = h("button", { type: "button", class: j.crew.includes(n) ? "on" : "", onclick: () => { if (n === S.user) return; const on = j.crew.includes(n); j.crew = on ? j.crew.filter(x => x !== n) : [...j.crew, n]; b.classList.toggle("on", !on); } }, n); return b; }));
+  return [topbar("New test job", `Ad hoc test  |  ${dmy(new Date(j.date + "T12:00:00"))}`, true), h("p", { class: "form-sub" }, "Fill this in before you start testing. Ask the client for the names on site. Everything with a red star must be filled in."),
+    sheet("", h("div", { class: "band" }, "SITE"), h("table", {}, h("tbody", {},
+      row("Site name", "site", "e.g. Kathu Solar Park substation", true),
+      row("Address or farm", "addr", "Where the site is"),
+      h("tr", {}, h("td", { class: "lab" }, "Date"), h("td", { class: "ro" }, dmy(new Date(j.date + "T12:00:00")))))),
+      gpsBlock(j, "gps")),
+    sheet("", h("div", { class: "band" }, "CLIENT"), h("table", {}, h("tbody", {},
+      row("Client company", "client", "Who we are testing for", true),
+      row("Order or reference no", "ref", "PO, job card or quote no"),
+      row("Client project manager", "pm", "Name", true), row("PM cell no", "pmc", "Cell number", false, "tel"),
+      row("Client site manager", "sm", "Name", true), row("SM cell no", "smc", "Cell number", false, "tel"),
+      row("Client SHEQ officer", "sheq", "Name", true), row("SHEQ cell no", "sheqc", "Cell number", false, "tel")))),
+    sheet("", h("div", { class: "band" }, "SCOPE"), txt(j.scope, v => j.scope = v, "What must be tested? e.g. 24 core SM fibre, substation to control room, OTDR both ways and OLTS")),
+    sheet("", h("div", { class: "band" }, "FIBRACO TEAM ON SITE"), crewBox),
+    h("p", { class: "hint" }, "The men you tick can see this job and fill in the readings from the other end."),
+    h("button", { class: "submit", type: "button", onclick: () => {
+      const miss = [["site", "the site name"], ["client", "the client company"], ["pm", "the client project manager"], ["sm", "the client site manager"], ["sheq", "the client SHEQ officer"], ["scope", "what must be tested"]].filter(([k]) => !(j[k] || "").trim()).map(x => x[1]);
+      if (miss.length) return showInfo("Not finished", `Fill in ${miss.join(", ")}. If the client has no SHEQ officer on site, write None on site.`);
+      j.at = new Date().toISOString(); Store.put(`adj|${j.id}`, j, "r", adhocMeta(j.id, j));
+      S.adj = null; S.hist = S.hist.filter(v => v !== "adhocjob"); S.view = "adhoc"; adhocOpen(j); } }, "START TESTING")];
+}
+
 function vTsheets() {
   const routes = tsRoutes(), L = tsLim();
   const card = r => {
@@ -2553,7 +2900,7 @@ function vTsheet() {
     h("p", { class: "form-sub", style: "margin-top:6px" }, tab === "ab" ? `Standing at ${r.a}, shooting to ${r.b}. Type the loss at each joint and the total loss.` : tab === "ba" ? `Standing at ${r.b}, shooting back to ${r.a}. The joints are listed from your side.` : "Type the OLTS loss in both directions for each core."),
     J.length || tab === "olts" ? null : h("p", { class: "hint" }, "No joints on this section. Only the total loss is needed."),
     h("div", { class: "ts-grid-wrap" }, h("table", { class: "ts-grid" }, h("thead", {}, head), h("tbody", {}, ...rows))),
-    (() => { const st = (all._stored || {})[wl]; return h("p", { class: "hint" }, st ? `Stored by ${st.by.split(" ")[0]} at ${st.time}. Change a number and tap STORE RESULT again.` : "Type all 12 cores, then tap STORE RESULT. Leave a box empty if that core is not tested yet."); })(),
+    (() => { const st = (all._stored || {})[wl]; return h("p", { class: "hint", style: "margin-top:10px" }, st ? `Stored by ${st.by.split(" ")[0]} at ${st.time}. Change a number and tap STORE RESULT again.` : `Type all ${n} cores, then tap STORE RESULT. Leave a box empty if that core is not tested yet.`); })(),
     h("button", { class: "submit ts-store", type: "button", onclick: () => tsStore(r, wl, tab, all, meta) }, "STORE RESULT"),
     h("div", { style: "display:flex;gap:8px;flex-wrap:wrap;margin:10px 0" },
       h("button", { class: "submit", type: "button", style: "flex:2", onclick: () => { tsFlush(); go("treport"); } }, "Generate report"),
@@ -2767,7 +3114,9 @@ function tsPdfHtml(r) {
   const L = tsLim(), J = r.joints || [];
   let html = `<div class="pd-head"><img src="${LOGO}" alt="Fibraco"><div><h1>FIBRE TEST REPORT</h1><div>${esc(S.project.name)}</div><div>${esc(r.a)} to ${esc(r.b)}  |  ${esc(r.cores)} cores  |  ${r.m ? esc(r.m) + " m" : "length not set"}</div></div></div>`;
   const meta = tsGet(r.id, "meta");
-  html += `<h2>Test details</h2><table class="kv"><tr><th>Tested by</th><td>${esc(meta.by || S.user)}</td></tr><tr><th>Site manager</th><td>${esc(smName())}</td></tr></table>`;
+  if (S.project.adhoc) { const j = S.project.job, kv = (a, b) => b ? `<tr><th>${esc(a)}</th><td>${esc(b)}</td></tr>` : "", pc = (n, c) => [n, c].filter(Boolean).join(", ");
+    html += `<h2>Site details</h2><table class="kv">${kv("Site", j.site)}${kv("Address", j.addr)}${j.gps ? kv("GPS", `${j.gps.lat.toFixed(6)}, ${j.gps.lng.toFixed(6)}`) : ""}${kv("Client", j.client)}${kv("Client order or reference", j.ref)}${kv("Client project manager", pc(j.pm, j.pmc))}${kv("Client site manager", pc(j.sm, j.smc))}${kv("Client SHEQ officer", pc(j.sheq, j.sheqc))}${kv("Scope of the test", j.scope)}${kv("Fibraco team", (j.crew || []).join(", "))}${kv("Date", j.date ? dmy(new Date(j.date + "T12:00:00")) : "")}</table>`; }
+  html += `<h2>Test details</h2><table class="kv"><tr><th>Tested by</th><td>${esc(meta.by || S.user)}</td></tr><tr><th>${S.project.adhoc ? "Fibraco lead on site" : "Site manager"}</th><td>${esc(smName())}</td></tr></table>`;
   const setRows = Object.entries(TS_SET).filter(([k]) => meta[k] != null && meta[k] !== "" && !(meta.cords === "Off" && (k === "launch" || k === "receive")) && !(meta.thr !== "Custom thresholds" && /^th[A-Z]/.test(k))).map(([k, [lab]]) => `<tr><th>${esc(lab)}</th><td>${esc(meta[k])}</td></tr>`)
     .concat(L.wls.filter(w => meta["ref" + w]).map(w => `<tr><th>OLTS reference at ${w} nm</th><td>${esc(meta["ref" + w])} dBm${meta["refAt" + w] ? ", set " + esc(new Date(meta["refAt" + w]).toLocaleString("en-ZA")) : ""}</td></tr>`));
   if (setRows.length) html += `<h2>Tester settings</h2><table class="kv">${setRows.join("")}</table>`;
@@ -2788,7 +3137,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792742076"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792742076"); await loadJs("./js/pdf.js?v=1792742076");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792770411"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792770411"); await loadJs("./js/pdf.js?v=1792770411");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
