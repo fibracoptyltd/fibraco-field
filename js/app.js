@@ -312,7 +312,7 @@ function vProjects() {
         bioSetup(); } }, "Fingerprint")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1792775325";
+const APPV = "1792817905";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -386,7 +386,7 @@ async function sendRegister(p, d, days) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792775325"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792775325"); await loadJs("./js/pdf.js?v=1792775325");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792817905"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792817905"); await loadJs("./js/pdf.js?v=1792817905");
     const { html, title } = attDoc(p, d, days); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
@@ -490,7 +490,7 @@ async function timeZone() {
   try {
     try { Store.kick(); await refreshDevices(true); } catch (e) {}
     await new Promise(r => setTimeout(r, 1800));
-    await loadJs("./js/lib/html2canvas.min.js?v=1792775325"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792775325"); await loadJs("./js/pdf.js?v=1792775325");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792817905"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792817905"); await loadJs("./js/pdf.js?v=1792817905");
     const D = tzData(), stamp = `${dmy(new Date())} ${hhmm()}`, name = `FIBRACO - Time Zone (${stamp})`;
     const pdf = await window.FibPdf.diaryPdf(tzHtml(D), name);
     const json = new File([JSON.stringify(D, null, 1)], name.replace(/[\\/:*?"<>|]+/g, "-") + ".json", { type: "application/json" });
@@ -641,6 +641,8 @@ const TI = {
   chat: '<path d="M4 5h16v11H9l-5 4z"/><path d="M8 10h8M8 13h5"/>',
   key: '<circle cx="8" cy="14" r="4"/><path d="M11 11l9-9M17 5l2 2M15 7l2 2"/>',
   obs: '<circle cx="10" cy="10" r="6"/><path d="M20 20l-5.5-5.5"/><path d="M7.5 10l2 2 3.5-3.5"/>',
+  fb: '<path d="M4 4h16v12H8l-4 4z"/><path d="M12 7v4M12 13.5v.5"/>',
+  dev: '<rect x="6" y="2" width="12" height="20" rx="2"/><path d="M10 18h4"/>',
   cal: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
   turb: '<path d="M12 12v9M9 21h6"/><path d="M12 12l-1-8 2 0z"/><path d="M12 12l7 4-1 1.7z"/><path d="M12 12l-7 4 1 1.7z"/>'
 };
@@ -709,15 +711,20 @@ function vProjectsTiles() {
     h("div", { class: "tw" },
       h("div", { class: "who", style: "margin:0" }, h("span", {}, "Signed in as ", h("b", {}, S.user), ` (${ROLE[S.user]})`)),
       installCard(),
-      ...(alertsBanner() || []),
+      admin ? ((alertsBanner() || [])[0] || null) : null,
       safetyBanner(),
+      admin ? (() => { const fb = Store.list("fb|").length, waiting = (DEVS || []).filter(d => d.status === "pending").length;
+        return h("div", { class: "tgrid g2" },
+          tile("fb", "Feedback\nfrom the team", () => go("feedback"), { badge: fb || "", cls: "slim" }),
+          tile("dev", "Devices\nand access", () => go("devices"), { badge: waiting || "", bc: "o", cls: "slim" })); })() : null,
       admin ? h("div", { class: "tgrid" },
         tile("dash", "My\ndashboard", () => go("dash"), { cls: "dark" }),
         tile("cam", "Time\nzone", timeZone, { cls: "dark" }),
         tile("chat", "Claude", () => go("claude"), { cls: "dark" })) : null,
-      ...PROJECTS.map(p => { const [line, col] = projStatus(p);
-        return h("button", { type: "button", class: "tproj", onclick: () => { S.project = p; S.date = today(); S.month = today(); go("menu"); } },
-          h("span", { class: "tdot", style: `background:${col}` }), h("span", { class: "tpt" }, h("b", {}, p.name.toUpperCase()), h("small", {}, line)), h("span", { class: "tgo", "aria-hidden": "true" }, "›")); }),
+      // projects as tiles, three to a row
+      h("div", { class: "tgrid" }, ...PROJECTS.filter(p => !(admin && p.hideFrontAdmin)).map(p => { const [line, col] = projStatus(p);
+        return h("button", { type: "button", class: "tile tpj", style: `border-top:6px solid ${col}`, "aria-label": `${p.name}. ${line}`, onclick: () => { S.project = p; S.date = today(); S.month = today(); go("menu"); } },
+          h("span", { class: "tpj-n" }, p.short.toUpperCase()), h("span", { class: "tpj-c" }, (p.client || "").split(" (")[0]), h("span", { class: "tpj-s" }, line)); })),
       PROJECTS.length ? null : h("p", { class: "note" }, "No active projects yet. The office adds you to a project."),
       h("div", { class: "tgrid" },
         PROJECTS.length ? tile("near", "Near\nmiss", () => frontForm("nearmiss"), { cls: "nm" }) : null,
@@ -1272,7 +1279,7 @@ async function sendOrder(f) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792775325"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792775325"); await loadJs("./js/pdf.js?v=1792775325");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792817905"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792817905"); await loadJs("./js/pdf.js?v=1792817905");
     const { html, title } = orderDoc(f);
     const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
@@ -2228,7 +2235,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792775325"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792775325"); await loadJs("./js/pdf.js?v=1792775325");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792817905"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792817905"); await loadJs("./js/pdf.js?v=1792817905");
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
     // Phones only open the share menu straight after a tap, so the last step is one tap on Share.
@@ -3174,7 +3181,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792775325"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792775325"); await loadJs("./js/pdf.js?v=1792775325");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792817905"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792817905"); await loadJs("./js/pdf.js?v=1792817905");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
