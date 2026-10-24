@@ -312,7 +312,7 @@ function vProjects() {
         bioSetup(); } }, "Fingerprint")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1792818925";
+const APPV = "1792819145";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -386,7 +386,7 @@ async function sendRegister(p, d, days) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792818925"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792818925"); await loadJs("./js/pdf.js?v=1792818925");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792819145"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792819145"); await loadJs("./js/pdf.js?v=1792819145");
     const { html, title } = attDoc(p, d, days); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
@@ -490,7 +490,7 @@ async function timeZone() {
   try {
     try { Store.kick(); await refreshDevices(true); } catch (e) {}
     await new Promise(r => setTimeout(r, 1800));
-    await loadJs("./js/lib/html2canvas.min.js?v=1792818925"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792818925"); await loadJs("./js/pdf.js?v=1792818925");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792819145"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792819145"); await loadJs("./js/pdf.js?v=1792819145");
     const D = tzData(), stamp = `${dmy(new Date())} ${hhmm()}`, name = `FIBRACO - Time Zone (${stamp})`;
     const pdf = await window.FibPdf.diaryPdf(tzHtml(D), name);
     const json = new File([JSON.stringify(D, null, 1)], name.replace(/[\\/:*?"<>|]+/g, "-") + ".json", { type: "application/json" });
@@ -1287,7 +1287,7 @@ async function sendOrder(f) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792818925"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792818925"); await loadJs("./js/pdf.js?v=1792818925");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792819145"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792819145"); await loadJs("./js/pdf.js?v=1792819145");
     const { html, title } = orderDoc(f);
     const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
@@ -2243,7 +2243,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792818925"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792818925"); await loadJs("./js/pdf.js?v=1792818925");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792819145"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792819145"); await loadJs("./js/pdf.js?v=1792819145");
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
     // Phones only open the share menu straight after a tap, so the last step is one tap on Share.
@@ -2359,14 +2359,21 @@ function openEmergency() {
     const intl = n => (n || "").replace(/\D/g, "").replace(/^0/, "27");
     const links = h("div", { class: "stack", style: "width:100%;max-width:340px" });
     // First call goes to the office (always reachable), then the site manager, then the emergency numbers.
-    const drawLinks = g => links.replaceChildren(...[
+    // a person can have his own first contact (Wanro: Francois); the office is skipped when the office is the one in trouble
+    const meP = PEOPLE.find(x => x.name === who) || {}, ec = meP.emergency, ecP = ec ? PEOPLE.find(x => x.name === ec.name) || {} : {};
+    const drawLinks = g => links.replaceChildren(...(ec ? [
+      h("a", { class: "mbtn emergency", style: "text-decoration:none", href: `https://wa.me/${intl(ec.phone)}?text=${encodeURIComponent(waText(g))}` }, `WhatsApp ${ec.name}`, h("small", {}, "Sends him your location")),
+      h("a", { class: "mbtn", style: "text-decoration:none", href: `tel:${ec.phone.replace(/\s/g, "")}` }, `Call ${ec.name}`, h("small", {}, ec.phone)),
+      ecP.phone && ecP.phone !== ec.phone ? h("a", { class: "mbtn", style: "text-decoration:none", href: `tel:${ecP.phone.replace(/\s/g, "")}` }, `Call ${ec.name.split(" ")[0]} on his other number`, h("small", {}, ecP.phone)) : null,
+      h("a", { class: "mbtn", style: "text-decoration:none", href: "tel:112" }, "Call 112", h("small", {}, "Cellphone emergency")),
+      h("a", { class: "mbtn", style: "text-decoration:none", href: "tel:10177" }, "Call 10177", h("small", {}, "Ambulance"))] : [
       pm.phone ? h("a", { class: "mbtn emergency", style: "text-decoration:none", href: `https://wa.me/${intl(pm.phone)}?text=${encodeURIComponent(waText(g))}` }, `WhatsApp ${pm.name}`, h("small", {}, "Sends your location to the office")) : null,
       pm.phone ? h("a", { class: "mbtn", style: "text-decoration:none", href: `tel:${pm.phone.replace(/\s/g, "")}` }, `Call ${pm.name}`, h("small", {}, pm.phone)) : null,
       smP.phone && smP.name !== pm.name ? h("a", { class: "mbtn", style: "text-decoration:none", href: `tel:${smP.phone.replace(/\s/g, "")}` }, `Call ${sm}`, h("small", {}, "Site manager")) : null,
       h("a", { class: "mbtn", style: "text-decoration:none", href: "tel:112" }, "Call 112", h("small", {}, "Cellphone emergency")),
-      h("a", { class: "mbtn", style: "text-decoration:none", href: "tel:10177" }, "Call 10177", h("small", {}, "Ambulance"))].filter(Boolean));
+      h("a", { class: "mbtn", style: "text-decoration:none", href: "tel:10177" }, "Call 10177", h("small", {}, "Ambulance"))]).filter(Boolean));
     body.replaceChildren(h("h2", {}, "EMERGENCY"),
-      h("p", {}, "The office has been alerted. Now call or WhatsApp for help."),
+      h("p", {}, ec ? `Now WhatsApp or call ${ec.name} for help.` : "The office has been alerted. Now call or WhatsApp for help."),
       h("div", { class: "sent" }, h("div", {}, h("b", {}, "From  "), who), h("div", {}, h("b", {}, "Project  "), proj), gps),
       links,
       h("button", { class: "btn-w", type: "button", style: "padding:13px 26px;border-radius:6px;border:0;font-weight:800;background:#fff;color:#15191e", onclick: () => ov.remove() }, "Close"));
@@ -3189,7 +3196,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792818925"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792818925"); await loadJs("./js/pdf.js?v=1792818925");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792819145"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792819145"); await loadJs("./js/pdf.js?v=1792819145");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
