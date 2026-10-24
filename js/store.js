@@ -218,6 +218,13 @@ const Store = (() => {
     async readLocal(k) { const b = await metaGet("loc_" + k).catch(() => null); if (!b) return null; try { return await open(b.iv, b.data); } catch (e) { return null; } },
     isDirty(id) { const v = mem.get(id); return !!(v && v.dirty); },
     removeDevice: (member, dev) => rpc("remove_device", { p_member: member, p_dev: dev }),
+    // reports to the client: the phone hands the PDFs to the server's send-report piece, which emails them from reports@fibraco.co.za
+    async sendReport(body) {
+      const r = await fetch(`${CONF.url}/functions/v1/send-report`, { method: "POST", headers: { "Content-Type": "application/json", apikey: CONF.anon, Authorization: `Bearer ${CONF.anon}` }, body: JSON.stringify(Object.assign({ token: TOKEN, device: DEV }, body)) });
+      const t = await r.text(); let j = null; try { j = JSON.parse(t); } catch (e) {}
+      if (!r.ok) { const e = new Error((j && j.error) || `send-report ${r.status}`); e.status = r.status; throw e; }
+      return j;
+    },
     setMember: (member, active) => rpc("set_member", { p_member: member, p_active: active }),
     get(id) { const v = mem.get(id); return v ? v.obj : undefined; },
     list(prefix) { const out = []; for (const [id, v] of mem) if (id.startsWith(prefix)) out.push([id, v.obj]); return out; },
