@@ -499,3 +499,21 @@ body.paged .fb-btn{bottom:calc(84px + env(safe-area-inset-bottom))}
 .rep-st small{display:block;font-weight:600;font-size:12.5px;margin-top:3px}
 .rep-st.ok{background:#e8f6ec;color:#1e6b34;border:1px solid #1e8e3e}
 .rep-st.wait{background:#fff4e0;color:#8a4b00;border:1px solid #f29900}
+/* My checks, from the appointment register */
+.tst.orange{background:#e07b00}
+.appt-card{background:#fff;border:1px solid #d6dbe2;border-left:5px solid #1b1f26;border-radius:8px;padding:10px 12px;margin:10px 0;font-size:13px;color:#15191e}
+.appt-card ul{margin:6px 0 0;padding-left:18px;line-height:1.5}
+.mbtn.ck-row{display:flex;align-items:center;gap:10px;text-align:left}
+.ck-row .ck-t{flex:1;min-width:0;display:flex;flex-direction:column}
+.ck-row.late{border-color:#c8102e;box-shadow:inset 4px 0 0 #c8102e}
+.ck-row.due{box-shadow:inset 4px 0 0 #e07b00}
+.ck-row.done{opacity:.75;box-shadow:inset 4px 0 0 #1e8e3e}
+.wx-stop{margin:8px;background:#c8102e;color:#fff;border-radius:6px;padding:10px 12px;display:flex;flex-direction:column;gap:3px}
+.wx-stop b{font-size:15px;letter-spacing:.04em}
+.overlay{overflow-y:auto}
+.em-list{width:100%;max-width:340px;margin:4px 0 14px;text-align:left;background:#111;border:1px solid var(--line-dark);border-radius:8px;color:#fff;font-size:12.5px}
+.em-list summary{padding:11px 12px;font-weight:800;cursor:pointer;color:#ffd200}
+.em-list p{color:#ddd;font-size:12px;margin:0 12px 8px;line-height:1.45}
+.em-row{display:flex;justify-content:space-between;gap:8px;padding:7px 12px;border-top:1px solid #2a2f37}
+.em-row span:last-child{display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex:none}
+.em-row a{color:#7fc4ff;font-weight:700;text-decoration:none;white-space:nowrap}

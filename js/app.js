@@ -312,7 +312,7 @@ function vProjects() {
         bioSetup(); } }, "Fingerprint")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1792835985";
+const APPV = "1792844554";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -386,7 +386,7 @@ async function sendRegister(p, d, days) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792835985"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792835985"); await loadJs("./js/pdf.js?v=1792835985");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792844554"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792844554"); await loadJs("./js/pdf.js?v=1792844554");
     const { html, title } = attDoc(p, d, days); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
@@ -490,7 +490,7 @@ async function timeZone() {
   try {
     try { Store.kick(); await refreshDevices(true); } catch (e) {}
     await new Promise(r => setTimeout(r, 1800));
-    await loadJs("./js/lib/html2canvas.min.js?v=1792835985"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792835985"); await loadJs("./js/pdf.js?v=1792835985");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792844554"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792844554"); await loadJs("./js/pdf.js?v=1792844554");
     const D = tzData(), stamp = `${dmy(new Date())} ${hhmm()}`, name = `FIBRACO - Time Zone (${stamp})`;
     const pdf = await window.FibPdf.diaryPdf(tzHtml(D), name);
     const json = new File([JSON.stringify(D, null, 1)], name.replace(/[\\/:*?"<>|]+/g, "-") + ".json", { type: "application/json" });
@@ -765,7 +765,7 @@ function vMenuTiles() {
       sm && p.qcSpots ? tile("check", "QC\nsheets", () => go("qc"), { cls: "qc" }) : null,
       tests,
       tile("shield", "DSTI", () => startForm("dsti")),
-      tile("eye", "Inspec-\ntions", () => go("inspections")),
+      APPT(p) ? tile("eye", "My\nchecks", () => go("mychecks"), { badge: checksOpen(p, S.user, ymd(d)) || "", bc: "o" }) : tile("eye", "Inspec-\ntions", () => go("inspections")),
       tile("doc", "Site\ninstruction", () => startForm("si")),
       tile("cart", "Material\norder", () => startForm("order")),
       tile("warn", "Incident", () => startForm("incident")),
@@ -786,7 +786,7 @@ function vMenuTiles() {
     grid = h("div", { class: "tgrid" },
       tile("book", "Daily\ndiary", () => go("mysection"), { cls: "hi" }),
       tile("shield", "DSTI", () => startForm("dsti")),
-      tile("eye", "Daily\ninspections", () => go("inspections")),
+      APPT(p) ? tile("eye", "My\nchecks", () => go("mychecks"), { badge: checksOpen(p, S.user, ymd(d)) || "", bc: "o" }) : tile("eye", "Daily\ninspections", () => go("inspections")),
       tests,
       tile("cart", "Material\norder", () => startForm("order")),
       tile("doc", "Site\ninstruction", () => startForm("si")),
@@ -850,6 +850,7 @@ function startForm(type, key) {
   if (type === "jobobs") Object.assign(base, { time: "", dur: "", area: "", seen: "", safe: "", groups: [], acts: [], other: "", good: "", state: "", unsafe: [], why: [], follow: [{}], sig: "" });
   if (type === "nearmiss") Object.assign(base, { time: "", where: "", task: "", dsti: "", what: "", cons: "", like: "", people: [{}], repeat: "", acts: [], other: "", wit: "", sig: "" });
   if (type === "incident") Object.assign(base, { time: "", types: [], acts: [], where: "", people: [{}], what: "", wit: "", sig: "" });
+  if (type === "invest") Object.assign(base, { ref: "", imm: [], immTxt: "", root: "", acts: [{}, {}], lessons: "", sig: "" });
   if (type === "si") Object.assign(base, { by: "", co: "", kind: "", ref: "", text: "", cost: "", sigC: "", sigF: "" });
   if (type === "order") Object.assign(base, { need: "", reason: "", items: [{}, {}, {}], notes: "", sig: "" });
   if (type === "diary") Object.assign(base, {
@@ -859,7 +860,7 @@ function startForm(type, key) {
     plant: Object.fromEntries(PLANT.map(p => [p, ""])), equip: Object.fromEntries(EQUIPMENT.map(p => [p, ""])),
     acts: Array.from({ length: 4 }, () => ({ area: S.project && S.project.area || "" })),
     sched: "", schedWhy: "", written: "", verbal: "", mats: [{}, {}, {}], delays: [{}, {}, {}], clientRep: "", sigF: "", sigC: "" });
-  if (type === "dsti") Object.assign(base, { task: "", ms: "", tbt: "", hz: {}, ppe: [], ack: OCCUPATIONS.map(o => ({ occ: o, name: "", sig: "" })), assessor: S.user, sigA: "" });
+  if (type === "dsti") Object.assign(base, { task: "", ms: "", tbt: "", hz: {}, ppe: [], ack: OCCUPATIONS.map(o => ({ occ: o, name: "", sig: "" })), assessor: riskAssessor(S.project) || S.user, sigA: "", wind: S.project && S.project.wind ? [{ t: hhmm(new Date()) }, {}, {}, {}, {}] : [] });
   if (type === "inspection") Object.assign(base, { company: "", contact: "", number: "", email: "", acts: [{ sow: "", comments: "", photos: [] }] });
   S.form = base; S.formDirty = false; go(type);
 }
@@ -940,6 +941,18 @@ function vDiary() {
     f.combined ? submitBtn(() => [], { label: "Save and back to review", onDone: () => { S.siteDone[dayKey()] = true; Store.put("site|" + dayKey(), formRecord(f)); clearDraft(); S.formDirty = false; S.hist.pop(); S.view = "review"; render(); window.scrollTo(0, 0); } }) : submitBtn(() => { const e = []; if (!f.team.some(r => r.name)) e.push("Add at least one person to the project team."); if (!f.acts.some(r => r.act)) e.push("Add at least one activity."); if (!f.sigF) e.push("The Fibraco rep must sign."); return e; })];
 }
 
+// Wind and weather on the DSTI (Wolf safety file FIB-PLN-001): check before work and every 2 hours.
+// Stop work at height at 12.5 m/s, in rain, mist or lightning, or above 38 degrees.
+const WX = ["Clear", "Cloudy", "Rain", "Mist", "Lightning", "Above 38 °C"], WX_STOP = ["Rain", "Mist", "Lightning", "Above 38 °C"];
+const windStop = r => r && ((+r.ms >= 12.5) || WX_STOP.includes(r.cond));
+const riskAssessor = p => p && p.appts ? Object.keys(p.appts).find(n => (p.team || {})[n] && p.appts[n].appts.some(a => /CR 9\(1\)/.test(a))) || null : null;
+function windTable(f) {
+  const banner = h("div", { class: "wx-stop", hidden: true, role: "alert" });
+  const upd = () => { const bad = f.wind.filter(windStop); banner.hidden = !bad.length; banner.replaceChildren(h("b", {}, "STOP WORK AT HEIGHT"), h("small", {}, bad.map(r => `${r.t || "?"}: ${+r.ms >= 12.5 ? r.ms + " m/s" : ""}${+r.ms >= 12.5 && WX_STOP.includes(r.cond) ? ", " : ""}${WX_STOP.includes(r.cond) ? r.cond : ""}`).join("  |  ") + ". Come down and tell the site manager.")); };
+  const t = rowsTable("", ["Time", "Wind m/s", "Weather"], f.wind, r => h("tr", {}, h("td", { style: "width:80px" }, inp("text", r.t, v => { r.t = v; upd(); }, "09h00")), h("td", { style: "width:90px" }, inp("number", r.ms, v => { r.ms = v; upd(); }, "m/s")), h("td", {}, sel(WX, r.cond, v => { r.cond = v; upd(); }, "Choose"))), "+ Add reading", () => ({ t: hhmm(new Date()) }));
+  upd();
+  return sheet("", h("div", { class: "band" }, "WIND AND WEATHER ", h("small", {}, "(before work, then every 2 hours)")), h("p", { class: "hint", style: "margin:6px 8px" }, "Stop work at height at 12.5 m/s or more, in rain, mist or lightning, or above 38 °C."), t, banner);
+}
 function vDsti() {
   const f = S.form;
   const tb = h("tbody");
@@ -962,14 +975,15 @@ function vDsti() {
       h("tr", {}, h("td", { class: "lab" }, "Work instructions for this task"), h("td", {}, sel(MS, f.ms, v => f.ms = v, "Choose method statement"))),
       h("tr", {}, h("td", { class: "lab" }, "Toolbox talk topic"), h("td", {}, inp("text", f.tbt, v => f.tbt = v, "Topic"))))),
       h("div", { class: "band" }, "What task is being performed today?"), txt(f.task, v => f.task = v, "Describe the task")),
+    f.project && f.project.wind ? windTable(f) : null,
     sheet("", h("div", { class: "band" }, "Hazards and risks ", h("small", {}, "(tap H, M or L, then add risk and controls)")), h("table", {}, h("thead", {}, h("tr", {}, h("th", {}, "No"), h("th", { class: "l" }, "Hazard"), h("th", {}, "Rating"))), tb)),
     sheet("", h("div", { class: "band" }, "What PPE is required for this task?"), ppe),
     rowsTable("", ["Occupation", "Name", "Signature"], f.ack, r => h("tr", {}, h("td", { style: "padding:8px;font-weight:600;font-size:12.5px" }, r.occ), h("td", { style: "min-width:120px" }, sel(STAFF, r.name, v => r.name = v, "Name")), h("td", { style: "width:110px" }, sigCell(() => r.sig, v => r.sig = v, `${r.occ} signature`))), "+ Add person", () => ({ occ: "Crew", name: "", sig: "" })),
     h("p", { class: "hint" }, "Acknowledgement. I am conversant with the work instructions and the risks of this task, I will work according to them, and I will report any unsafe condition."),
     sheet("", h("table", {}, h("tbody", {},
       h("tr", {}, h("td", { class: "lab" }, "CR 9(1) risk assessor"), h("td", {}, sel(STAFF, f.assessor, v => f.assessor = v, "Name"))),
-      h("tr", {}, h("td", { class: "lab" }, "Signature"), h("td", {}, sigCell(() => f.sigA, v => f.sigA = v, "Risk assessor signature", true)))))),
-    submitBtn(() => { const e = []; if (!f.task.trim()) e.push("Describe the task being performed today."); if (!Object.values(f.hz).some(x => x.r)) e.push("Rate at least one hazard."); if (!f.ack.some(a => a.name && a.sig)) e.push("At least one crew member must sign on."); if (!f.sigA) e.push("The risk assessor must sign."); return e; })];
+      h("tr", {}, h("td", { class: "lab" }, f.assessor && f.assessor !== S.user ? `Signature (${S.user}, completed by)` : "Signature"), h("td", {}, sigCell(() => f.sigA, v => f.sigA = v, "Risk assessor signature", true)))))),
+    submitBtn(() => { const e = []; if (!f.task.trim()) e.push("Describe the task being performed today."); if (f.project && f.project.wind && !(f.wind || []).some(r => r.t && r.ms !== undefined && r.ms !== "" && r.cond)) e.push("Take the first wind reading: time, m/s and weather."); if (!Object.values(f.hz).some(x => x.r)) e.push("Rate at least one hazard."); if (!f.ack.some(a => a.name && a.sig)) e.push("At least one crew member must sign on."); if (!f.sigA) e.push("The risk assessor must sign."); return e; })];
 }
 
 function vInspection() {
@@ -1012,7 +1026,7 @@ function vDone() {
   const f = S.form;
   const names = { diary: ["1. Daily Diaries", "Daily Diary", "xlsx", "x"], dsti: ["2. DSTI", "DSTI", "docx", "w"], inspection: ["3. Site Inspections", "Site Inspection", "docx", "w"],
     toolbox: ["5. Toolbox Talks", "Toolbox Talk", "docx", "w"], check: ["7. Inspection Checklists", f.key ? CHECKS[f.key].title : "Inspection", "docx", "w"],
-    incident: ["8. Incidents", "Incident Report", "docx", "w"], nearmiss: ["8. Incidents", "Near-Miss Report", "docx", "w"], jobobs: ["6. Behavioural Observations", "Behavioural Observation", "docx", "w"], si: ["9. Site Instructions", "Site Instruction SI-001", "docx", "w"], order: ["10. Orders", "Material Order OR-001", "docx", "w"] }[f.type];
+    incident: ["8. Incidents", "Incident Report", "docx", "w"], nearmiss: ["8. Incidents", "Near-Miss Report", "docx", "w"], invest: ["8. Incidents", "Incident Investigation", "docx", "w"], jobobs: ["6. Behavioural Observations", "Behavioural Observation", "docx", "w"], si: ["9. Site Instructions", "Site Instruction SI-001", "docx", "w"], order: ["10. Orders", "Material Order OR-001", "docx", "w"] }[f.type];
   const proj = f.project ? f.project.name : "Site inspections (no project yet)";
   const short = f.project ? f.project.short : (f.company || "New site");
   const base = `FIBRACO - ${names[1]} - ${short} (${dmy(f.date)})`;
@@ -1030,65 +1044,175 @@ function vDone() {
     f.type === "diary" && f.project ? reportStatus(f.project, ymd(f.date)) : null,
     h("div", { class: "stack" },
       f.type === "diary" && f.project && S.final[f.project.id + "|" + ymd(f.date)] ? h("button", { class: "mbtn", onclick: () => { S.hist = ["projects", "calendar", "menu"]; S.view = "review"; render(); window.scrollTo(0, 0); } }, "Back to diary review", h("small", {}, "Client sign-off and KPIs")) : null,
+      f.project && APPT(f.project) ? h("button", { class: "mbtn", onclick: () => { S.hist = ["projects", "calendar", "menu"]; S.view = "mychecks"; render(); window.scrollTo(0, 0); } }, "Back to my checks") : null,
       f.project ? h("button", { class: "mbtn", onclick: () => { S.hist = ["projects", "calendar"]; S.view = "menu"; render(); window.scrollTo(0, 0); } }, "Back to project") : null,
       h("button", { class: "mbtn ghost", onclick: () => { S.hist = []; S.view = "projects"; render(); window.scrollTo(0, 0); } }, "Back to projects")))];
 }
 
 const TALKS = [{"n": 1, "t": "Hardhats, Eye protection, Safety shoes", "s": [{"h": "Hardhats", "b": ["It prevents head injuries", "It must be worn at all times", "Ask attendees if their hardhats has ever prevented injuries"]}, {"h": "Eye protection", "b": ["Use at all times where instructed", "Use the right goggles when cutting, grinding, welding chipping, etc", "Side shields are available in windy areas"]}, {"h": "Safety shoes", "b": ["Wear at all times on any site", "Keep in a good condition", "Do not wear broken, damaged boots"]}]}, {"n": 2, "t": "Speed limits, Mobile equipment, Passengers", "s": [{"h": "Speed limits", "b": ["Observe all signposted speedlimits", "Report reckless driving to your supervisor", "Reduce your speed in bad weather, bad road conditions and dust"]}, {"h": "Mobile equipment", "b": ["Complete the daily pre-start checklist before you start work", "Do not operate unsafe machines", "In vehicles always wear seatbelts"]}, {"h": "Passengers", "b": ["Never give unauthorised passengers lifts", "Never take passengers on earthmoving equipment"]}]}, {"n": 3, "t": "Lock out procedures, Safety belts in vehicles, Handrails", "s": [{"h": "Lock out procedures", "b": ["Make sure power is isolated by supervisor before repairs begin", "Make sure locks has been fitted by the supervisor", "Test the start button before repairs begin"]}, {"h": "Safety belts in vehicles", "b": ["It is law to always wear safety belts", "If the safety belt is broken, report it to the supervisor", "Safety belts are there to protect you"]}, {"h": "Handrails", "b": ["Report broken handrails", "Always barricade broken handrails"]}]}, {"n": 4, "t": "Heat exhaustion, Housekeeping, Overhead powerlines", "s": [{"h": "Heat exhaustion", "b": ["Drink plenty of fluids in hot weather to protect your body", "Symptoms of heat exhaustion are : dizziness, nausea, feeling weak"]}, {"h": "Housekeeping", "b": ["Put all waste in proper bins", "Clean up after you have done any job", "Keep vehicle cabs free from litter"]}, {"h": "Overhead powerlines", "b": ["Keep away from overhead powerlines", "Do not attempt to reach upto or climb upto overhead powerlines", "Do not go near fallen or damaged powerlines"]}]}, {"n": 5, "t": "Health and safety representatives, Teamwork, Hearing protection", "s": [{"h": "Health and safety representatives", "b": ["Your representatives are there to help you", "Always report any danger to your representative", "You have a right to refuse to work in unsafe areas"]}, {"h": "Teamwork", "b": ["Teamwork prevents injuries", "Tell fellow workers if they work unsafely", "Help other workers should they require it"]}, {"h": "Hearing protection", "b": ["We  use hearing protection to protect our hearing", "If you cannot talk to some one in a normal voice, the area probably requires that hearing protection be worn"]}]}, {"n": 6, "t": "Attitude, Dust masks/respirators, Skin rashes", "s": [{"h": "Attitude", "b": ["Attitude is the feeling or moods you are experiencing", "Be very cautious when working during emotional times, like the death of a relative", "Be alert to surrounding conditions"]}, {"h": "Dust masks/respirators", "b": ["These are used to protect your lungs", "Always use them when the area is dusty", "Make sure they fit properly"]}, {"h": "Skin rashes", "b": ["Can occur in dusty or hot conditions", "Washing and clean clothes can prevent skin rashes", "If serious, report to your representative"]}]}, {"n": 7, "t": "Fall hazards, Unsafe acts, Short cuts", "s": [{"h": "Fall hazards", "b": ["Keep walkways clear – remove all objects lying on designated walkways", "Always use safety belts when working above groundlevel", "Make sure they safety belt is properly anchored"]}, {"h": "Unsafe acts", "b": ["It is the primary cause of all accidents", "People commit unsafe acts – not equipment", "Always report unsafe conditions"]}, {"h": "Short cuts", "b": ["Always use steps and ladders – do not climb up structures", "Use demarcated walkways – not short cuts", "Use demarcated roads – not short cuts"]}]}, {"n": 8, "t": "Flammable liquids, Fire extinguishers, Playing around", "s": [{"h": "Flammable liquids", "b": ["Flammable liquid vapours cause explosions", "Store flammable liquids in proper containers", "Observe no smoking signs"]}, {"h": "Fire extinguishers", "b": ["They are only designed for smaller fires", "Aim at base of fire and use a sweeping motion", "Never block your way of escape when fighting a fire"]}, {"h": "Playing around", "b": ["Playing practical jokes at work could be dangerous", "The job is important – be professional"]}]}, {"n": 9, "t": "Pry bars/tommy bars, Personal safety, Hand safety", "s": [{"h": "Pry bars/tommy bars", "b": ["Never use screwdrivers as pry bars or strike pry bars with a hammer", "Be prepared for pry bars to slip when using it a handle for a turfer (come-along)"]}, {"h": "Personal safety", "b": ["Long hair must be secured under a hardhat to prevent entanglement with moving machinery", "Personal items such as watches, rings, necklaces must not create opportunity for entanglement"]}, {"h": "Hand safety", "b": ["Wear gloves when handling wire rope, sharp or hot objects", "Watch where you place your hands – many fingers have been lost"]}]}, {"n": 10, "t": "Compressed airlines, Clothing, Personal protective equipment", "s": [{"h": "Compressed airlines", "b": ["Always bleed air from cylinders and tanks before repairs", "Never place your finger over a small hole in an airline – the air could puncture your skin", "Never direct compressed air at yourself or anybody"]}, {"h": "Clothing", "b": ["Never wear loose or torn clothing that could become entangled in machinery", "Wear proper ppe when cutting, welding, grinding and chipping", "Keep clothes free of oil and grease when cutting or welding as it may catch fire"]}, {"h": "Personal protective equipment", "b": ["Use earplugs/ear muffs in designated areas", "Clean earplugs before every use", "It protects your hearing"]}]}, {"n": 11, "t": "Oxygen / acetylene torch safety, Lifting, Report injuries", "s": [{"h": "Oxygen / acetylene torch safety", "b": ["Make sure torches are equipped with flashback arrestors", "Repair torches, guages and lines immediately when defective", "Always secure gas cylinders in upright position"]}, {"h": "Lifting", "b": ["Get help when lifting or moving heavy objects", "Look for an escape route, before you lift, should the object fall", "Watch your feet, should the object fall"]}, {"h": "Report injuries", "b": ["All injuries, no matter how small, must be reported", "Insist on immediate first aid assistance", "Rather get medical help for more serious injuries"]}]}, {"n": 12, "t": "Safety harnesses, Crane safety, Safety glasses", "s": [{"h": "Safety harnesses", "b": ["Safety harnesses must be worn whenever there is danger that you may fall", "Safety harnesses must be kept clean and in a good condition", "Safety harnesses must be properly achored and adjusted for your conditions"]}, {"h": "Crane safety", "b": ["Make sure the lift is within the crane capacity", "Make sure the outriggers are extended and on a firm base", "Always check the crane before use"]}, {"h": "Safety glasses", "b": ["Safety glasses must be worn in all designated areas", "It is better if safety glasses have side shields", "Only properly approved safety glasses may be worn", ""]}]}, {"n": 13, "t": "Removing bucket teeth, Personal conduct, Storage areas", "s": [{"h": "Removing bucket teeth", "b": ["Use hammer and chisel to remove teeth", "Watch your fingers/hands when removing teeth", "Always use safety glasses when removing teeth"]}, {"h": "Personal conduct", "b": ["Treat fellow employees with dignity and respect", "Pratice good housekeeping", "Report any unsafe issues you may find"]}, {"h": "Storage areas", "b": ["Keep storage areas free from litter, spillage and debris", "Clearly label all containers", "Keep shelves neat and organised"]}]}, {"n": 14, "t": "Operator fitness, Cleaning with water hoses, Safe access", "s": [{"h": "Operator fitness", "b": ["Never report to work under the influence of drugs or alcohol", "Try to leave personal problems at home", "Make sure you get enough rest between shifts"]}, {"h": "Cleaning with water hoses", "b": ["Grip hose firmly and turn on pressure gradually", "Never aim water at any electrical installation or apparatus", "Never aim water at people"]}, {"h": "Safe access", "b": ["Always use designated walkways", "Use a safety belt when working outside handrails", "Only use proper ladders and steps – don’t climb over equipment"]}]}, {"n": 15, "t": "Using a shovel, Pumps, Hydraulic systems", "s": [{"h": "Using a shovel", "b": ["Ensure that your footing is firm", "Grip the shovel firmly", "Do not use a shovel near pinch points"]}, {"h": "Pumps", "b": ["Ensure the pump is locked out before doing repairs", "Make sure pump lines are depressurised before disconnecting", "Never direct waterlines to electrical installations or equipment"]}, {"h": "Hydraulic systems", "b": ["Check flow diagram to ensure system is depressurised before commencing repairs", "Be aware of heat build-up in hydraulic systems", "Clean up any oil spills after repairs"]}]}, {"n": 16, "t": "Hand rails and walkways, Illegal drugs and alcohol, Label containers", "s": [{"h": "Hand rails and walkways", "b": ["Use handrails when climbing", "Keep walkways free of clutter and spillage", "Never climb over handrails"]}, {"h": "Illegal drugs and alcohol", "b": ["Is not allowed in workplaces", "Your, and your fellow employees lifes’ will be endangered", "Should you use drugs or alcohol on the job, you will be dismissed"]}, {"h": "Label containers", "b": ["Write contents on labels of containers", "Know emergency first aid procedure for spills", "Report spills to your supervisor"]}]}, {"n": 17, "t": "Good housekeeping, Reversing safely, Hand tools", "s": [{"h": "Good housekeeping", "b": ["Applies to all areas and mobile equipment", "Never let anything lie around after you worked in an area", "Clean up any spills immediately"]}, {"h": "Reversing safely", "b": ["Park so that reversing is avoided as far as possible", "Keep mirrors and windows clean, and look around", "Ensure that reverse alarms are always working"]}, {"h": "Hand tools", "b": ["Use the right tool for the job", "Keep tools in a safe place and in a good condition", "Use tools in the way they were intended to be used"]}]}, {"n": 18, "t": "Help reduce injury risks to others, Portable electric tools, Floor openings", "s": [{"h": "Help reduce injury risks to others", "b": ["Set an example by working safely", "Report any unsafe acts to your health and safety representative"]}, {"h": "Portable electric tools", "b": ["Do not use when damaged in any way – it will kill you", "Check that the plug and cable is 100% safe", "Take damaged electric tools to your supervisor"]}, {"h": "Floor openings", "b": ["Always keep floor openings covered", "If not covered install guardrails", "Keep properly marked"]}]}, {"n": 19, "t": "Report unsafe conditions, Welding, Chain hoist/chain blocks", "s": [{"h": "Report unsafe conditions", "b": ["It reduces the potential for injuries", "Report to your supervisor or representative", "It is your right not to work in unsafe conditions"]}, {"h": "Welding", "b": ["Use proper safety equipment", "Clear all flammable materials from the work area", "Is there proper ventilation?"]}, {"h": "Chain hoist/chain blocks", "b": ["Keep free from dirt and grease", "Do not use damaged chain blocks", "Do not exceed the maximum allowed tonnage"]}]}, {"n": 20, "t": "First aid, Falls, Moving items", "s": [{"h": "First aid", "b": ["Disinfect small cuts and abrasions and cover with bandage or plaster", "If there is foreign matter in the wound, get medical help", "Report all injuries, no matter how small they are"]}, {"h": "Falls", "b": ["Falls are the most frequent form of injuries", "Be careful in oily, greasy and muddy conditions", "Always hold onto something when climbing up or down"]}, {"h": "Moving items", "b": ["Check completely around you before moving something", "The bigger and heavier the items,the greater the risk of accidents", "Check your reverse alarm every day"]}]}, {"n": 21, "t": "Heat exhaustion, Heat stroke, Fractures", "s": [{"h": "Heat exhaustion", "b": ["Symptoms are weakness, nausea and dizziness", "It may be difficult to breathe", "Always take lots of fluids"]}, {"h": "Heat stroke", "b": ["The skin is hot and dry, face is red and the temperature is high", "Remove victim to cool place and remove as much as possible clothing", "Apply wet cloths and cool the person gradually", "Get medical help immediately"]}, {"h": "Fractures", "b": ["Immobilise the limb", "Call the first aider", "Get medical help immediately"]}]}, {"n": 22, "t": "First aid, Operating service pick-ups/bakkies, Fire prevention", "s": [{"h": "First aid", "b": ["Always know where the nearest first aid box is kept", "Always know who the first aiders are", "Never treat small injuries as insignificant"]}, {"h": "Operating service pick-ups/bakkies", "b": ["Never drive too close to earthmoving equipment", "Always drive on demarcated roads only", "Never leave a vehcile unattended with the engine running"]}, {"h": "Fire prevention", "b": ["Obey all “no smoking” signs strictly", "Do not place any items near fire extinguishers", "Check fire extinguishers regularly for damage"]}]}, {"n": 23, "t": "Lightning precautions, Crane operations, Mobile equipment", "s": [{"h": "Lightning precautions", "b": ["Stay inside buildings or vehicles during storms", "Stay away from metal structures that are not earthed", "Stay away from trees or high structures – seek low areas"]}, {"h": "Crane operations", "b": ["Respond to lifting signals from only one person – but “stop” signals from any person around", "Never leave a suspended load anattended", "Never swing a load over persons or equipment"]}, {"h": "Mobile equipment", "b": ["Never leave equipment unattended with bucket, boom or other attachments suspended in the air", "Block any suspended attachments before inspecting them", "Make sure you have the attention of the operator before mounting any mobile equipment"]}]}, {"n": 24, "t": "Containers, Personal safety, Eye protection", "s": [{"h": "Containers", "b": ["All containers must have their contents clearly marked", "Know how to dispose of used or unwanted containers", "Know the first aid procedure for chemicals"]}, {"h": "Personal safety", "b": ["Keep open flames away from any flammable goods", "Avoid overloading electrical plugs", "Do not drink and drive"]}, {"h": "Eye protection", "b": ["Do not look when somebody is cutting or welding", "Always use safety glasses when you are required to assist with cutting,welding or grinding", "Get medical help with foreign objects in your eyes"]}]}, {"n": 25, "t": "Working in hot weather, Electrical safety, General safety", "s": [{"h": "Working in hot weather", "b": ["Always drink plenty of water", "Aif you feel faint or light headed, sit down and drink water", "Do not overdress in hot weather"]}, {"h": "Electrical safety", "b": ["Always ensure any equipment is locked out before working on it", "Only qualified persons are allowed into substations", "Do not try to  reset any tripped equipment – call your supervisor"]}, {"h": "General safety", "b": ["Always be aware of your surroundings", "Never walk under a suspended load", "Report any hazards immediately"]}]}];
 // ---------- daily inspections ----------
-const OK3 = [["OK", "OK"], ["Defect", "Defect"], ["N/A", "N/A"]];
+const OK3 = [["OK", "OK"], ["Defect", "DEF"], ["N/A", "N/A"]];
+const INORDER = [["OK", "In order"], ["Defect", "Not in order"], ["N/A", "N/A"]];
+// Fibraco checklists FIBRACO-HSE-CHECK-001 to 009 (Wolf safety file, Section 21), word for word. Legend: OK, DEF (defect) or N/A.
+// Non-compliant equipment must not be used. Defective equipment is reported and returned to the store immediately.
+const LEG = "Mark OK for compliance, DEF for non-compliance, N/A for not applicable. Non-compliant equipment must not be used. Defective equipment shall be reported and returned to the store immediately.";
 const CHECKS = {
-  ppe: { title: "PPE inspection", freq: "Daily before work", basis: "Fibraco PPE policy. Check each person's PPE before work starts.",
-    details: [["Person checked", "staff"]], ans: [["OK", "OK"], ["Replace", "Replace"], ["N/A", "N/A"]],
-    groups: [["Head, eyes and ears", ["Hard hat, no cracks and within date", "Safety glasses clean and not scratched", "Ear plugs or ear muffs available"]],
-             ["Body", ["Overall or long sleeve shirt and long pants in good condition", "Reflective vest worn and visible", "Dust mask or respirator available where needed"]],
-             ["Hands and feet", ["Gloves suitable for the task", "Safety boots in good condition, soles not worn through", "Gum boots or rainsuit when wet"]],
-             ["Work at height", ["Full body harness and lanyard issued and checked"]]] },
-  vehicle: { title: "Vehicle inspection", freq: "Daily before use", basis: "Construction Regulations 2014, regulation 23(1)(k). Done by the driver before use.",
-    details: [["Vehicle", "text", "e.g. Double Cab Pickup"], ["Registration no", "text"], ["Odometer (km)", "number"]], ans: OK3,
-    groups: [["Documents", ["Licence disc valid", "Driver licence and PrDP carried", "Vehicle inspection register in the vehicle"]],
-             ["Outside", ["Tyres, tread and pressure", "Spare wheel, jack and spanner", "Windscreen and mirrors", "Wipers and washers", "Lights, indicators and hazards", "Reverse alarm", "Beacon or site flag where required", "No new body damage", "Load bin, canopy and tow hitch secure"]],
-             ["Under the bonnet", ["Engine oil", "Coolant", "Brake fluid", "No leaks under the vehicle"]],
-             ["Cab", ["Seatbelts", "Foot brake and hand brake", "Steering", "Hooter", "No dashboard warning lights", "First aid kit on board", "Fire extinguisher in date", "Warning triangles"]],
-             ["Load", ["Ladders, drums and tools tied down", "Fibre offcut container closed"]]] },
-  ladder: { title: "Ladder inspection", freq: "Before use, recorded monthly", basis: "General Safety Regulations, regulation 13A.",
-    details: [["Ladder ID or no", "text"], ["Type", "select", ["Step", "Extension", "Straight"]], ["Material", "select", ["Aluminium", "Fibreglass", "Wood"]]], ans: OK3,
-    groups: [["Stiles and rungs", ["Stiles straight, no cracks, splits or bends", "No rungs missing, loose or damaged", "No sharp edges or burrs"]],
-             ["Feet and top", ["Non-skid feet in good condition", "Top hooks or a way to tie off"]],
-             ["Step and extension ladders", ["Spreader bars lock", "Extension locks, guides and rope"]],
-             ["Condition", ["Clean, no oil, grease or mud", "Labels and load rating legible", "Fibreglass ladder used near electrical work"]]] },
+  ppe: { no: "FIBRACO-HSE-CHECK-007", title: "Daily PPE checklist", freq: "Daily before work", basis: "By signing you confirm all PPE is in good condition with no wear and tear. If defects are found on PPE, nobody may enter the work area or do any task until it is replaced.",
+    details: [["Employee", "staff"], ["Designation", "text"]], ans: [["OK", "To standard"], ["Replace", "Not to standard"], ["N/A", "N/A"]],
+    groups: [["PPE items", ["Gloves", "Ear plugs", "Goggles", "Safety shoes", "Overall", "Hard hat", "Reflector vest", "Harness"]]], addable: "+ Additional PPE" },
+  vehicle: { no: "FIBRACO-HSE-CHECK-008", title: "Vehicle check", freq: "Daily before use", basis: "Weekly vehicle check sheet, one line per day. Done by the driver before use (CR 23).",
+    details: [["Vehicle", "text", "e.g. Double Cab Pickup"], ["Registration no", "text"], ["Driver name", "staff"], ["Odometer reading (km)", "number"]], ans: INORDER,
+    groups: [["Inspection checks", ["Vehicle and driver site authorization disk", "Check for validity of license disc", "Check engine oil level", "Check radiator fluid level", "Check fan belt condition", "Check brake fluid level", "Check for damaged water hoses", "Check windscreen washer container water level", "Check condition of spare wheel and tools", "Check if all windows are clean and free from damage", "Check vehicle bodywork for damage", "Check door locks and tail gate for proper operation", "Check the rear-view mirrors for damage", "Check condition of tires", "Check wheel rims and nuts for any visible damage", "Check the operation of head, brake and indicator lights", "Check the operation of the horn", "Check the operation of the windscreen wipers", "Check the condition and operation of the seat belts", "Check interior for damage", "Check condition of seating and adjusting mechanism", "Check strobe light operation (site only)", "Check jack and wheel changing tools", "Check emergency triangles", "Check steering for excessive play", "Check operation of foot and hand brake", "Check fuel level", "Check for any coolant and oil leaks", "Check the operation of the gauges and switches in general", "Check for excessive noise and emissions from the exhaust"]]] },
+  mewp: { no: "FIBRACO-HSE-CHECK-009", title: "Cherry picker check", freq: "Daily before first use", basis: "Cherry picker (MEWP) pre-use check by the appointed operator (CR 53). JLG 450AJ, 15.5 m working height, SWL 227 kg. No work at height until this is done and fit for use.",
+    details: [["Machine", "text", "e.g. JLG 450AJ"], ["Driver name", "staff"], ["Hour meter reading", "number"]], ans: INORDER,
+    groups: [["Inspection checks", ["Check training certificate", "Check load test certificate", "SWL", "Working height 15.5 m", "Load chart visible and correct", "Emergency stops", "Strobe light", "Push buttons", "Switches (selector, key, limit)", "Cables, connections, batteries", "Control boards, joysticks, contactors", "Pulleys (wear, pins, runners)", "Tyres", "Runners (wear, pins, shafts)", "Wire ropes (anchor points, wear, lubrication)", "Platform (wear, pins, welding)", "Columns (wear, runners, pins, welding)", "Platform alignment", "Scissors (pins, bushes, wear)", "Boom (wear, play, straightness, cracks)", "Welding cracks (visual)", "Pump (leak, pressure, noise)", "Oil level", "Cylinders (leaks, mountings)", "Control valves (leaks, operation)", "Bypass valve (fitted, operation)", "Emergency valve", "Piping (leaks, condition)"]]] },
+  ladder: { no: "FIBRACO-HSE-CHECK-001", title: "Ladder inspection", freq: "Before use, recorded monthly", basis: "General Safety Regulations 13A. " + LEG,
+    details: [["Ladder number", "text"]], ans: OK3,
+    groups: [["Inspection", ["Ladder number identified", "Safe load limit identified", "No damage, cracks or bends evident", "Ladder clean and free from splinters or exposed fibres", "Free of corrosion", "Spreader bars undamaged", "Non-skid devices fitted", "Extension locks not defective", "Rungs or steps not loose or missing", "No loose bolts or rivets"]],
+             ["Permanently marked in a prominent position", ["A warning against standing any higher than second from the top step (stepladder not being a platform stepladder)", "A warning against standing any higher than the third from the top step (single or extension ladder)"]]] },
+  extension: { no: "FIBRACO-HSE-CHECK-002", title: "Electrical extension inspection", freq: "Before use, recorded monthly", basis: "CR 24(e) portable electrical equipment. " + LEG,
+    details: [["Extension number", "text"]], ans: OK3,
+    groups: [["Inspection", ["Extension number identified", "Length identified", "Cable wires not exposed at connections", "Electrical cord without damage or joints", "Plug and weatherproof socket undamaged", "Unit colour coded"]]] },
+  tools: { no: "FIBRACO-HSE-CHECK-003", title: "Hand tool checklist", freq: "Before use, recorded monthly", basis: "OHS Act section 8(2), hand tool inspector. " + LEG,
+    details: [["Tool number", "text"], ["Tool type", "text", "e.g. side cutters, hammer"]], ans: OK3,
+    groups: [["Inspection", ["No homemade tool", "Lanyard fitted for elevated work", "Tool not painted", "No cracks evident", "Tool not bent or damaged", "Ring not damaged and operational", "Flat face undamaged and operational", "Chisels, spades, picks, etc sharp and true", "Handles on spades, forks, picks, hammers, etc undamaged", "No mushroomed chisels, wedges, drifts, slogging spanners"]]] },
+  drill: { no: "FIBRACO-HSE-CHECK-004", title: "Portable drill inspection", freq: "Before use, recorded monthly", basis: "CR 24(e) portable electrical equipment. " + LEG,
+    details: [["Drill or tool number", "text"]], ans: OK3,
+    groups: [["Inspection", ["Plug and weatherproof socket undamaged", "Cable without damage or joints", "Cable wires not exposed at connections", "Housing secure and in good condition", "Switches operational", "Handles in place and secure", "Spindle and bearing not loose", "Chuck and key in good working order", "Plant number identified", "Unit colour coded"]]] },
+  generator: { no: "FIBRACO-HSE-CHECK-005", title: "Generator (petrol) inspection", freq: "Before use, recorded monthly", basis: "CR 24(e) portable electrical equipment. " + LEG,
+    details: [["Generator number", "text"]], ans: OK3,
+    groups: [["Inspection", ["Generator number identified", "Housing secure and good condition", "Start and stop devices fully functional", "Cover plates (guards) cover all moving parts (pulleys, fans)", "Cables without joints or damage", "Correct socket plug fitted and undamaged", "No exposed wires at connections", "Earth leakage switch fitted and working", "Fuel caps", "Fuel and oil leaks", "Drip tray", "Wheels, tyres, nuts", "Chassis", "Unit colour coded"]]] },
+  firstaid: { no: "FIBRACO-HSE-CHECK-006", title: "First aid box register", freq: "Monthly and after use", basis: "General Safety Regulations 3(4), first aider. " + LEG,
+    details: [["First aid box number", "text"], ["First aider", "staff"]], ans: OK3,
+    groups: [["Inspection", ["First aid box identified", "Name of first aider identified on first aid box", "Material safety data sheets available", "Wound cleaner or antiseptic (100 ml)", "Swabs for cleaning wounds", "Cotton wool for padding (100 g)", "Sterile gauze (minimum of 10)", "Forceps (tweezers)", "Scissors (100 mm)", "Safety pins (minimum of 4)", "Triangular bandages (minimum 4)", "Roller bandages (4 x 75 mm x 5 m)", "Roller bandages (4 x 100 mm x 5 m)", "Elastic adhesive tape (25 mm x 3 m)", "Non-allergenic adhesive tape (25 mm x 3 m)", "Assorted adhesive dressing (plasters x 10)", "First aid dressings (4 x 75 mm x 100 mm)", "First aid dressings (4 x 150 mm x 200 mm)", "Straight splints (x 2)", "Disposable latex gloves (x 4)", "CPR mouth piece (x 2)", "Disposable sanitised eye wash water", "Eye patch", "Folding stretcher", "First aider certificate available", "First aid treatment register available", "Unit in good general condition", "Item number identified"]]] },
   harness: { title: "Harness inspection", freq: "Before use, recorded monthly", basis: "Construction Regulations 2014, regulation 10 and the site fall protection plan.",
     details: [["Harness serial no", "text"], ["Issued to", "staff"]], ans: OK3,
     groups: [["Webbing", ["No cuts, tears or fraying", "No burns or melted fibres", "No chemical or paint damage", "Not faded or brittle from sun", "Stitching complete"]],
              ["Metal parts", ["D rings, no cracks, bends or rust", "Buckles adjust and hold"]],
              ["Lanyard", ["Lanyard in good condition", "Shock absorber sealed, not deployed", "Hooks close and lock by themselves"]],
              ["Label", ["Label legible, within service life"]]] },
-  firstaid: { title: "First aid kit inspection", freq: "Monthly and after use", basis: "General Safety Regulations, regulation 3 and its Annexure (minimum contents).",
-    details: [["Kit location", "text", "e.g. Container, Hilux"], ["First aider on site", "staff"]], ans: [["OK", "OK"], ["Short", "Short"], ["N/A", "N/A"]],
-    groups: [["Minimum contents", ["Wound cleaner 500 ml", "Swabs for cleaning wounds", "Cotton wool 250 g", "Sterile gauze swabs, 1 packet", "Forceps", "Scissors 100 mm", "Safety pins, 1 card", "Triangular bandages x 12", "Roller bandages 80 mm x 6", "Roller bandages 100 mm x 6", "Elastic adhesive 25 mm, 1 roll", "Anti-allergenic adhesive strip", "Adhesive dressing strips, 1 packet", "Large dressings 75 x 100 mm x 6", "Shell dressings 150 x 200 mm x 6", "Straight splints x 2"]],
-             ["Fibraco extra", ["Disposable gloves", "CPR mouthpiece", "Eye wash", "Burn dressing", "Foil blanket"]],
-             ["General", ["Box clean and closed", "First aider name and number at the box", "Nothing past expiry date"]]] },
-  tools: { title: "Hand and power tools", freq: "Monthly", basis: "OHS Act section 8(2) and the hand tool inspector appointment. Electrical Machinery Regulations 2011, regulation 10.",
-    details: [["Colour code this month", "select", ["Red", "Yellow", "Blue", "Green", "White", "Orange"]]], ans: [["Pass", "Pass"], ["Fail", "Fail"], ["N/A", "N/A"]], addable: "+ Add tool",
-    groups: [["Tools on site", ["Ingco cordless drill and charger 18 V", "Ingco cordless grinder and charger 18 V", "Power lead 15 m", "Ingco cordless floodlight 18 V", "Magneto power station (UPS)", "Splicing hand tool set", "Tool box hand tools"]]] },
-  fire: { title: "Fire extinguishers", freq: "Monthly", basis: "Construction Regulations 2014, regulation 29(g) and (h). Yearly service by an accredited provider.",
-    details: [], ans: [["Pass", "Pass"], ["Fail", "Fail"], ["N/A", "N/A"]], addable: "+ Add extinguisher",
-    groups: [["Extinguishers (gauge in green, pin and seal intact, hose clear, service in date, mounted and signed)", ["Site container", "Vehicle 1", "Work area"]]] },
+  fire: { title: "Fire extinguishers", freq: "Before use, recorded monthly", basis: "Construction Regulations 2014, regulation 29(g) and (h), fire equipment inspector. Tagged with the client's monthly colour code. Yearly service by an accredited provider.",
+    details: [["Colour code this month", "select", ["Red", "Yellow", "Blue", "Green", "White", "Orange"]]], ans: [["Pass", "Pass"], ["Fail", "Fail"], ["N/A", "N/A"]], addable: "+ Add extinguisher",
+    groups: [["Extinguishers (gauge in green, pin and seal intact, hose clear, service in date, mounted and signed)", ["Vehicle 1", "Vehicle 2", "Cherry picker", "Work area"]]] },
   stacking: { title: "Stacking and storage", freq: "Monthly", basis: "Construction Regulations 2014, regulation 28 and General Safety Regulations, regulation 8.",
     details: [["Store or laydown area", "text"]], ans: OK3,
     groups: [["Storage area", ["Demarcated and signed", "Ground level and firm", "Walkways clear"]],
              ["Stacking", ["Stacks stable and upright", "Items taken from the top only", "Nobody climbs on stacks"]],
              ["Cable drums", ["Drums upright on flanges", "Drums chocked against rolling", "Cable ends sealed with end caps"]],
-             ["Hazards", ["Fibre offcuts in a sealed container", "Fuel, solvents and gas stored apart", "Safety data sheets available"]]] }
+             ["Hazards", ["Fibre offcuts in a sealed container", "Fuel, solvents and gas stored apart", "Safety data sheets available"]]] },
+  // daily construction manager inspection, weekly SHE rep inspection and the emergency drill (Wolf safety file FIB-PLN-001 and FIB-PLN-002)
+  siteinsp: { title: "Construction manager daily inspection", freq: "Daily", basis: "CR 8(1). The construction manager inspects the work daily (site health and safety plan, section 14).",
+    details: [["Work area or turbine", "text", "e.g. WEA 12"]], ans: OK3,
+    groups: [["Paperwork", ["DSTI done and signed by every person before work", "Toolbox talk held and on the register", "Permit in place (Vestas pause or Red Rocket permit) where needed", "Daily checks done (vehicle, cherry picker, PPE)"]],
+             ["Work at height", ["Wind checked and recorded, below 12.5 m/s", "Harnesses worn and clipped to the basket anchor", "Two persons in the basket within 227 kg", "Ground person at the base controls", "Tools tethered, area below barricaded"]],
+             ["Site", ["Barricading and signs in place", "Housekeeping, no litter, waste taken off site", "Fire extinguisher and first aid kit at the work area", "Spill kit and drip tray where fuel is used", "Vehicles parked safe, speed limits kept"]],
+             ["People", ["PPE worn correctly", "Water, shade and sun protection", "Nobody working alone"]]] },
+  sherep: { title: "SHE representative weekly inspection", freq: "Weekly", basis: "OHS Act section 17. The SHE representative inspects the workplace weekly and reports to the construction manager (site health and safety plan, section 14).",
+    details: [["Areas inspected", "text"]], ans: OK3,
+    groups: [["Workplace", ["Work areas barricaded and signed", "Housekeeping and waste", "Access roads and parking", "Emergency numbers and assembly point known"]],
+             ["Equipment", ["Cherry picker checked daily and certificates valid", "Ladders, tools and extensions tagged this month", "Fire extinguishers in date and tagged", "First aid box complete"]],
+             ["People", ["PPE in good condition and worn", "DSTI and toolbox talks signed daily", "Unsafe acts or conditions reported and fixed", "Near misses reported"]]] },
+  edrill: { title: "Emergency drill record", freq: "Before work at height starts", basis: "Emergency preparedness and response plan, section 4. A drill, including a cherry picker rescue, is held with the team before work at height starts.",
+    details: [["Scenario", "select", ["Cherry picker rescue", "Person injured", "Fire", "Snake bite", "Vehicle accident"]], ["Time to bring the person down (minutes)", "number"], ["People who took part", "text"]], ans: [["OK", "Done"], ["Defect", "Not done"], ["N/A", "N/A"]],
+    groups: [["Drill steps", ["Alarm raised and the team responded", "Ground person lowered the basket with the ground or emergency controls", "Person down within 15 minutes", "First aider responded with the first aid kit", "Emergency numbers called (GardMed and Red Rocket), or simulated", "Person sent to meet the ambulance at the gate", "Rescue equipment available and working"]]] }
 };
-const INSPECT_ORDER = ["toolbox", "ppe", "vehicle", "ladder", "harness", "firstaid", "tools", "fire", "stacking"];
+const INSPECT_ORDER = ["toolbox", "ppe", "vehicle", "mewp", "ladder", "extension", "tools", "drill", "generator", "harness", "firstaid", "fire", "stacking", "siteinsp", "sherep", "edrill"];
 
 function vInspections() {
   return [topbar("Daily inspections", S.project.short, true), projCard(S.project),
     h("div", { class: "stack" }, INSPECT_ORDER.map(k => k === "toolbox"
       ? h("button", { class: "mbtn", onclick: () => startForm("toolbox") }, "Daily toolbox talk", h("small", {}, "Daily before work"))
-      : h("button", { class: "mbtn", onclick: () => startForm("check", k) }, CHECKS[k].title, h("small", {}, CHECKS[k].freq)))),
+      : h("button", { class: "mbtn", onclick: () => startForm("check", k) }, CHECKS[k].title, h("small", {}, CHECKS[k].freq + (CHECKS[k].no ? "  |  " + CHECKS[k].no : ""))))),
     h("p", { class: "note" }, "Each one files under the project in its own folder, ready for audits.")];
+}
+
+// ---------- My checks: each person's appointments from the safety file drive his own list of checks ----------
+// Ring-fence rule: the organogram, the appointment register and the app checklists match, per person, per site.
+const APPT = (p, who) => ((p && p.appts) || {})[who || S.user] || null;
+const CK_EXTRA = { dsti: ["DSTI", "Lead the crew DSTI, wind readings on it"], jobobs: ["Job observation", "Watch one task, safe or unsafe"], invest: ["Incident investigation", "Each incident or near miss gets investigated"], flash: ["Flash report to the client", "Within 24 hours of an incident or near miss"] };
+const ckName = k => CHECKS[k] ? CHECKS[k].title : (CK_EXTRA[k] || [k])[0];
+const OFTEN = { daily: "Every day", weekly: "Every week", monthly: "Before use, record monthly", once: "Once, before work at height", event: "When it happens" };
+function weekStart(ds) { const d = new Date(ds + "T12:00:00"), w = (d.getDay() + 6) % 7; d.setDate(d.getDate() - w); return ymd(d); }
+function myForms(p, who, k) {
+  const type = CHECKS[k] ? "check" : k;
+  return Store.list(`form|${p.id}|`).map(([, o]) => o).filter(o => o && o.type === type && (type !== "check" || o.key === k) && (o.savedBy === who || o.user === who));
+}
+const incidentsOf = p => Store.list(`form|${p.id}|`).map(([id, o]) => o && Object.assign({ _id: id }, o)).filter(o => o && ["incident", "nearmiss"].includes(o.type)).sort((a, b) => (a.savedAt || "").localeCompare(b.savedAt || ""));
+const investOf = (p, id) => Store.list(`form|${p.id}|`).map(([, o]) => o).find(o => o && o.type === "invest" && o.ref === id);
+function myChecks(p, who, ds) {
+  const a = APPT(p, who); if (!a) return [];
+  const out = [];
+  for (const [k, often] of a.checks) {
+    if (often === "event") {
+      for (const r of incidentsOf(p)) {
+        const what = `${r.type === "nearmiss" ? "Near miss" : "Incident"} ${dmy(new Date(r.date + "T12:00:00"))}${r.where ? ", " + r.where : ""}`;
+        const age = (Date.now() - Date.parse(r.savedAt || 0)) / 36e5;
+        if (k === "invest") { const inv = investOf(p, r._id); out.push({ k, often, ref: r, title: "Investigate: " + what, st: inv ? "done" : age > 72 ? "late" : "due", sub: inv ? `Investigated by ${inv.savedBy}` : "GAR 9(2). Find the cause and the corrective actions" }); }
+        if (k === "flash") { const m = Store.get(`flash|${r._id}`), pend = mqGet().find(j => j.flash === r._id); out.push({ k, often, ref: r, title: "Flash report: " + what, st: m ? "done" : pend ? "wait" : age > 24 ? "late" : "due", sub: m ? `Sent ${m.at} to ${(m.to || []).join(", ")}` : pend ? "Waiting for signal, it goes by itself" : "Send to the client within 24 hours" }); }
+      }
+      continue;
+    }
+    const list = myForms(p, who, k).map(o => o.date).sort(), last = list[list.length - 1];
+    let done, late = false;
+    if (often === "daily") done = list.includes(ds);
+    else if (often === "weekly") { done = list.some(x => weekStart(x) === weekStart(ds) && x <= ds); late = new Date(ds + "T12:00:00").getDay() >= 5 || new Date(ds + "T12:00:00").getDay() === 0; }
+    // monthly: due in the first week of the month, or in the first 3 days on a new site
+    else if (often === "monthly") { done = list.some(x => x.slice(0, 7) === ds.slice(0, 7) && x <= ds); const st = p.start && p.start.slice(0, 7) === ds.slice(0, 7) ? p.start : null, dl = new Date((st || ds.slice(0, 8) + "01") + "T12:00:00"); dl.setDate(dl.getDate() + (st ? 2 : 6)); late = ds > ymd(dl); }
+    else if (often === "once") { done = list.some(x => x <= ds); late = p.start ? ds > p.start : false; }
+    out.push({ k, often, title: ckName(k), st: done ? "done" : late ? "late" : "due", sub: `${OFTEN[often]}${CHECKS[k] && CHECKS[k].no ? "  |  " + CHECKS[k].no : ""}${last ? "  |  last " + dmy(new Date(last + "T12:00:00")) : ""}` });
+  }
+  return out;
+}
+const checksOpen = (p, who, ds) => myChecks(p, who, ds).filter(x => x.st !== "done" && x.st !== "wait").length;
+function openCheck(x) {
+  if (x.k === "flash") return sendFlash(S.project, x.ref);
+  if (x.k === "invest") { startForm("invest"); Object.assign(S.form, { ref: x.ref._id, refType: x.ref.type, refWhat: x.ref.what || "", refWhere: x.ref.where || "", refDate: x.ref.date }); render(); return; }
+  if (CHECKS[x.k]) return startForm("check", x.k);
+  startForm(x.k);
+}
+function vMyChecks() {
+  const p = S.project, a = APPT(p), ds = ymd(S.date), list = myChecks(p, S.user, ds);
+  const chip = { done: ["DONE", "green"], due: ["DUE", "orange"], late: ["LATE", "red"], wait: ["WAITING", "blue"] };
+  return [topbar("My checks", `${p.short}  |  ${nice(S.date)}`, true),
+    h("div", { class: "appt-card" }, h("b", {}, `${S.user}, your appointments on ${p.short}`), h("ul", {}, a.appts.map(x => h("li", {}, x)))),
+    h("div", { class: "stack" }, list.length ? list.map(x => h("button", { type: "button", class: "mbtn ck-row " + x.st, onclick: () => x.st === "wait" ? null : openCheck(x) },
+      h("span", { class: "ck-t" }, x.title, h("small", {}, x.sub)), h("span", { class: "tst " + chip[x.st][1] }, chip[x.st][0]))) : h("p", { class: "note" }, "Nothing for you on this project.")),
+    h("button", { type: "button", class: "mbtn", onclick: () => go("inspections") }, "All checklists", h("small", {}, "Any other check you must do today")),
+    h("p", { class: "note" }, "This list comes from the appointment register in the safety file. If something is wrong here, tell Wanro.")];
+}
+// Incident investigation, GAR 9(2). Linked to the incident or near miss it investigates.
+function vInvest() {
+  const f = S.form, IMM = ["Unsafe act", "Unsafe condition", "Equipment failure", "Weather", "No or wrong PPE", "Procedure not followed", "No procedure"];
+  const imm = h("div", { class: "chips" }, IMM.map(c => { const b = h("button", { type: "button", class: (f.imm || []).includes(c) ? "on" : "", onclick: () => { f.imm = (f.imm || []).includes(c) ? f.imm.filter(x => x !== c) : [...(f.imm || []), c]; b.classList.toggle("on"); } }, c); return b; }));
+  return [...formHead("Incident investigation", "General Administrative Regulations 9(2). The appointed incident investigator investigates every incident and near miss and records the causes and corrective actions."),
+    sheet("", h("div", { class: "band" }, "WHAT IS BEING INVESTIGATED"), h("table", {}, h("tbody", {},
+      h("tr", {}, h("td", { class: "lab" }, "Report"), h("td", { class: "ro" }, `${f.refType === "nearmiss" ? "Near miss" : "Incident"} on ${f.refDate ? dmy(new Date(f.refDate + "T12:00:00")) : ""}`)),
+      h("tr", {}, h("td", { class: "lab" }, "Where"), h("td", { class: "ro" }, f.refWhere || "-")),
+      h("tr", {}, h("td", { class: "lab" }, "What happened"), h("td", { class: "ro" }, f.refWhat || "-"))))),
+    sheet("", h("div", { class: "band" }, "IMMEDIATE CAUSES ", h("small", {}, "(tap all that apply)")), imm, txt(f.immTxt, v => f.immTxt = v, "Describe what directly caused it")),
+    sheet("", h("div", { class: "band" }, "ROOT CAUSE"), txt(f.root, v => f.root = v, "Why did it really happen? Ask why five times")),
+    rowsTable("", ["Corrective action", "Who", "By when"], f.acts, r => h("tr", {}, h("td", {}, inp("text", r.what, v => r.what = v, "What must be done")), h("td", { style: "min-width:110px" }, sel(STAFF, r.who, v => r.who = v, "Who")), h("td", { style: "width:130px" }, inp("date", r.by, v => r.by = v))), "+ Add action", () => ({})),
+    sheet("", h("div", { class: "band" }, "LESSONS FOR THE TEAM"), txt(f.lessons, v => f.lessons = v, "What do we tell everyone at the next toolbox talk")),
+    sheet("", h("table", {}, h("tbody", {}, h("tr", {}, h("td", { class: "lab" }, "Investigator signature"), h("td", {}, sigCell(() => f.sig, v => f.sig = v, "Investigator signature", true)))))),
+    submitBtn(() => { const e = []; if (!(f.imm || []).length && !(f.immTxt || "").trim()) e.push("Give the immediate cause."); if (!(f.root || "").trim()) e.push("Give the root cause."); if (!f.acts.some(a => a.what && a.who)) e.push("Add at least one corrective action with who does it."); if (!f.sig) e.push("Sign the investigation."); return e; })];
+}
+function incidentDoc(p, r) {
+  const esc = x => String(x == null ? "" : x).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+  const d = new Date(r.date + "T12:00:00"), nm = r.type === "nearmiss", row = (a, b) => b ? `<tr><th>${a}</th><td>${esc(Array.isArray(b) ? b.join(", ") : b)}</td></tr>` : "";
+  const ppl = (r.people || []).filter(x => x && (x.name || x.n)).map(x => esc(x.name || x.n) + (x.inj ? ", " + esc(x.inj) : "")).join("<br>");
+  const inv = investOf(p, r._id);
+  return { html: `<div class="pd-head"><img src="${LOGO}" alt="Fibraco"><div><h1>FLASH REPORT, ${nm ? "NEAR MISS" : "INCIDENT"}</h1><div>${esc(p.name)}</div><div>${esc(nice(d))}${r.time ? ", " + esc(r.time) : ""}</div></div></div>
+    <table class="kv">${row("Reported by", r.savedBy || r.user)}${row("Where", r.where)}${row("Task", r.task)}${row("Type", r.types)}${row("What happened", r.what)}${nm ? row("Could have caused", r.cons) + row("How likely", r.like) : ""}${row("Immediate actions", r.acts)}${row("Other", r.other)}${ppl ? `<tr><th>People involved</th><td>${ppl}</td></tr>` : ""}${row("Witnesses", r.wit)}</table>
+    ${inv ? `<h2>Investigation</h2><table class="kv">${row("Investigator", inv.savedBy)}${row("Immediate causes", [...(inv.imm || []), inv.immTxt].filter(Boolean))}${row("Root cause", inv.root)}${row("Corrective actions", (inv.acts || []).filter(a => a.what).map(a => `${a.what} (${a.who || "?"}${a.by ? ", by " + a.by : ""})`))}</table>` : `<p>The investigation by the appointed incident investigator follows.</p>`}`,
+    title: `FIBRACO - Flash Report - ${p.short} (${dmy(d)})` };
+}
+function sendFlash(p, r) {
+  const to = [...repTo(p, "diary"), ...repTo(p, "dsti")];
+  const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Flash report" }, h("div", { class: "modal" }, h("h2", {}, "Send flash report"),
+    h("p", {}, `The ${r.type === "nearmiss" ? "near miss" : "incident"} report goes by email to ${to.length ? to.map(x => x.name).join(" and ") : "the office only (no client emails set up)"}, with a copy to Wanro. If there is no signal it goes as soon as there is.`),
+    h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Cancel"),
+      h("button", { class: "btn-w", type: "button", onclick: () => { const q = mqGet().filter(j => j.flash !== r._id); q.push({ flash: r._id, pid: p.id, ds: r.date, by: S.user, at: new Date().toISOString(), tries: 0 }); mqSet(q); ov.remove(); setTimeout(processMailQ, 800); render(); } }, "Send"))));
+  document.body.append(ov);
 }
 
 function detailRow(f, d) {
@@ -1121,7 +1245,7 @@ function vCheck() {
     return sheet("", h("div", { class: "band" }, g[0]), h("table", {}, tb),
       c.addable ? h("button", { class: "addrow", type: "button", onclick: () => { items.push({ name: "", custom: true }); draw(); } }, c.addable) : null);
   });
-  return [...formHead(c.title, c.basis), stdHeader(f, c.title, c.details.map(d => detailRow(f, d))), ...blocks,
+  return [...formHead(c.title, (c.no ? c.no + ". " : "") + c.basis), stdHeader(f, c.no ? `${c.title} (${c.no})` : c.title, c.details.map(d => detailRow(f, d))), ...blocks,
     sheet("", h("div", { class: "band" }, "Outcome"), seg([["Fit", "Fit for use"], ["Not fit", "Not fit, taken out of use"]], f.outcome, v => f.outcome = v)),
     sheet("", h("table", {}, h("tbody", {}, h("tr", {}, h("td", { class: "lab" }, "Signature"), h("td", {}, sigCell(() => f.sig, v => f.sig = v, "Inspector signature", true)))))),
     submitBtn(() => { const e = []; const all = f.items.flat(); if (all.some(i => !i.a && i.name)) e.push("Mark every item."); if (all.some(i => ["Defect", "Replace", "Short", "Fail"].includes(i.a) && !(i.c || "").trim())) e.push("Write what is wrong for every item that failed."); if (!f.sig) e.push("Sign the inspection."); return e; })];
@@ -1288,7 +1412,7 @@ async function sendOrder(f) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792835985"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792835985"); await loadJs("./js/pdf.js?v=1792835985");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792844554"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792844554"); await loadJs("./js/pdf.js?v=1792844554");
     const { html, title } = orderDoc(f);
     const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
@@ -2244,7 +2368,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792835985"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792835985"); await loadJs("./js/pdf.js?v=1792835985");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792844554"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792844554"); await loadJs("./js/pdf.js?v=1792844554");
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
     // Phones only open the share menu straight after a tap, so the last step is one tap on Share.
@@ -2268,7 +2392,7 @@ const mqGet = () => { try { return JSON.parse(localStorage.getItem(MQ_KEY) || "[
 const mqSet = q => { try { localStorage.setItem(MQ_KEY, JSON.stringify(q)); } catch (e) {} };
 const repTo = (p, kind) => ((p.reports || {})[kind] || []).filter(x => x && /@/.test(x.email || ""));
 function queueReports(p, d) {
-  const ds = ymd(d), q = mqGet().filter(j => !(j.pid === p.id && j.ds === ds));
+  const ds = ymd(d), q = mqGet().filter(j => j.flash || !(j.pid === p.id && j.ds === ds));
   q.push({ pid: p.id, ds, by: S.user, at: new Date().toISOString(), tries: 0 }); mqSet(q);
   setTimeout(processMailQ, 1500);
 }
@@ -2284,7 +2408,8 @@ function dstiDoc(p, ds) {
     <table class="g"><thead><tr><th>Hazard</th><th>Rating</th><th>Associated risk</th><th>Control measures</th></tr></thead><tbody>${hz || '<tr><td colspan="4">None rated</td></tr>'}</tbody></table>
     <table class="kv"><tr><th>PPE required</th><td>${esc((f.ppe || []).join(", ")) || "-"}</td></tr></table>
     <table class="g"><thead><tr><th>Occupation</th><th>Name</th><th>Signature</th></tr></thead><tbody>${ack}</tbody></table>
-    <table class="kv"><tr><th>CR 9(1) risk assessor</th><td>${esc(f.assessor)} ${f.sigA ? `<img src="${f.sigA}" style="height:30px;vertical-align:middle">` : ""}</td></tr></table>`;
+    ${(f.wind || []).some(r => r.ms !== undefined && r.ms !== "") ? `<table class="g"><thead><tr><th>Time</th><th>Wind m/s</th><th>Weather</th><th>Work at height</th></tr></thead><tbody>${f.wind.filter(r => r.ms !== undefined && r.ms !== "").map(r => `<tr><td>${esc(r.t)}</td><td style="text-align:center">${esc(r.ms)}</td><td>${esc(r.cond)}</td><td style="font-weight:700">${windStop(r) ? "STOP" : "OK"}</td></tr>`).join("")}</tbody></table>` : ""}
+    <table class="kv"><tr><th>CR 9(1) risk assessor</th><td>${esc(f.assessor)}${f.assessor && f.assessor !== (f.savedBy || f.user) ? ` (signed by ${esc(f.savedBy || f.user)})` : ""} ${f.sigA ? `<img src="${f.sigA}" style="height:30px;vertical-align:middle">` : ""}</td></tr></table>`;
   };
   return { html: `<div class="pd-head"><img src="${LOGO}" alt="Fibraco"><div><h1>DAILY SAFETY TASK INSTRUCTIONS</h1><div>${esc(p.name)}</div><div>${esc(nice(d))}</div></div></div>` + list.map(one).join('<div style="height:22px"></div>'),
     title: `FIBRACO - DSTI - ${p.short} (${dmy(d)})`, n: list.length };
@@ -2296,9 +2421,22 @@ async function processMailQ() {
   const q = mqGet(); if (!q.length) return;
   mqBusy = true;
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792835985"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792835985"); await loadJs("./js/pdf.js?v=1792835985");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792844554"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792844554"); await loadJs("./js/pdf.js?v=1792844554");
     for (const j of q) {
       const p = CFG.projects.find(x => x.id === j.pid); if (!p) { j.done = true; continue; }
+      if (j.flash) { // flash report of an incident or near miss
+        const r = incidentsOf(p).find(x => x._id === j.flash); if (!r) { j.done = true; continue; }
+        const doc = incidentDoc(p, r), file = await window.FibPdf.diaryPdf(doc.html, doc.title), to = [...repTo(p, "diary"), ...repTo(p, "dsti")], smP = PEOPLE.find(x => x.name === j.by) || {};
+        const nm = r.type === "nearmiss" ? "near miss" : "incident";
+        try {
+          const res = ((await Store.sendReport({ project: p.id, day: r.date, mails: [{ kind: "flash", to: to.map(x => x.email), bcc: CFG.office ? [CFG.office] : [], replyTo: smP.email, subject: `Fibraco flash report, ${nm}, ${p.name}, ${nice(new Date(r.date + "T12:00:00"))}`,
+            text: `Good day ${to.length ? to.map(x => x.name.split(" ")[0]).join(" and ") : "team"},\n\nAttached is Fibraco's flash report of a ${nm} on ${p.name} on ${nice(new Date(r.date + "T12:00:00"))}${r.where ? " at " + r.where : ""}. The investigation follows.\n\nReply to this email and it goes to ${j.by.split(" ")[0]}.\n\nRegards\nFibraco site team`,
+            files: [{ name: file.name, b64: await fileB64(file) }] }] })) || {}).results || [];
+          if (res.length && res.every(x => x.ok)) { j.done = true; Store.put(`flash|${r._id}`, { at: hhmm(new Date()) + " " + dmy(new Date()), by: S.user, to: to.map(x => x.name) }, "r", { tags: [`mgr:${p.id}`] }); }
+          else { j.tries++; j.err = (res.find(x => !x.ok) || {}).error || "not sent"; }
+        } catch (e) { j.tries++; j.err = e.message; if (e.status === 403) j.done = true; }
+        continue;
+      }
       const d = new Date(j.ds + "T12:00:00"), k = p.id + "|" + j.ds, fin = Store.get("final|" + k) || {};
       const sm = fin.by || j.by, smP = PEOPLE.find(x => x.name === sm) || {}, office = (CFG.office ? [CFG.office] : []);
       const first = x => (x.name || "").split(" ")[0] || "there";
@@ -2325,14 +2463,14 @@ async function processMailQ() {
       } catch (e) { j.tries++; j.err = e.message; if (e.status === 403) j.done = true; }
     }
   } catch (e) { window.__mqErr = String(e && e.message || e); /* PDF tools not loaded yet; try again later */ }
-  finally { mqSet(mqGet().map(x => q.find(y => y.pid === x.pid && y.ds === x.ds) || x).filter(x => !x.done)); mqBusy = false; if (["done", "review", "menu"].includes(S.view)) render(); }
+  finally { const jk = x => x.flash || x.pid + "|" + x.ds; mqSet(mqGet().map(x => q.find(y => jk(y) === jk(x)) || x).filter(x => !x.done)); mqBusy = false; if (["done", "review", "menu", "mychecks"].includes(S.view)) render(); }
 }
 addEventListener("online", () => setTimeout(processMailQ, 2000));
 window.FibReports = { queue: (pid, ds) => queueReports(CFG.projects.find(x => x.id === pid), new Date(ds + "T12:00:00")), run: () => processMailQ(), pending: () => mqGet() };
 setInterval(processMailQ, 120e3);
 // what the site manager sees about it
 function reportStatus(p, ds) {
-  const m = Store.get(`mail|${p.id}|${ds}`), pend = mqGet().find(j => j.pid === p.id && j.ds === ds);
+  const m = Store.get(`mail|${p.id}|${ds}`), pend = mqGet().find(j => !j.flash && j.pid === p.id && j.ds === ds);
   if (m) return h("div", { class: "rep-st ok" }, `Emailed to the client at ${m.at}.`, h("small", {}, [m.diary && m.diary.length ? `Diary to ${m.diary.join(", ")}` : "Diary to the office only (no client email set up yet)", m.nDsti ? (m.dsti && m.dsti.length ? `. DSTIs to ${m.dsti.join(", ")}` : ". DSTIs to the office only") : ". No DSTI was done that day", "."].join("")));
   if (pend) return h("div", { class: "rep-st wait" }, Store.online() ? "Sending the diary and DSTIs to the client..." : "Waiting for signal. The diary and DSTIs go to the client by themselves as soon as the phone has reception.", pend.err ? h("small", {}, `Last try: ${pend.err}`) : null);
   return null;
@@ -2450,13 +2588,16 @@ function openEmergency() {
       h("a", { class: "mbtn", style: "text-decoration:none", href: "tel:10177" }, "Call 10177", h("small", {}, "Ambulance"))] : [
       pm.phone ? h("a", { class: "mbtn emergency", style: "text-decoration:none", href: `https://wa.me/${intl(pm.phone)}?text=${encodeURIComponent(waText(g))}` }, `WhatsApp ${pm.name}`, h("small", {}, "Sends your location to the office")) : null,
       pm.phone ? h("a", { class: "mbtn", style: "text-decoration:none", href: `tel:${pm.phone.replace(/\s/g, "")}` }, `Call ${pm.name}`, h("small", {}, pm.phone)) : null,
-      smP.phone && smP.name !== pm.name ? h("a", { class: "mbtn", style: "text-decoration:none", href: `tel:${smP.phone.replace(/\s/g, "")}` }, `Call ${sm}`, h("small", {}, "Site manager")) : null,
+      smP.phone && smP.name !== pm.name && smP.name !== who ? h("a", { class: "mbtn", style: "text-decoration:none", href: `tel:${smP.phone.replace(/\s/g, "")}` }, `Call ${sm}`, h("small", {}, "Site manager")) : null,
       h("a", { class: "mbtn", style: "text-decoration:none", href: "tel:112" }, "Call 112", h("small", {}, "Cellphone emergency")),
       h("a", { class: "mbtn", style: "text-decoration:none", href: "tel:10177" }, "Call 10177", h("small", {}, "Ambulance"))]).filter(Boolean));
     body.replaceChildren(h("h2", {}, "EMERGENCY"),
       h("p", {}, ec ? `Now WhatsApp or call ${ec.name} for help.` : "The office has been alerted. Now call or WhatsApp for help."),
       h("div", { class: "sent" }, h("div", {}, h("b", {}, "From  "), who), h("div", {}, h("b", {}, "Project  "), proj), gps),
       links,
+      S.project && S.project.emergency ? h("details", { class: "em-list" }, h("summary", {}, `${S.project.short} emergency numbers`),
+        S.project.location ? h("p", {}, S.project.location) : null,
+        ...S.project.emergency.map(([n, ...nums]) => h("div", { class: "em-row" }, h("span", {}, n), h("span", {}, ...nums.map(x => h("a", { href: "tel:" + x.replace(/\s/g, "") }, x)))))) : null,
       h("button", { class: "btn-w", type: "button", style: "padding:13px 26px;border-radius:6px;border:0;font-weight:800;background:#fff;color:#15191e", onclick: () => ov.remove() }, "Close"));
     drawLinks(null);
     Store.put(alert.id, alert);
@@ -2546,12 +2687,12 @@ function vDelays() {
 // ---------- render ----------
 let render = function () {
   const v = S.view;
-  const views = { users: vUsers, projects: vProjects, calendar: vCalendar, menu: vMenu, inspections: vInspections, client: vClient, tests: vTests, link: vLink, logtest: vLogTest, biocheck: vBioCheck, allocate: vAllocate, mysection: vMySection, review: vReview, kpi: vKpi, rams: vRams, ramsdoc: vRamsDoc, drawings: vDrawings, drawing: vDrawing, diary: vDiary, dsti: vDsti, inspection: vInspection, check: vCheck, toolbox: vToolbox, incident: vIncident, si: vSI, order: vOrder, done: vDone, feedback: vFeedback, devices: vDevices, dash: vDash, qc: vQc, qcspot: vQcSpot, tsheets: vTsheets, tsheet: vTsheet, treport: vTreport, attendance: vAttendance, claude: vClaude, delays: vDelays, nearmiss: vNearMiss, jobobs: vJobObs, adhoc: vAdhoc, adhocjob: vAdhocJob };
+  const views = { users: vUsers, projects: vProjects, calendar: vCalendar, menu: vMenu, inspections: vInspections, client: vClient, tests: vTests, link: vLink, logtest: vLogTest, biocheck: vBioCheck, allocate: vAllocate, mysection: vMySection, review: vReview, kpi: vKpi, rams: vRams, ramsdoc: vRamsDoc, drawings: vDrawings, drawing: vDrawing, diary: vDiary, dsti: vDsti, inspection: vInspection, check: vCheck, toolbox: vToolbox, incident: vIncident, si: vSI, order: vOrder, done: vDone, feedback: vFeedback, devices: vDevices, dash: vDash, qc: vQc, qcspot: vQcSpot, tsheets: vTsheets, tsheet: vTsheet, treport: vTreport, attendance: vAttendance, claude: vClaude, delays: vDelays, nearmiss: vNearMiss, jobobs: vJobObs, adhoc: vAdhoc, adhocjob: vAdhocJob, mychecks: vMyChecks, invest: vInvest };
   app.replaceChildren(...[].concat((views[v] || vProjects)()).filter(Boolean));
   pageForm();
 }
 // ---------- page-by-page forms (tile layout): what fits on the screen, green NEXT and yellow BACK at the bottom ----------
-const PAGED_VIEWS = ["nearmiss", "jobobs", "incident", "si", "order", "dsti", "inspection", "toolbox", "check", "adhocjob"];
+const PAGED_VIEWS = ["nearmiss", "jobobs", "incident", "invest", "si", "order", "dsti", "inspection", "toolbox", "check", "adhocjob"];
 let PG = { key: null, i: 0 };
 function pageForm(step) {
   document.querySelectorAll(".pnav").forEach(x => x.remove()); document.body.classList.remove("paged");
@@ -2659,7 +2800,7 @@ function persistSoon() { clearTimeout(persistT); persistT = setTimeout(persist, 
 const saveLink = () => persist();
 ["input", "change", "click"].forEach(t => document.addEventListener(t, persistSoon, true));
 // Changes from other phones
-const SAFE_VIEWS = ["projects", "calendar", "menu", "adhoc", "review", "kpi", "tests", "link", "client", "drawings", "rams"];
+const SAFE_VIEWS = ["projects", "calendar", "menu", "adhoc", "mychecks", "review", "kpi", "tests", "link", "client", "drawings", "rams"];
 function hydrate(ids) {
   let touched = false;
   for (const id of ids) {
@@ -3277,7 +3418,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792835985"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792835985"); await loadJs("./js/pdf.js?v=1792835985");
+    await loadJs("./js/lib/html2canvas.min.js?v=1792844554"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792844554"); await loadJs("./js/pdf.js?v=1792844554");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
