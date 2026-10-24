@@ -517,3 +517,8 @@ body.paged .fb-btn{bottom:calc(84px + env(safe-area-inset-bottom))}
 .em-row{display:flex;justify-content:space-between;gap:8px;padding:7px 12px;border-top:1px solid #2a2f37}
 .em-row span:last-child{display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex:none}
 .em-row a{color:#7fc4ff;font-weight:700;text-decoration:none;white-space:nowrap}
+/* method statements and risk assessments: full page fitted to the screen */
+.docfit { width: 100%; overflow: hidden; background: #fff; border: 1px solid var(--line); border-radius: 6px; }
+.docpage { width: 794px; background: #fff; }
+.docpage .doc { overflow: visible; font-size: 13px; }
+.docpage .doc table { min-width: 0; }
