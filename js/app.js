@@ -150,7 +150,7 @@ function mySig(done) {
   if (!sg) return setupSignature(() => { render(); mySig(done); });
   pinOverlay("Sign with your PIN", "Type your PIN to put your signature here.", pin => Store.checkPin(pin).then(async ok => {
     if (ok !== true) {
-      if (10 - ok <= 0) { await Store.wipe(true); location.reload(); return "x"; }
+      if (10 - ok <= 0) { const n = await Store.unsentLocked(); if (n) return `Wrong PIN too many times. Your ${n} unsent form${n === 1 ? " is" : "s are"} kept safe. Phone the office.`; await Store.wipe(true); location.reload(); return "x"; }
       return `Wrong PIN. ${10 - ok} ${10 - ok === 1 ? "try" : "tries"} left.`;
     }
     const im = new Image(); im.src = sg.img; await new Promise(r => { im.onload = im.onerror = r; });
@@ -312,7 +312,7 @@ function vProjects() {
         bioSetup(); } }, "Fingerprint")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1793052041";
+const APPV = "1793052662";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -386,7 +386,7 @@ async function sendRegister(p, d, days) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793052041"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793052041"); await loadJs("./js/pdf.js?v=1793052041");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793052662"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793052662"); await loadJs("./js/pdf.js?v=1793052662");
     const { html, title } = attDoc(p, d, days); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
@@ -490,7 +490,7 @@ async function timeZone() {
   try {
     try { Store.kick(); await refreshDevices(true); } catch (e) {}
     await new Promise(r => setTimeout(r, 1800));
-    await loadJs("./js/lib/html2canvas.min.js?v=1793052041"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793052041"); await loadJs("./js/pdf.js?v=1793052041");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793052662"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793052662"); await loadJs("./js/pdf.js?v=1793052662");
     const D = tzData(), stamp = `${dmy(new Date())} ${hhmm()}`, name = `FIBRACO - Time Zone (${stamp})`;
     const pdf = await window.FibPdf.diaryPdf(tzHtml(D), name);
     const json = new File([JSON.stringify(D, null, 1)], name.replace(/[\\/:*?"<>|]+/g, "-") + ".json", { type: "application/json" });
@@ -952,9 +952,11 @@ function vDiary() {
         seg([["Client", "Client"], ["Internal", "Internal"]], (r.int !== undefined ? r.int : isInternal(r.c)) ? "Internal" : "Client", v => { r.int = v === "Internal"; })) : null),
       h("td", { style: "width:96px" }, inp("text", r.t, v => r.t = v, "Hrs"))), "+ Add delay", () => ({})),
     sheet("", h("div", { class: "band" }, "Photo diary"), photoBlock(f.photos)),
+    f.correcting ? h("p", { class: "hint", style: "color:#8a4b00" }, "You are correcting a signed diary. Fix the team, the work done, the materials and the rest, then sign the correction with your PIN.") :
     f.combined ? h("p", { class: "hint" }, "No signature here. You sign once, in step 3 on the review page. The client signs on his own link the next morning.") : sheet("", h("div", { class: "band" }, "Representative"), h("table", {}, h("thead", {}, h("tr", {}, h("th", {}, ""), h("th", {}, "Fibraco rep"), h("th", {}, "Client rep"))), h("tbody", {},
       h("tr", {}, h("td", { class: "lab", style: "width:24%" }, "Name"), h("td", { class: "ro" }, f.user), h("td", {}, inp("text", f.clientRep, v => f.clientRep = v, "Client name"))),
       h("tr", {}, h("td", { class: "lab" }, "Signature"), h("td", {}, sigCell(() => f.sigF, v => f.sigF = v, "Fibraco rep signature", true)), h("td", {}, sigCell(() => f.sigC, v => f.sigC = v, "Client rep signature")))))),
+    f.correcting ? submitBtn(() => { const e = []; if (!f.team.some(r => r.name)) e.push("Add at least one person to the project team."); if (!f.acts.some(r => r.act)) e.push("Add at least one line of work done."); return e; }, { label: "Sign the correction", onDone: () => signCorrection(f) }) :
     f.combined ? submitBtn(() => [], { label: "Save and back to review", onDone: () => { S.siteDone[dayKey()] = true; Store.put("site|" + dayKey(), formRecord(f)); clearDraft(); S.formDirty = false; S.hist.pop(); S.view = "review"; render(); window.scrollTo(0, 0); } }) : submitBtn(() => { const e = []; if (!f.team.some(r => r.name)) e.push("Add at least one person to the project team."); if (!f.acts.some(r => r.act)) e.push("Add at least one activity."); if (!f.sigF) e.push("The Fibraco rep must sign."); return e; })];
 }
 
@@ -1323,7 +1325,7 @@ async function recordPdf() {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793052041"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793052041"); await loadJs("./js/pdf.js?v=1793052041");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793052662"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793052662"); await loadJs("./js/pdf.js?v=1793052662");
     const f = S.form, src = [...app.children].filter(k => !k.matches(".bar, .fb-btn, .ro-bar, .psub, .err, .pnav, .addrow"));
     const box = document.createElement("div");
     for (const k of src) {
@@ -1574,7 +1576,7 @@ async function sendOrder(f) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793052041"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793052041"); await loadJs("./js/pdf.js?v=1793052041");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793052662"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793052662"); await loadJs("./js/pdf.js?v=1793052662");
     const { html, title } = orderDoc(f);
     const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
@@ -2490,6 +2492,7 @@ function vReview() {
   const after = h("div", { class: "stack" },
     final || viewOnly ? h("button", { class: "mbtn", onclick: () => go("client") }, S.client[k] ? "Client signed. View the client copy" : "What the client sees", h("small", {}, S.client[k] ? `Signed by ${S.client[k].name} at ${S.client[k].at}` : "The page the client gets with the diary")) : null,
     final ? h("button", { class: "mbtn", onclick: () => sendDiary(k, S.project, S.date) }, "Send diary", h("small", {}, "Makes the PDF and opens WhatsApp, email and the rest")) : null,
+    final && isAdmin(S.user) ? h("button", { class: "mbtn", style: "border-color:#f29900;background:#fff8ec", onclick: () => openCorrection(k) }, `Correct this diary (Rev ${((Store.get("final|" + k) || {}).rev || 0) + 1})`, h("small", {}, "Office only. Fix what the site manager missed, sign it as the PM, and the corrected copy goes out again")) : null,
     isPM(S.user) ? h("button", { class: "mbtn", onclick: () => go("kpi") }, "KPIs for the day", h("small", {}, "Only you see this")) : null);
   if (viewOnly) {
     const sub = people.filter(p => ["submitted", "approved"].includes((secs[p] || {}).status)).length;
@@ -2529,7 +2532,7 @@ function diaryDoc(k, project, date) {
   const tbl = (head, rows) => rows.length ? `<table class="g"><thead><tr>${head.map(x => `<th>${esc(x)}</th>`).join("")}</tr></thead><tbody>${rows.map(r => `<tr>${r.map(c => `<td>${esc(c)}</td>`).join("")}</tr>`).join("")}</tbody></table>` : `<p class="none">None</p>`;
   const totHrs = team.reduce((x, r) => x + (+r.hrs || 0), 0);
   const html = `
-  <div class="pd-head"><img src="${LOGO}" alt="Fibraco"><div><h1>DAILY DIARY</h1><div>${esc(project.name)}</div><div>${esc(nice(date))}</div></div></div>
+  <div class="pd-head"><img src="${LOGO}" alt="Fibraco"><div><h1>DAILY DIARY${fin.rev ? " (REV " + fin.rev + ")" : ""}</h1><div>${esc(project.name)}</div><div>${esc(nice(date))}</div></div></div>
   <table class="kv">${row("Client", project.client)}${row("Diary completed by", fin.by || smName())}${row("Applicable to", site.applicable || project.area)}${row("Time started", site.start)}${row("Time ended", site.end)}${row("Weather", [site.weather, w.tmin || w.tmax ? `${w.tmin || "?"} to ${w.tmax || "?"} °C` : "", w.wdmin || w.wdmax ? `wind ${w.wdmin || "?"} to ${w.wdmax || "?"} m/s` : "", w.rain ? `rain ${w.rain} mm` : ""].filter(Boolean).join(", "))}</table>
   <h2>Project team</h2>${tbl(["No", "Name", "Hrs"], team.map((r, i) => [i + 1, r.name, r.hrs || "-"]).concat(team.length ? [["", "Total hours", totHrs]] : []))}
   ${nz(site.desig).length ? `<h2>Designation</h2>${tbl(["Designation", "Qty"], nz(site.desig))}` : ""}
@@ -2542,11 +2545,12 @@ function diaryDoc(k, project, date) {
   <h2>Material delivered to site</h2>${tbl(["No", "Material"], (site.mats || []).filter(r => r.m).map((r, i) => [i + 1, r.m]))}
   <h2>Delays</h2>${tbl(["No", "Cause", "Time lost"], delays.map((d, i) => [i + 1, noName(d.c), d.t ? `${d.t} hrs` : ""]))}
   <div class="sigs">
-    <div><h3>Fibraco site manager</h3><div class="sigline">${fin.sig ? `<img src="${fin.sig}" alt="Signature">` : ""}</div><div>${esc(fin.by || smName())}</div><div>Signed ${esc(fin.at || "")}</div></div>
+    ${fin.rev ? `<div><h3>Corrected, Rev ${fin.rev}</h3><div class="sigline">${fin.revSig ? `<img src="${fin.revSig}" alt="Signature">` : ""}</div><div>${esc(fin.revBy)}, Project Manager</div><div>Signed ${esc(fin.revAt || "")} on ${esc(fin.revDate || "")}</div><div style="font-size:11px;margin-top:4px">${esc(fin.revWhy || "")}. First version signed by ${esc(fin.by || smName())} at ${esc(fin.at || "")}.</div></div>`
+      : `<div><h3>Fibraco site manager</h3><div class="sigline">${fin.sig ? `<img src="${fin.sig}" alt="Signature">` : ""}</div><div>${esc(fin.by || smName())}</div><div>Signed ${esc(fin.at || "")}</div></div>`}
     <div><h3>Client representative</h3><div class="sigline"></div><div>Name: ${project.sm ? esc(String(project.sm).split(",")[0]) : "______________________"}</div><div>Date: ______________________</div></div>
   </div>
   <p class="foot">Fibraco (Pty) Ltd. Daily diary from Fibraco Field, made ${esc(new Date().toLocaleString("en-ZA"))}. Photos are kept in the app.</p>`;
-  return { html, title: `FIBRACO - Daily Diary - ${project.short} (${dmy(date)})` };
+  return { html, title: `FIBRACO - Daily Diary - ${project.short} (${dmy(date)})${fin.rev ? " Rev " + fin.rev : ""}` };
 }
 // Fallback when the PDF cannot be made on this device: the browser's own print or save as PDF.
 function printDiary(k, project, date) {
@@ -2566,7 +2570,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793052041"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793052041"); await loadJs("./js/pdf.js?v=1793052041");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793052662"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793052662"); await loadJs("./js/pdf.js?v=1793052662");
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
     // Phones only open the share menu straight after a tap, so the last step is one tap on Share.
@@ -2619,7 +2623,7 @@ async function processMailQ() {
   const q = mqGet(); if (!q.length) return;
   mqBusy = true;
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793052041"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793052041"); await loadJs("./js/pdf.js?v=1793052041");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793052662"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793052662"); await loadJs("./js/pdf.js?v=1793052662");
     for (const j of q) {
       const p = CFG.projects.find(x => x.id === j.pid); if (!p) { j.done = true; continue; }
       if (j.flash) { // flash report of an incident or near miss
@@ -2644,7 +2648,7 @@ async function processMailQ() {
       try { ensureDay(k); dd = diaryDoc(k, p, d); sd = dstiDoc(p, j.ds); } finally { [S.project, S.date] = keep; }
       const dFile = await window.FibPdf.diaryPdf(dd.html, dd.title);
       const dTo = repTo(p, "diary");
-      mails.push({ kind: "diary", to: dTo.map(x => x.email), bcc: office, replyTo: smP.email, subject: `Fibraco daily diary, ${p.name}, ${nice(d)}`,
+      mails.push({ kind: "diary", to: dTo.map(x => x.email), bcc: office, replyTo: smP.email, subject: `Fibraco daily diary, ${p.name}, ${nice(d)}${fin.rev ? `, corrected Rev ${fin.rev}` : ""}`,
         text: `Good day ${dTo.length ? dTo.map(first).join(" and ") : "team"},\n\nAttached is Fibraco's signed daily diary for ${p.name} for ${nice(d)}. It was signed off on site by ${sm}${fin.at ? " at " + fin.at : ""}.\n\nIf you have any questions, reply to this email and it goes to ${sm.split(" ")[0]}.\n\nRegards\nFibraco site team`,
         files: [{ name: dFile.name, b64: await fileB64(dFile) }] });
       if (sd) { const sFile = await window.FibPdf.diaryPdf(sd.html, sd.title), sTo = repTo(p, "dsti");
@@ -2680,9 +2684,36 @@ function sendBack(p, sec) {
     h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Cancel"), h("button", { class: "btn-w", type: "button", onclick: () => { sec.status = "returned"; sec.back = t.value.trim() || "Please check your quantities."; ov.remove(); render(); } }, "Send back"))));
   document.body.append(ov);
 }
+// Wanro 27 Oct: the office corrects a signed diary. Everything stays on record (the server keeps every version).
+function openCorrection(k) {
+  const site = Store.get("site|" + k);
+  openCombined();
+  const f = S.form;
+  if (site) { const keep = { type: f.type, project: f.project, date: f.date, user: f.user, photos: f.photos || [] }; Object.assign(f, JSON.parse(JSON.stringify(site)), keep); }
+  if (!f.team || !f.team.some(r => r.name)) f.team = [{ name: "" }, {}, {}, {}];
+  if (!f.acts || !f.acts.some(r => r.act)) f.acts = Array.from({ length: 3 }, () => ({ area: S.project.area || "" }));
+  if (!f.mats || !f.mats.length) f.mats = [{}, {}, {}];
+  f.combined = true; f.correcting = true; render();
+}
+function signCorrection(f) {
+  const k = dayKey(), why = h("textarea", { placeholder: "What was corrected, for example: added the trip to Bloemfontein and the 12 SFPs delivered", style: "width:100%;min-height:96px;border-radius:6px;border:1px solid #c9ced6;padding:8px;color:#15191e;font:inherit" });
+  const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Correction" }, h("div", { class: "modal" }, h("h2", {}, "What did you correct?"),
+    h("p", {}, "This line goes on the corrected diary, next to your signature."), why,
+    h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Cancel"),
+      h("button", { class: "btn-w", type: "button", onclick: () => { if (!why.value.trim()) { why.focus(); return; } const text = why.value.trim(); ov.remove();
+        mySig(v => { if (!v) return;
+          Store.put("site|" + k, formRecord(f));
+          const fin = Store.get("final|" + k) || {}, now = new Date();
+          Store.put("final|" + k, Object.assign({}, fin, { rev: (fin.rev || 0) + 1, revBy: S.user, revAt: hhmm(now), revDate: dmy(now), revWhy: text, revSig: v }));
+          clearDraft(); S.formDirty = false; queueReports(S.project, S.date);
+          S.hist.pop(); S.view = "review"; render(); window.scrollTo(0, 0);
+          showInfo("Diary corrected", `Rev ${(fin.rev || 0) + 1} is signed by you. The corrected diary goes to the same people as before, marked Rev ${(fin.rev || 0) + 1}. The first version stays on record.`);
+        }); } }, "Sign the correction"))));
+  document.body.append(ov); why.focus();
+}
 function openCombined() {
   // Opens the full Fibraco diary layout with the team and activities already filled from the crew sections.
-  const k = dayKey(), alloc = S.alloc[k], secs = S.sections[k];
+  const k = dayKey(), alloc = S.alloc[k] || [], secs = S.sections[k] || {};
   startForm("diary");
   const f = S.form;
   const people = [...new Set(alloc.map(a => a.who))];
@@ -3679,7 +3710,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793052041"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793052041"); await loadJs("./js/pdf.js?v=1793052041");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793052662"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793052662"); await loadJs("./js/pdf.js?v=1793052662");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
