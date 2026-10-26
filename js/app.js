@@ -312,7 +312,7 @@ function vProjects() {
         bioSetup(); } }, "Fingerprint")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1793045415";
+const APPV = "1793052041";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -386,7 +386,7 @@ async function sendRegister(p, d, days) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793045415"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793045415"); await loadJs("./js/pdf.js?v=1793045415");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793052041"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793052041"); await loadJs("./js/pdf.js?v=1793052041");
     const { html, title } = attDoc(p, d, days); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
@@ -490,7 +490,7 @@ async function timeZone() {
   try {
     try { Store.kick(); await refreshDevices(true); } catch (e) {}
     await new Promise(r => setTimeout(r, 1800));
-    await loadJs("./js/lib/html2canvas.min.js?v=1793045415"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793045415"); await loadJs("./js/pdf.js?v=1793045415");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793052041"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793052041"); await loadJs("./js/pdf.js?v=1793052041");
     const D = tzData(), stamp = `${dmy(new Date())} ${hhmm()}`, name = `FIBRACO - Time Zone (${stamp})`;
     const pdf = await window.FibPdf.diaryPdf(tzHtml(D), name);
     const json = new File([JSON.stringify(D, null, 1)], name.replace(/[\\/:*?"<>|]+/g, "-") + ".json", { type: "application/json" });
@@ -1323,7 +1323,7 @@ async function recordPdf() {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793045415"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793045415"); await loadJs("./js/pdf.js?v=1793045415");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793052041"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793052041"); await loadJs("./js/pdf.js?v=1793052041");
     const f = S.form, src = [...app.children].filter(k => !k.matches(".bar, .fb-btn, .ro-bar, .psub, .err, .pnav, .addrow"));
     const box = document.createElement("div");
     for (const k of src) {
@@ -1574,7 +1574,7 @@ async function sendOrder(f) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793045415"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793045415"); await loadJs("./js/pdf.js?v=1793045415");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793052041"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793052041"); await loadJs("./js/pdf.js?v=1793052041");
     const { html, title } = orderDoc(f);
     const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
@@ -2566,7 +2566,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793045415"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793045415"); await loadJs("./js/pdf.js?v=1793045415");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793052041"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793052041"); await loadJs("./js/pdf.js?v=1793052041");
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
     // Phones only open the share menu straight after a tap, so the last step is one tap on Share.
@@ -2619,7 +2619,7 @@ async function processMailQ() {
   const q = mqGet(); if (!q.length) return;
   mqBusy = true;
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793045415"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793045415"); await loadJs("./js/pdf.js?v=1793045415");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793052041"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793052041"); await loadJs("./js/pdf.js?v=1793052041");
     for (const j of q) {
       const p = CFG.projects.find(x => x.id === j.pid); if (!p) { j.done = true; continue; }
       if (j.flash) { // flash report of an incident or near miss
@@ -3679,7 +3679,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793045415"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793045415"); await loadJs("./js/pdf.js?v=1793045415");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793052041"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793052041"); await loadJs("./js/pdf.js?v=1793052041");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
@@ -3951,7 +3951,24 @@ function vFeedback() {
 // ---------- boot ----------
 let CFG = null;
 const PIN_WARN = () => [h("b", { style: "color:#c8102e;font-weight:900;font-size:15px" }, "REMEMBER THIS PIN."), " You must type it every time you open the app. If you forget it, the office has to reset it for you."];
-const screen = (...kids) => { app.replaceChildren(h("div", { class: "lock" }, h("img", { src: LOGO, alt: "Fibraco", style: "width:220px;max-width:70%;margin:30px auto 18px;display:block" }), ...kids)); };
+// Login and PIN screens: Wanro's Fibraco intro plays muted on a loop at the top (26 Oct). Downloaded once and kept on the phone.
+let introP = null;
+function introURL() {
+  if (!introP) introP = (async () => {
+    const t = document.createElement("video"), mp4 = t.canPlayType('video/mp4; codecs="avc1.4D401E"'), u = mp4 ? "./icons/intro.mp4?v=1" : "./icons/intro.webm?v=1"; let c = null; try { c = await caches.open("fibraco-media-1"); } catch (e) {}
+    let r = c && await c.match(u).catch(() => null);
+    if (!r) { r = await fetch(u); if (!r.ok) throw new Error("no video"); if (c) await c.put(u, r.clone()).catch(() => {}); }
+    return URL.createObjectURL(await r.blob());
+  })().catch(() => { introP = null; return null; });
+  return introP;
+}
+function introVideo() {
+  const v = h("video", { class: "intro-v", muted: true, autoplay: true, loop: true, playsinline: true, poster: "icons/intro.jpg", "aria-hidden": "true", disablepictureinpicture: true });
+  v.muted = true; v.setAttribute("playsinline", ""); v.setAttribute("muted", "");
+  introURL().then(u => { if (u) { v.src = u; v.play().catch(() => {}); } });
+  return h("div", { class: "intro" }, v);
+}
+const screen = (...kids) => { app.replaceChildren(h("div", { class: "lock dark" }, introVideo(), ...kids)); };
 function pinPad(title, sub, onDone, warn, extra) {
   let v = ""; const dots = h("div", { class: "pin-dots" }); const msg = h("p", { class: "pin-msg" }, sub || "");
   const draw = () => dots.replaceChildren(...[0, 1, 2, 3].map(i => h("i", { class: i < v.length ? "on" : "" })));
