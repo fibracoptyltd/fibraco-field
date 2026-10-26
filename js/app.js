@@ -312,7 +312,7 @@ function vProjects() {
         bioSetup(); } }, "Fingerprint")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1793021006";
+const APPV = "1793023391";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -386,7 +386,7 @@ async function sendRegister(p, d, days) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793021006"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793021006"); await loadJs("./js/pdf.js?v=1793021006");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793023391"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793023391"); await loadJs("./js/pdf.js?v=1793023391");
     const { html, title } = attDoc(p, d, days); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
@@ -490,7 +490,7 @@ async function timeZone() {
   try {
     try { Store.kick(); await refreshDevices(true); } catch (e) {}
     await new Promise(r => setTimeout(r, 1800));
-    await loadJs("./js/lib/html2canvas.min.js?v=1793021006"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793021006"); await loadJs("./js/pdf.js?v=1793021006");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793023391"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793023391"); await loadJs("./js/pdf.js?v=1793023391");
     const D = tzData(), stamp = `${dmy(new Date())} ${hhmm()}`, name = `FIBRACO - Time Zone (${stamp})`;
     const pdf = await window.FibPdf.diaryPdf(tzHtml(D), name);
     const json = new File([JSON.stringify(D, null, 1)], name.replace(/[\\/:*?"<>|]+/g, "-") + ".json", { type: "application/json" });
@@ -618,6 +618,18 @@ function vClaude() {
 // "tiles" for everyone, "admin" for Wanro's phone only (to try it before the crew gets it)
 const TILES = () => typeof CFG !== "undefined" && CFG && (CFG.ui === "tiles" || (CFG.ui === "admin" && isAdmin(S.user)));
 const TI = {
+  ladder: '<path d="M7 3v18M17 3v18"/><path d="M7 7h10M7 11h10M7 15h10M7 19h10"/>',
+  truck: '<path d="M2 7h11v9H2z"/><path d="M13 10h4l3 3v3h-7"/><circle cx="6" cy="17.5" r="1.8"/><circle cx="16.5" cy="17.5" r="1.8"/>',
+  helmet: '<path d="M4 16a8 8 0 0 1 16 0"/><path d="M2 16h20v2H2z"/><path d="M10 8v-3h4v3"/>',
+  lift: '<path d="M4 20h16"/><circle cx="7" cy="18" r="1.5"/><circle cx="17" cy="18" r="1.5"/><path d="M5 16h14"/><path d="M9 16l6-9"/><path d="M13 4h7v4h-7z"/>',
+  plug: '<path d="M9 3v5M15 3v5"/><path d="M6 8h12v3a6 6 0 0 1-12 0z"/><path d="M12 17v4"/>',
+  drill: '<path d="M3 7h12v6H3z"/><path d="M15 9h4M19 10h2"/><path d="M6 13l-1 7h4l1-7"/>',
+  bolt: '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
+  tool: '<path d="M14 6a4 4 0 0 0 5 5l-9 9-3-3 9-9a4 4 0 0 0-2-2z"/>',
+  box: '<path d="M3 8l9-5 9 5v8l-9 5-9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/>',
+  aid: '<rect x="3" y="6" width="18" height="14" rx="2"/><path d="M9 6V4h6v2"/><path d="M12 10v6M9 13h6"/>',
+  fire: '<path d="M12 3c1 4 6 6 6 11a6 6 0 0 1-12 0c0-3 2-4 2-7 2 1 3 3 3 5 1-2 1-6 1-9z"/>',
+  drill2: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>',
   pen: '<path d="M4 20h4l10-10-4-4L4 16z"/><path d="M14 6l4 4"/>',
   book: '<path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11"/><path d="M9 8h6"/>',
   shield: '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/>',
@@ -744,7 +756,7 @@ function vProjectsTiles() {
         tile("search", "Site\ninspection", () => { S.project = null; startForm("inspection"); }),
         tile("key", "PIN and\nfingerprint", pinMenu)),
       h("div", { class: "tfoot", style: "justify-content:center" }, h("span", {}, `App version ${verLabel()}`)),
-      h("button", { type: "button", class: "tsos" + (admin ? " round" : ""), "aria-label": "Emergency", onclick: () => { if (!S.project && PROJECTS.length === 1) S.project = PROJECTS[0]; openEmergency(); } }, ticon("sos"), "EMERGENCY"))];
+      h("button", { type: "button", class: "tsos round", "aria-label": "Emergency", onclick: () => { if (!S.project && PROJECTS.length === 1) S.project = PROJECTS[0]; openEmergency(); } }, ticon("sos"), "EMERGENCY"))];
 }
 function vMenuTiles() {
   const p = S.project, d = S.date, k = (ensureDay(), dayKey()), alloc = S.alloc[k] || [], mgr = isMgr(S.user), sm = isSM(S.user) || isAdmin(S.user);
@@ -809,7 +821,7 @@ function vMenuTiles() {
       rp.length ? red(`${rp.every(x => /^Splice failed/.test(x.title || "")) ? "SPLICE FAILED" : rp.every(x => /^QC failed/.test(x.title || "")) ? "QC FAILED" : "REPAIRS"}: ${rp.length} TO FIX`, "Fix it, then tap Repaired", () => go("mysection")) : null,
       idle.length ? red(`NO WORK FOR ${idle.map(n => n.split(" ")[0].toUpperCase()).join(" AND ")} TODAY`, "Tap, give him tasks and tap Send to crew", () => go("allocate")) : null,
       work, grid,
-      h("button", { type: "button", class: "tsos", onclick: openEmergency }, ticon("sos"), "EMERGENCY"))];
+      h("button", { type: "button", class: "tsos round", "aria-label": "Emergency", onclick: openEmergency }, ticon("sos"), "EMERGENCY"))];
 }
 
 function vMenu() {
@@ -1140,6 +1152,7 @@ function vInspections() {
 // Ring-fence rule: the organogram, the appointment register and the app checklists match, per person, per site.
 const APPT = (p, who) => ((p && p.appts) || {})[who || S.user] || null;
 const CK_EXTRA = { dsti: ["DSTI", "Lead the crew DSTI, wind readings on it"], jobobs: ["Job observation", "Watch one task, safe or unsafe"], invest: ["Incident investigation", "Each incident or near miss gets investigated"], flash: ["Flash report to the client", "Within 24 hours of an incident or near miss"] };
+const CK_TILE = { dsti: ["DSTI", "shield"], ppe: ["PPE", "helmet"], vehicle: ["Vehicle", "truck"], mewph: ["Cherry picker\nand harness", "lift"], mewp: ["Cherry\npicker", "lift"], ladder: ["Ladder", "ladder"], extension: ["Electrical\nextension", "plug"], tools: ["Hand\ntools", "tool"], drill: ["Portable\ndrill", "drill"], generator: ["Generator", "bolt"], harness: ["Harness and\nlanyard", "users"], firstaid: ["First aid\nbox", "aid"], fire: ["Fire extin-\nguishers", "fire"], stacking: ["Stacking and\nstorage", "box"], siteinsp: ["Daily site\ninspection", "search"], sherep: ["SHE rep\ninspection", "eye"], edrill: ["Emergency\ndrill", "sos"], jobobs: ["Job obser-\nvation", "obs"], invest: ["Investigate", "warn"], flash: ["Flash\nreport", "warn"] };
 const ckName = k => CHECKS[k] ? CHECKS[k].title : (CK_EXTRA[k] || [k])[0];
 const OFTEN = { daily: "Every day", weekly: "Every week", monthly: "Before use, record monthly", once: "Once, before work at height", event: "When it happens" };
 function weekStart(ds) { const d = new Date(ds + "T12:00:00"), w = (d.getDay() + 6) % 7; d.setDate(d.getDate() - w); return ymd(d); }
@@ -1193,12 +1206,18 @@ const dstiDue = (p, ds) => !!APPT(p) && myChecks(p, S.user, ds).some(x => x.k ==
 const dueToday = () => PROJECTS.filter(p => APPT(p) && projPhase(p) === "live");
 function checkRows(p, who, ds) {
   const list = myChecks(p, who, ds), out = [];
-  for (const [often, lab] of GROUPS) {
-    const g = list.filter(x => x.often === often); if (!g.length) continue;
-    out.push(h("div", { class: "ck-head" }, lab));
-    for (const x of g) out.push(h("button", { type: "button", class: "mbtn ck-row " + (x.watch ? "watch " : "") + x.st, onclick: () => x.st === "wait" ? null : (S.project = p, S.ckBack = S.view, openCheck(x)) },
-      h("span", { class: "ck-t" }, x.title, h("small", {}, x.sub)),
-      x.st === "late" ? h("span", { class: "tst red" }, "LATE") : x.st === "wait" ? h("span", { class: "tst blue" }, "WAITING") : x.st === "done" ? h("span", { class: "ck-ok" }, "DONE \u2713") : x.watch ? h("span", { class: "tst blue" }, "NOT YET") : h("span", { class: "ck-todo" }, "TO DO")));
+  const OFT = { daily: "DAILY", weekly: "WEEKLY", monthly: "MONTHLY", once: "ONCE", event: "NOW" };
+  // one block of square tiles: daily first, then weekly, monthly, once and incidents. The tag on each tile says how often.
+  const g = GROUPS.flatMap(([often]) => list.filter(x => x.often === often));
+  if (g.length) {
+    out.push(h("div", { class: "tgrid ck-grid" }, ...g.map(x => { const often = x.often;
+      const [nm, ic] = CK_TILE[x.watch ? x.key : x.k] || [x.title, "check"];
+      const label = x.watch ? `${x.person.split(" ")[0]}'s\n${nm.split("\n")[0].toLowerCase()}` : x.ref ? `${nm}\n${x.ref.type === "nearmiss" ? "near miss" : "incident"} ${dmy(new Date(x.ref.date + "T12:00:00")).slice(0, 5)}` : nm;
+      const st = x.st === "done" ? "DONE \u2713" : x.st === "late" ? "LATE" : x.st === "wait" ? "WAITING" : x.watch ? "NOT YET" : "TO DO";
+      return h("button", { type: "button", class: "tile ck-tile " + (x.watch ? "watch " : "") + x.st, "aria-label": `${x.title}. ${st}. ${x.sub}`,
+        onclick: () => x.st === "wait" ? null : (S.project = p, S.ckBack = S.view, openCheck(x)) },
+        h("span", { class: "ck-f" }, OFT[often]), ticon(ic), h("span", { class: "tl" }, ...label.split("\n").flatMap((y, i) => i ? [h("br"), y] : [y])), h("span", { class: "ck-s" }, st));
+    })));
   }
   return out;
 }
@@ -1226,9 +1245,9 @@ function openCheck(x) {
 function vMyChecks() {
   const p = S.project, a = APPT(p), ds = ymd(S.date), list = myChecks(p, S.user, ds);
   return [topbar("My checks", `${p.short}  |  ${nice(S.date)}`, true),
-    h("div", { class: "appt-card" }, h("b", {}, `${S.user}, your appointments on ${p.short}`), h("ul", {}, a.appts.map(x => h("li", {}, x)))),
+    h("details", { class: "appt-card" }, h("summary", {}, h("b", {}, `Your appointments on ${p.short} (${a.appts.length})`)), h("ul", {}, a.appts.map(x => h("li", {}, x)))),
     h("div", { class: "stack" }, list.length ? checkRows(p, S.user, ds) : h("p", { class: "note" }, "Nothing for you on this project.")),
-    h("button", { type: "button", class: "mbtn", onclick: () => go("inspections") }, "All checklists", h("small", {}, "Any other check you must do today")),
+    h("div", { class: "tgrid", style: "margin-top:10px" }, tile("list", "All\nchecklists", () => go("inspections"))),
     h("p", { class: "note" }, "This list comes from the appointment register in the safety file. If something is wrong here, tell Wanro.")];
 }
 // Incident investigation, GAR 9(2). Linked to the incident or near miss it investigates.
@@ -1463,7 +1482,7 @@ async function sendOrder(f) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793021006"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793021006"); await loadJs("./js/pdf.js?v=1793021006");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793023391"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793023391"); await loadJs("./js/pdf.js?v=1793023391");
     const { html, title } = orderDoc(f);
     const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
@@ -2427,7 +2446,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793021006"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793021006"); await loadJs("./js/pdf.js?v=1793021006");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793023391"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793023391"); await loadJs("./js/pdf.js?v=1793023391");
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
     // Phones only open the share menu straight after a tap, so the last step is one tap on Share.
@@ -2480,7 +2499,7 @@ async function processMailQ() {
   const q = mqGet(); if (!q.length) return;
   mqBusy = true;
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793021006"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793021006"); await loadJs("./js/pdf.js?v=1793021006");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793023391"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793023391"); await loadJs("./js/pdf.js?v=1793023391");
     for (const j of q) {
       const p = CFG.projects.find(x => x.id === j.pid); if (!p) { j.done = true; continue; }
       if (j.flash) { // flash report of an incident or near miss
@@ -3477,7 +3496,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793021006"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793021006"); await loadJs("./js/pdf.js?v=1793021006");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793023391"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793023391"); await loadJs("./js/pdf.js?v=1793023391");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
