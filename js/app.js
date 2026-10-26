@@ -312,7 +312,7 @@ function vProjects() {
         bioSetup(); } }, "Fingerprint")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1792876656";
+const APPV = "1793011373";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -386,7 +386,7 @@ async function sendRegister(p, d, days) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792876656"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792876656"); await loadJs("./js/pdf.js?v=1792876656");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793011373"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793011373"); await loadJs("./js/pdf.js?v=1793011373");
     const { html, title } = attDoc(p, d, days); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
@@ -490,7 +490,7 @@ async function timeZone() {
   try {
     try { Store.kick(); await refreshDevices(true); } catch (e) {}
     await new Promise(r => setTimeout(r, 1800));
-    await loadJs("./js/lib/html2canvas.min.js?v=1792876656"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792876656"); await loadJs("./js/pdf.js?v=1792876656");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793011373"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793011373"); await loadJs("./js/pdf.js?v=1793011373");
     const D = tzData(), stamp = `${dmy(new Date())} ${hhmm()}`, name = `FIBRACO - Time Zone (${stamp})`;
     const pdf = await window.FibPdf.diaryPdf(tzHtml(D), name);
     const json = new File([JSON.stringify(D, null, 1)], name.replace(/[\\/:*?"<>|]+/g, "-") + ".json", { type: "application/json" });
@@ -1066,6 +1066,12 @@ const CHECKS = {
   mewp: { no: "FIBRACO-HSE-CHECK-009", title: "Cherry picker check", freq: "Daily before first use", basis: "Cherry picker (MEWP) pre-use check by the appointed operator (CR 53). JLG 450AJ, 15.5 m working height, SWL 227 kg. No work at height until this is done and fit for use.",
     details: [["Machine", "text", "e.g. JLG 450AJ"], ["Driver name", "staff"], ["Hour meter reading", "number"]], ans: INORDER,
     groups: [["Inspection checks", ["Check training certificate", "Check load test certificate", "SWL", "Working height 15.5 m", "Load chart visible and correct", "Emergency stops", "Strobe light", "Push buttons", "Switches (selector, key, limit)", "Cables, connections, batteries", "Control boards, joysticks, contactors", "Pulleys (wear, pins, runners)", "Tyres", "Runners (wear, pins, shafts)", "Wire ropes (anchor points, wear, lubrication)", "Platform (wear, pins, welding)", "Columns (wear, runners, pins, welding)", "Platform alignment", "Scissors (pins, bushes, wear)", "Boom (wear, play, straightness, cracks)", "Welding cracks (visual)", "Pump (leak, pressure, noise)", "Oil level", "Cylinders (leaks, mountings)", "Control valves (leaks, operation)", "Bypass valve (fitted, operation)", "Emergency valve", "Piping (leaks, condition)"]]] },
+  // Hendrik from site, 26 Oct: cherry picker and harnesses checked together every morning, by Marcel (appointed operator)
+  mewph: { no: "FIBRACO-HSE-CHECK-009 and harness", title: "Cherry picker and harness check", freq: "Daily before first use", basis: "Cherry picker (MEWP) pre-use check (FIBRACO-HSE-CHECK-009, CR 53) by the appointed operator, plus the harness of every person going up in the basket (Construction Regulations 2014, regulation 10, and the site fall protection plan). JLG 450AJ, 15.5 m working height, SWL 227 kg. If anything is Not in order, nobody goes up.",
+    details: [["Machine", "text", "e.g. JLG 450AJ"], ["Operator", "staff"], ["Hour meter reading", "number"], ["Person 1 in the basket", "staff"], ["Harness 1 serial no", "text"], ["Person 2 in the basket", "staff"], ["Harness 2 serial no", "text"]], ans: INORDER,
+    groups: [["Cherry picker", ["Check training certificate", "Check load test certificate", "SWL", "Working height 15.5 m", "Load chart visible and correct", "Emergency stops", "Strobe light", "Push buttons", "Switches (selector, key, limit)", "Cables, connections, batteries", "Control boards, joysticks, contactors", "Pulleys (wear, pins, runners)", "Tyres", "Runners (wear, pins, shafts)", "Wire ropes (anchor points, wear, lubrication)", "Platform (wear, pins, welding)", "Columns (wear, runners, pins, welding)", "Platform alignment", "Scissors (pins, bushes, wear)", "Boom (wear, play, straightness, cracks)", "Welding cracks (visual)", "Pump (leak, pressure, noise)", "Oil level", "Cylinders (leaks, mountings)", "Control valves (leaks, operation)", "Bypass valve (fitted, operation)", "Emergency valve", "Piping (leaks, condition)", "Ground controls lower the basket (rescue)"]],
+             ["Harness, person 1", ["Webbing: no cuts, tears, burns or fraying", "Stitching complete", "D-rings: no cracks, bends or rust", "Buckles adjust and hold", "Lanyard in good condition", "Shock absorber sealed, not deployed", "Hooks close and lock by themselves", "Label legible, within service life", "Harness fitted and worn correctly", "Clipped to the basket anchor before lifting"]],
+             ["Harness, person 2 (N/A if only one goes up)", ["Webbing: no cuts, tears, burns or fraying", "Stitching complete", "D-rings: no cracks, bends or rust", "Buckles adjust and hold", "Lanyard in good condition", "Shock absorber sealed, not deployed", "Hooks close and lock by themselves", "Label legible, within service life", "Harness fitted and worn correctly", "Clipped to the basket anchor before lifting"]]] },
   ladder: { no: "FIBRACO-HSE-CHECK-001", title: "Ladder inspection", freq: "Before use, recorded monthly", basis: "General Safety Regulations 13A. " + LEG,
     details: [["Ladder number", "text"]], ans: OK3,
     groups: [["Inspection", ["Ladder number identified", "Safe load limit identified", "No damage, cracks or bends evident", "Ladder clean and free from splinters or exposed fibres", "Free of corrosion", "Spreader bars undamaged", "Non-skid devices fitted", "Extension locks not defective", "Rungs or steps not loose or missing", "No loose bolts or rivets"]],
@@ -1116,7 +1122,7 @@ const CHECKS = {
     details: [["Scenario", "select", ["Cherry picker rescue", "Person injured", "Fire", "Snake bite", "Vehicle accident"]], ["Time to bring the person down (minutes)", "number"], ["People who took part", "text"]], ans: [["OK", "Done"], ["Defect", "Not done"], ["N/A", "N/A"]],
     groups: [["Drill steps", ["Alarm raised and the team responded", "Ground person lowered the basket with the ground or emergency controls", "Person down within 15 minutes", "First aider responded with the first aid kit", "Emergency numbers called (GardMed and Red Rocket), or simulated", "Person sent to meet the ambulance at the gate", "Rescue equipment available and working"]]] }
 };
-const INSPECT_ORDER = ["toolbox", "ppe", "vehicle", "mewp", "ladder", "extension", "tools", "drill", "generator", "harness", "firstaid", "fire", "stacking", "siteinsp", "sherep", "edrill"];
+const INSPECT_ORDER = ["toolbox", "ppe", "vehicle", "mewph", "mewp", "ladder", "extension", "tools", "drill", "generator", "harness", "firstaid", "fire", "stacking", "siteinsp", "sherep", "edrill"];
 
 function vInspections() {
   return [topbar("Daily inspections", S.project.short, true), projCard(S.project),
@@ -1143,6 +1149,11 @@ function myChecks(p, who, ds) {
   const a = APPT(p, who); if (!a) return [];
   const out = [];
   for (const [k, often] of a.checks) {
+    if (k.startsWith("watch:")) {
+      const [, key, person] = k.split(":"), first = person.split(" ")[0], done = myForms(p, person, key).some(o => o.date === ds);
+      out.push({ k, often, watch: true, person, key, title: `${first}'s ${ckName(key).toLowerCase()}`, st: done ? "done" : "due", sub: done ? "Done today, filed under Inspections" : `${first} must do it before anyone goes up` });
+      continue;
+    }
     if (often === "event") {
       for (const r of incidentsOf(p)) {
         const what = `${r.type === "nearmiss" ? "Near miss" : "Incident"} ${dmy(new Date(r.date + "T12:00:00"))}${r.where ? ", " + r.where : ""}`;
@@ -1165,6 +1176,7 @@ function myChecks(p, who, ds) {
 }
 const checksOpen = (p, who, ds) => myChecks(p, who, ds).filter(x => x.st !== "done" && x.st !== "wait").length;
 function openCheck(x) {
+  if (x.watch) return showInfo(x.title, x.st === "done" ? `${x.person} did it today. It is filed under Inspections for the project.` : `${x.person} has not done it yet today. Nobody may go up in the cherry picker until he has. Phone him.`);
   if (x.k === "flash") return sendFlash(S.project, x.ref);
   if (x.k === "invest") { startForm("invest"); Object.assign(S.form, { ref: x.ref._id, refType: x.ref.type, refWhat: x.ref.what || "", refWhere: x.ref.where || "", refDate: x.ref.date }); render(); return; }
   if (CHECKS[x.k]) return startForm("check", x.k);
@@ -1412,7 +1424,7 @@ async function sendOrder(f) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792876656"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792876656"); await loadJs("./js/pdf.js?v=1792876656");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793011373"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793011373"); await loadJs("./js/pdf.js?v=1793011373");
     const { html, title } = orderDoc(f);
     const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
@@ -2376,7 +2388,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792876656"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792876656"); await loadJs("./js/pdf.js?v=1792876656");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793011373"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793011373"); await loadJs("./js/pdf.js?v=1793011373");
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
     // Phones only open the share menu straight after a tap, so the last step is one tap on Share.
@@ -2429,7 +2441,7 @@ async function processMailQ() {
   const q = mqGet(); if (!q.length) return;
   mqBusy = true;
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792876656"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792876656"); await loadJs("./js/pdf.js?v=1792876656");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793011373"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793011373"); await loadJs("./js/pdf.js?v=1793011373");
     for (const j of q) {
       const p = CFG.projects.find(x => x.id === j.pid); if (!p) { j.done = true; continue; }
       if (j.flash) { // flash report of an incident or near miss
@@ -3426,7 +3438,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1792876656"); await loadJs("./js/lib/jspdf.umd.min.js?v=1792876656"); await loadJs("./js/pdf.js?v=1792876656");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793011373"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793011373"); await loadJs("./js/pdf.js?v=1793011373");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
