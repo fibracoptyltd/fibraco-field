@@ -102,7 +102,7 @@ let draftT = 0;
 function saveDraft() {
   clearTimeout(draftT);
   draftT = setTimeout(() => { try {
-    if (!S.form || !FORM_VIEWS.includes(S.view) || S.view === "mysection" || !Store.keepLocal) return;
+    if (!S.form || S.formRO || !FORM_VIEWS.includes(S.view) || S.view === "mysection" || !Store.keepLocal) return;
     const f = Object.assign({}, S.form, { project: S.form.project ? S.form.project.id : null, date: S.form.date ? new Date(S.form.date).toISOString() : null });
     Store.keepLocal("draft", { view: S.view, at: Date.now(), f }).catch(() => {});
   } catch (e) {} }, 600);
@@ -312,7 +312,7 @@ function vProjects() {
         bioSetup(); } }, "Fingerprint")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1793044121";
+const APPV = "1793045415";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -386,7 +386,7 @@ async function sendRegister(p, d, days) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793044121"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793044121"); await loadJs("./js/pdf.js?v=1793044121");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793045415"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793045415"); await loadJs("./js/pdf.js?v=1793045415");
     const { html, title } = attDoc(p, d, days); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
@@ -490,7 +490,7 @@ async function timeZone() {
   try {
     try { Store.kick(); await refreshDevices(true); } catch (e) {}
     await new Promise(r => setTimeout(r, 1800));
-    await loadJs("./js/lib/html2canvas.min.js?v=1793044121"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793044121"); await loadJs("./js/pdf.js?v=1793044121");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793045415"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793045415"); await loadJs("./js/pdf.js?v=1793045415");
     const D = tzData(), stamp = `${dmy(new Date())} ${hhmm()}`, name = `FIBRACO - Time Zone (${stamp})`;
     const pdf = await window.FibPdf.diaryPdf(tzHtml(D), name);
     const json = new File([JSON.stringify(D, null, 1)], name.replace(/[\\/:*?"<>|]+/g, "-") + ".json", { type: "application/json" });
@@ -728,12 +728,13 @@ function vProjectsTiles() {
     h("div", { class: "tw" },
       h("div", { class: "who", style: "margin:0" }, h("span", {}, "Signed in as ", h("b", {}, S.user), ` (${ROLE[S.user]})`)),
       installCard(),
-      admin ? ((alertsBanner() || [])[0] || null) : null,
+      alertSheet(),
       safetyBanner(),
       (() => { const ds = ymd(today()), n = dueToday().reduce((c, p) => c + checksOpen(p, S.user, ds), 0);
         return n ? h("button", { type: "button", class: "mbtn today-bar", onclick: () => go("today") }, `${n} check${n === 1 ? "" : "s"} to do today`, h("small", {}, "Tap to see them. Clear every mustard one.")) : null; })(),
       admin ? (() => { const fb = Store.list("fb|").length, waiting = (DEVS || []).filter(d => d.status === "pending").length;
-        return h("div", { class: "tgrid g2" },
+        return h("div", { class: "tgrid" },
+          tile("list", "Records", () => { S.recProj = ""; S.recF = null; go("records"); }, { cls: "slim" }),
           tile("fb", "Feedback\nfrom the team", () => go("feedback"), { badge: fb || "", cls: "slim" }),
           tile("dev", "Devices\nand access", () => go("devices"), { badge: waiting || "", bc: "o", cls: "slim" })); })() : null,
       admin ? h("div", { class: "tgrid" },
@@ -788,6 +789,7 @@ function vMenuTiles() {
       tile("map", "Drawings and\nschedule", () => go("drawings")),
       tile("rams", "RAMS", () => go("rams")),
       tile("clock", "Internal\ndelays", () => go("delays"), dl),
+      tile("list", "Records", () => { S.recProj = p.id; S.recF = null; go("records"); }),
       contacts].filter(Boolean);
     if (list.length < 16) list.splice(list.length - 1, 0, tile("search", "Site\ninspection", () => startForm("inspection")));
     grid = h("div", { class: "tgrid g4" }, ...list);
@@ -858,6 +860,7 @@ function vMenu() {
 
 // ---------- forms ----------
 function startForm(type, key) {
+  S.formRO = null;
   const base = { type, key, date: S.date || today(), project: S.project, user: S.user, photos: [] };
   if (type === "check") Object.assign(base, { d: {}, outcome: "", sig: "", items: CHECKS[key].groups.map(g => g[1].map(n => ({ name: n }))) });
   if (type === "toolbox") Object.assign(base, { talk: "", talkLabel: "", att: [{ name: S.user }, {}, {}, {}], q: "" });
@@ -1025,10 +1028,19 @@ function vInspection() {
 
 function submitBtn(check, opts) {
   opts = opts || {};
+  if (S.formRO) return h("div", {}, h("button", { class: "submit", type: "button", onclick: () => { S.formRO = null; goBack(); } }, "Close"));
   const errBox = h("div", { class: "err", hidden: true, role: "alert" });
+  const e0 = S.form && S.form._errs; if (e0 && e0.length) { errBox.hidden = false; errBox.replaceChildren(...e0.map(x => h("div", {}, x))); }
   return h("div", {}, errBox, h("button", { class: "submit", type: "button", onclick: () => {
     const e = check();
-    if (e.length) { errBox.hidden = false; errBox.replaceChildren(...e.map(x => h("div", {}, x))); errBox.scrollIntoView({ behavior: "smooth", block: "center" }); return; }
+    if (e.length) {
+      // Wanro 26 Oct: say what is missing and take him to the page where it is, marked in red
+      if (S.form) { S.form._errs = e; S.form._try = true; render(); }
+      setTimeout(() => { const m = app.querySelector(".miss"), paged = document.body.classList.contains("paged");
+        if (m && paged) gotoPageOf(m); else (m || app.querySelector(".err:not([hidden])") || errBox).scrollIntoView({ behavior: "smooth", block: "center" });
+        toast(m ? `${e[0]} Marked in red.` : e[0]); }, 60);
+      return; }
+    if (S.form) { delete S.form._errs; delete S.form._try; }
     if (opts.onDone) return opts.onDone();
     const f = S.form; if (f.project) S.done[f.project.id + "|" + ymd(f.date)] = true;
     if (!canWrite(S.user)) { showInfo("View only", "You can look at this project but not submit on it."); return; }
@@ -1258,6 +1270,78 @@ function vMyChecks() {
     h("div", { class: "tgrid", style: "margin-top:10px" }, tile("list", "All\nchecklists", () => go("inspections"))),
     h("p", { class: "note" }, "This list comes from the appointment register in the safety file. If something is wrong here, tell Wanro.")];
 }
+// ---------- Records: the office and the site manager open any submitted form (Wanro 26 Oct) ----------
+// Shows exactly what was filled in, read only, with a PDF button. Diaries keep their own screen.
+const REC_TYPES = { dsti: ["DSTI", "shield"], check: ["Checklist", "eye"], toolbox: ["Toolbox talk", "users"], inspection: ["Site inspection", "search"], incident: ["Incident", "warn"],
+  nearmiss: ["Near miss", "near"], invest: ["Investigation", "warn"], jobobs: ["Job observation", "obs"], si: ["Site instruction", "doc"], order: ["Material order", "cart"] };
+const recProjects = () => PROJECTS.filter(p => isAdmin(S.user) || roleIn(S.user, p) === "sm");
+function recList() {
+  const ok = new Set(recProjects().map(p => p.id)), F = S.recF || (S.recF = { pid: S.recProj || "", type: "", who: "", day: "" });
+  return Store.list("form|").map(([id, o]) => [id, o]).filter(([id, o]) => o && REC_TYPES[o.type] && (ok.has(o.project) || (isAdmin(S.user) && !o.project)))
+    .filter(([, o]) => (!F.pid || o.project === F.pid) && (!F.type || o.type === F.type || (F.type.startsWith("check:") && o.type === "check" && o.key === F.type.slice(6))) && (!F.who || (o.savedBy || o.user) === F.who) && (!F.day || o.date === F.day))
+    .sort((a, b) => (b[1].savedAt || "").localeCompare(a[1].savedAt || ""));
+}
+function vRecords() {
+  const F = S.recF || (S.recF = { pid: S.recProj || "", type: "", who: "", day: "" }), ps = recProjects(), all = recList(), list = all.slice(0, S.recN || 60);
+  const people = [...new Set(Store.list("form|").map(([, o]) => o && (o.savedBy || o.user)).filter(Boolean))].sort();
+  const types = [["", "All types"], ...Object.entries(REC_TYPES).map(([k, v]) => [k, v[0] + (k === "check" ? " (all)" : "")]), ...Object.keys(CHECKS).map(k => ["check:" + k, "  " + CHECKS[k].title])];
+  const pick = (val, opts, set) => { const el = h("select", { class: "rec-sel", onchange: e => { set(e.target.value); S.recN = 60; render(); } }, ...opts.map(([v, t]) => h("option", { value: v }, t))); el.value = val; return el; };
+  const day = h("input", { type: "date", class: "rec-sel", value: F.day, onchange: e => { F.day = e.target.value; render(); } });
+  return [topbar("Records", F.pid ? (ps.find(p => p.id === F.pid) || {}).short : "All jobs", true),
+    h("div", { class: "rec-f" },
+      pick(F.pid, [["", "All jobs"], ...ps.map(p => [p.id, p.short])], v => F.pid = v),
+      pick(F.type, types, v => F.type = v),
+      pick(F.who, [["", "Everybody"], ...people.map(n => [n, n])], v => F.who = v),
+      h("div", { class: "rec-day" }, day, F.day ? h("button", { type: "button", class: "rec-clr", onclick: () => { F.day = ""; render(); } }, "All days") : null)),
+    h("p", { class: "note", style: "margin:6px 0 10px" }, all.length ? `${all.length} submitted form${all.length === 1 ? "" : "s"}, newest first. Tap one to open it.` : "Nothing submitted that matches."),
+    h("div", { class: "tgrid ck-grid" }, ...list.map(([id, o]) => {
+      const [tn, ic] = REC_TYPES[o.type], ck = o.type === "check" && CK_TILE[o.key];
+      const nm = o.type === "check" ? (ck ? ck[0] : (CHECKS[o.key] || {}).title || "Checklist") : tn, who = (o.savedBy || o.user || "").split(" ")[0];
+      const t = o.savedAt ? new Date(o.savedAt) : null;
+      return h("button", { type: "button", class: "tile ck-tile rec-tile", "aria-label": `${nm.replace("\n", " ")} by ${who}, ${o.date}`, onclick: () => openRecord(id) },
+        h("span", { class: "ck-f" }, (ps.find(p => p.id === o.project) || {}).short || "No job"), ticon(ck ? ck[1] : ic),
+        h("span", { class: "tl" }, ...nm.split("\n").flatMap((y, i) => i ? [h("br"), y] : [y])),
+        h("span", { class: "ck-no" }, `${who}  ${o.date ? dmy(new Date(o.date + "T12:00:00")).slice(0, 5) : ""}${t ? "  " + t.toTimeString().slice(0, 5) : ""}`));
+    })),
+    all.length > list.length ? h("button", { type: "button", class: "mbtn", style: "margin-top:10px", onclick: () => { S.recN = (S.recN || 60) + 60; render(); } }, `Show more (${all.length - list.length} more)`) : null];
+}
+function openRecord(id) {
+  const o = Store.get(id); if (!o) return;
+  S.form = Object.assign(JSON.parse(JSON.stringify(o)), { date: new Date(o.date + "T12:00:00"), project: CFG.projects.find(p => p.id === o.project) || null });
+  S.formRO = { id, by: o.savedBy || o.user || "", at: o.savedAt || "" }; S.formDirty = false; PG = { key: null, i: 0 };
+  go(o.type);
+}
+const RO_VIEWS = [...FORM_VIEWS, "invest"];
+function roBar() {
+  const r = S.formRO, t = r.at ? new Date(r.at) : null;
+  return h("div", { class: "ro-bar" }, h("span", {}, h("b", {}, "VIEW ONLY  "), `Submitted by ${r.by}${t ? ` on ${dmy(t)} at ${t.toTimeString().slice(0, 5)}` : ""}`),
+    h("button", { type: "button", class: "ro-pdf", onclick: recordPdf }, "PDF"));
+}
+// PDF of exactly what is on the screen: every page of the form, typed answers as text
+async function recordPdf() {
+  if (sending) return; sending = true;
+  const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
+  document.body.append(ov);
+  try {
+    await loadJs("./js/lib/html2canvas.min.js?v=1793045415"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793045415"); await loadJs("./js/pdf.js?v=1793045415");
+    const f = S.form, src = [...app.children].filter(k => !k.matches(".bar, .fb-btn, .ro-bar, .psub, .err, .pnav, .addrow"));
+    const box = document.createElement("div");
+    for (const k of src) {
+      const c = k.cloneNode(true); c.hidden = false; c.querySelectorAll("[hidden]").forEach(x => { if (!x.matches(".err")) x.hidden = false; });
+      const a = k.querySelectorAll("input, select, textarea"), b = c.querySelectorAll("input, select, textarea");
+      a.forEach((el, i) => { const v = el.tagName === "SELECT" ? (el.selectedOptions[0] ? el.selectedOptions[0].text : "") : el.type === "checkbox" ? (el.checked ? "Yes" : "") : el.value;
+        const sp = document.createElement("span"); sp.className = "ro-val"; sp.textContent = v || ""; b[i].replaceWith(sp); });
+      c.querySelectorAll(".addrow, button.submit, .err").forEach(x => x.remove());
+      box.append(c);
+    }
+    const nm = f.type === "check" ? (CHECKS[f.key] || {}).title : (REC_TYPES[f.type] || [f.type])[0], short = f.project ? f.project.short : "No job";
+    const title = `FIBRACO - ${nm} - ${short} (${dmy(f.date)}) ${(S.formRO.by || "").split(" ")[0]}`;
+    const html = `<div class="pd-head"><img src="${LOGO}" alt="Fibraco"><div><h1>${nm.toUpperCase()}</h1><div>${f.project ? f.project.name : ""}</div><div>Submitted by ${S.formRO.by}${S.formRO.at ? " on " + new Date(S.formRO.at).toLocaleString("en-ZA") : ""}</div></div></div><div class="ro-doc">${box.innerHTML}</div>`;
+    const file = await window.FibPdf.diaryPdf(html, title);
+    ov.remove(); await window.FibPdf.shareFile(file, title);
+  } catch (e) { ov.remove(); showInfo("Could not make the PDF", String(e && e.message || e)); }
+  finally { sending = false; }
+}
 // Incident investigation, GAR 9(2). Linked to the incident or near miss it investigates.
 function vInvest() {
   const f = S.form, IMM = ["Unsafe act", "Unsafe condition", "Equipment failure", "Weather", "No or wrong PPE", "Procedure not followed", "No procedure"];
@@ -1315,7 +1399,7 @@ function vCheck() {
     const items = f.items[gi];
     const draw = () => tb.replaceChildren(...items.flatMap((it, i) => {
       const nameCell = c.addable && it.custom ? h("td", {}, inp("text", it.name, v => it.name = v, "Name or location")) : h("td", { style: "padding:8px;font-weight:600;font-size:12.5px" }, it.name);
-      const row = h("tr", {}, nameCell, h("td", { style: "width:168px" }, seg(c.ans, it.a, v => { it.a = v; draw(); })));
+      const row = h("tr", { class: f._try && it.name && !it.a ? "miss" : "" }, nameCell, h("td", { style: "width:168px" }, seg(c.ans, it.a, v => { it.a = v; draw(); })));
       const bad = ["Defect", "Replace", "Short", "Fail"].includes(it.a);
       return bad ? [row, h("tr", { class: "hz-extra" }, h("td", { colspan: 2 }, inp("text", it.c, v => it.c = v, "What is wrong and what was done")))] : [row];
     }));
@@ -1326,7 +1410,7 @@ function vCheck() {
   return [...formHead(c.title, (c.no ? c.no + ". " : "") + c.basis), stdHeader(f, c.no ? `${c.title} (${c.no})` : c.title, c.details.map(d => detailRow(f, d))), ...blocks,
     sheet("", h("div", { class: "band" }, "Outcome"), seg([["Fit", "Fit for use"], ["Not fit", "Not fit, taken out of use"]], f.outcome, v => f.outcome = v)),
     sheet("", h("table", {}, h("tbody", {}, h("tr", {}, h("td", { class: "lab" }, "Signature"), h("td", {}, sigCell(() => f.sig, v => f.sig = v, "Inspector signature", true)))))),
-    submitBtn(() => { const e = []; const all = f.items.flat(); if (all.some(i => !i.a && i.name)) e.push("Mark every item."); if (all.some(i => ["Defect", "Replace", "Short", "Fail"].includes(i.a) && !(i.c || "").trim())) e.push("Write what is wrong for every item that failed."); if (!f.sig) e.push("Sign the inspection."); return e; })];
+    submitBtn(() => { const e = []; const all = f.items.flat(); { const open = all.filter(i => !i.a && i.name).map(i => i.name); if (open.length) e.push(`Mark every item. ${open.length} still open: ${open.slice(0, 4).join(", ")}${open.length > 4 ? " and more" : ""}.`); } if (all.some(i => ["Defect", "Replace", "Short", "Fail"].includes(i.a) && !(i.c || "").trim())) e.push("Write what is wrong for every item that failed."); if (!f.sig) e.push("Sign the inspection."); return e; })];
 }
 
 function vToolbox() {
@@ -1490,7 +1574,7 @@ async function sendOrder(f) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793044121"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793044121"); await loadJs("./js/pdf.js?v=1793044121");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793045415"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793045415"); await loadJs("./js/pdf.js?v=1793045415");
     const { html, title } = orderDoc(f);
     const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
@@ -1563,8 +1647,18 @@ function vDrawings() {
       h("div", { class: "tgrid dwg-grid" }, ...c.items.map(d => h("button", { type: "button", class: "dwg-tile", "aria-label": `${d.title}, ${d.no}`, onclick: () => { S.dwg = d; S.zoom = 1; dwgFull(true); go("drawing"); } },
         encImg(d.img, { alt: "", class: "dwg-th" }),
         h("span", { class: "dwg-t" }, d.title), h("span", { class: "dwg-n" }, `${d.no.replace(/ page /, " p")}${d.rev ? "  Rev " + d.rev : ""}`)))))),
-    cats.length ? h("p", { class: "note" }, "Latest revision only. Tap one to open it full screen. Turn the phone sideways for a wide drawing.") : null];
+    cats.length ? h("p", { class: "note" }, "Latest revision only. Tap one to open it full screen. Turn the phone sideways for a wide drawing.") : null,
+    cats.length ? (() => { const el = h("p", { class: "note", style: "margin-top:0" }, ""); const urls = cats.flatMap(c => c.items.map(d => d.img));
+      Store.cachedCount(urls).then(n => { el.textContent = n >= urls.length ? `All ${urls.length} are saved on this phone and open without signal.` : `${n} of ${urls.length} saved on this phone so far. The rest download by themselves when there is signal.`; }); return el; })() : null];
 }
+const onWifi = () => { const c = navigator.connection; return !!(c && (c.type === "wifi" || c.type === "ethernet")); };
+const dwgUrls = (hi) => PROJECTS.filter(p => projPhase(p) !== "done").flatMap(p => (p.dwg || []).flatMap(c => c.items.flatMap(d => [d.img, hi ? d.hi : null]))).filter(Boolean);
+let dwgBusy = false;
+async function keepDrawings() {
+  if (dwgBusy || !Store.prefetch || !navigator.onLine) return; dwgBusy = true;
+  try { await Store.prefetch(dwgUrls(false)); if (onWifi()) await Store.prefetch(dwgUrls(true)); if (S.view === "drawings") render(); } finally { dwgBusy = false; }
+}
+addEventListener("online", () => setTimeout(keepDrawings, 3000));
 // Full screen for drawings: the whole phone screen, and the phone may turn sideways while a drawing is open.
 function dwgFull(on) {
   try {
@@ -2412,8 +2506,8 @@ function vReview() {
     projectBar(),
     ...people.map(personBlock), totals,
     final ? after : h("div", {},
-      h("button", { class: "mbtn", style: `margin-bottom:12px;${s1 ? "" : "opacity:.45"}`, onclick: () => { if (s1) openCombined(); } }, s2 ? "✓ My part of the diary (open again)" : "2. My part of the diary", h("small", {}, "Weather, plant, site instructions and materials. Team and work fill in by themselves.")),
-      h("button", { class: "submit", type: "button", style: s1 && s2 ? "" : "opacity:.45", onclick: () => { if (!(s1 && s2)) return;
+      h("button", { class: "mbtn", style: `margin-bottom:12px;${s1 ? "" : "opacity:.45"}`, onclick: () => { if (s1) openCombined(); else showInfo("Not yet", `First check and approve every crew section above. Still waiting: ${pending.join(", ")}.`); } }, s2 ? "✓ My part of the diary (open again)" : "2. My part of the diary", h("small", {}, "Weather, plant, site instructions and materials. Team and work fill in by themselves.")),
+      h("button", { class: "submit", type: "button", style: s1 && s2 ? "" : "opacity:.45", onclick: () => { if (!(s1 && s2)) return showInfo("Not yet", !s1 ? `First approve every crew section. Still waiting: ${pending.join(", ")}.` : "First fill in your part of the diary (button 2 above), then sign.");
         const noQty = people.flatMap(pn => (((S.sections[k] || {})[pn] || {}).other || []).filter(o => o.act && (o.qty === undefined || o.qty === "")).map(o => `${pn}: ${nice2(o.act)}, ${o.loc || ""}`));
         if (noQty.length) return showInfo("Quantities missing", "Put the quantity on every Other work line before you sign (0 if two men wrote the same job, so it counts once): " + noQty.join("  |  "));
         mySig(v => { if (!v) return; S.final[k] = new Date().toLocaleTimeString("en-ZA", { hour: "2-digit", minute: "2-digit" }).replace(":", "h"); S.done[k] = true; persist(); Store.put("final|" + k, { at: S.final[k], by: S.user, sig: v, date: ymd(S.date) }); people.forEach(pn => putProg(S.project.id, ymd(S.date), pn, myTasks(pn), ((S.sections[k] || {})[pn] || {}).rows || [], ((S.sections[k] || {})[pn] || {}).other || [])); Store.lock(["alloc|" + k, "site|" + k, "final|" + k, ...people.map(p => `sec|${k}|${p}`)]); queueReports(S.project, S.date); S.form = { type: "diary", project: S.project, date: S.date, user: S.user, photos: [] }; go("done"); }); } }, "3. Sign and make final"))];
@@ -2472,7 +2566,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793044121"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793044121"); await loadJs("./js/pdf.js?v=1793044121");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793045415"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793045415"); await loadJs("./js/pdf.js?v=1793045415");
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
     // Phones only open the share menu straight after a tap, so the last step is one tap on Share.
@@ -2525,7 +2619,7 @@ async function processMailQ() {
   const q = mqGet(); if (!q.length) return;
   mqBusy = true;
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793044121"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793044121"); await loadJs("./js/pdf.js?v=1793044121");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793045415"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793045415"); await loadJs("./js/pdf.js?v=1793045415");
     for (const j of q) {
       const p = CFG.projects.find(x => x.id === j.pid); if (!p) { j.done = true; continue; }
       if (j.flash) { // flash report of an incident or near miss
@@ -2681,22 +2775,24 @@ function openEmergency() {
     const waText = g => `EMERGENCY from ${who} on ${proj}. ${g ? `Location: https://maps.google.com/?q=${g}` : "Location not available."} Sent from the Fibraco app.`;
     const intl = n => (n || "").replace(/\D/g, "").replace(/^0/, "27");
     const links = h("div", { class: "stack", style: "width:100%;max-width:340px" });
+    const status = h("p", { class: "em-status wait" }, "Sending the alert...");
     // First call goes to the office (always reachable), then the site manager, then the emergency numbers.
     // a person can have his own first contact (Wanro: Francois); the office is skipped when the office is the one in trouble
     const meP = PEOPLE.find(x => x.name === who) || {}, ec = meP.emergency, ecP = ec ? PEOPLE.find(x => x.name === ec.name) || {} : {};
-    const drawLinks = g => links.replaceChildren(...(ec ? [
-      h("a", { class: "mbtn emergency", style: "text-decoration:none", href: `https://wa.me/${intl(ec.phone)}?text=${encodeURIComponent(waText(g))}` }, `WhatsApp ${ec.name}`, h("small", {}, "Sends him your location")),
-      h("a", { class: "mbtn", style: "text-decoration:none", href: `tel:${ec.phone.replace(/\s/g, "")}` }, `Call ${ec.name}`, h("small", {}, ec.phone)),
-      ecP.phone && ecP.phone !== ec.phone ? h("a", { class: "mbtn", style: "text-decoration:none", href: `tel:${ecP.phone.replace(/\s/g, "")}` }, `Call ${ec.name.split(" ")[0]} on his other number`, h("small", {}, ecP.phone)) : null,
-      h("a", { class: "mbtn", style: "text-decoration:none", href: "tel:112" }, "Call 112", h("small", {}, "Cellphone emergency")),
-      h("a", { class: "mbtn", style: "text-decoration:none", href: "tel:10177" }, "Call 10177", h("small", {}, "Ambulance"))] : [
-      pm.phone ? h("a", { class: "mbtn emergency", style: "text-decoration:none", href: `https://wa.me/${intl(pm.phone)}?text=${encodeURIComponent(waText(g))}` }, `WhatsApp ${pm.name}`, h("small", {}, "Sends your location to the office")) : null,
-      pm.phone ? h("a", { class: "mbtn", style: "text-decoration:none", href: `tel:${pm.phone.replace(/\s/g, "")}` }, `Call ${pm.name}`, h("small", {}, pm.phone)) : null,
-      smP.phone && smP.name !== pm.name && smP.name !== who ? h("a", { class: "mbtn", style: "text-decoration:none", href: `tel:${smP.phone.replace(/\s/g, "")}` }, `Call ${sm}`, h("small", {}, "Site manager")) : null,
-      h("a", { class: "mbtn", style: "text-decoration:none", href: "tel:112" }, "Call 112", h("small", {}, "Cellphone emergency")),
-      h("a", { class: "mbtn", style: "text-decoration:none", href: "tel:10177" }, "Call 10177", h("small", {}, "Ambulance"))]).filter(Boolean));
+    const call = (label, num, sub, cls) => num ? h("a", { class: "mbtn" + (cls ? " " + cls : ""), style: "text-decoration:none", href: `tel:${num.replace(/\s/g, "")}` }, label, h("small", {}, sub || num)) : null;
+    const medic = S.project && S.project.emergency ? S.project.emergency.find(([n]) => /medic|ambulance|gardmed/i.test(n)) : null;
+    const first = ec ? { name: ec.name, phone: ec.phone, other: ecP.phone && ecP.phone !== ec.phone ? ecP.phone : "" } : { name: pm.name, phone: pm.phone, other: "" };
+    // Wanro 26 Oct: help first. Medical and the emergency numbers on top, then the people, then WhatsApp with the location.
+    const drawLinks = g => links.replaceChildren(...[
+      medic ? call(`Call ${medic[0]}`, medic[1], `Site medical, ${medic[1]}`, "emergency") : null,
+      call("Call 112", "112", "Cellphone emergency", medic ? "" : "emergency"),
+      call("Call 10177", "10177", "Ambulance"),
+      smP.phone && smP.name !== who && smP.name !== first.name ? call(`Call ${sm}`, smP.phone, `Site manager, ${smP.phone}`) : null,
+      first.phone && first.name !== who ? call(`Call ${first.name}`, first.phone) : null,
+      first.other ? call(`Call ${first.name.split(" ")[0]} on his other number`, first.other) : null,
+      first.phone && first.name !== who ? h("a", { class: "mbtn", style: "text-decoration:none", href: `https://wa.me/${intl(first.phone)}?text=${encodeURIComponent(waText(g))}` }, `WhatsApp ${first.name}`, h("small", {}, g ? "Sends your location" : "Sends the alert, location still coming")) : null].filter(Boolean));
     body.replaceChildren(h("h2", {}, "EMERGENCY"),
-      h("p", {}, ec ? `Now WhatsApp or call ${ec.name} for help.` : "The office has been alerted. Now call or WhatsApp for help."),
+      status,
       h("div", { class: "sent" }, h("div", {}, h("b", {}, "From  "), who), h("div", {}, h("b", {}, "Project  "), proj), gps),
       links,
       S.project && S.project.emergency ? h("details", { class: "em-list" }, h("summary", {}, `${S.project.short} emergency numbers`),
@@ -2705,6 +2801,15 @@ function openEmergency() {
       h("button", { class: "btn-w", type: "button", style: "padding:13px 26px;border-radius:6px;border:0;font-weight:800;background:#fff;color:#15191e", onclick: () => ov.remove() }, "Close"));
     drawLinks(null);
     Store.put(alert.id, alert);
+    // the alert only counts as sent once the server has it. Until then the screen says so, in red.
+    const alertTo = [...new Set([pm.name, sm].filter(n => n && n !== who))].join(" and ") || "the office";
+    const showStatus = () => {
+      const sentOk = !Store.isDirty(alert.id) && Store.online();
+      status.className = "em-status " + (sentOk ? "ok" : "wait");
+      status.replaceChildren(sentOk ? `Alert sent. ${alertTo} ${alertTo.includes(" and ") ? "get" : "gets"} it with a siren on their phone. Now phone for help below.` : `NOT SENT YET. ${Store.online() ? "Sending" : "No signal"}. It goes by itself the moment there is signal. Do not wait: phone for help now.`);
+      if (!sentOk && document.body.contains(status)) setTimeout(showStatus, 1500);
+    };
+    Store.kick(); setTimeout(showStatus, 50);
     if (navigator.geolocation) navigator.geolocation.getCurrentPosition(
       p => { const g = `${p.coords.latitude.toFixed(6)},${p.coords.longitude.toFixed(6)}`; gps.replaceChildren(h("b", {}, "GPS  "), g.replace(",", ", ")); alert.gps = g; Store.put(alert.id, alert); drawLinks(g); },
       () => gps.replaceChildren(h("b", {}, "GPS  "), "Location is switched off on this phone"), { timeout: 8000, enableHighAccuracy: true });
@@ -2791,7 +2896,7 @@ function vDelays() {
 // ---------- render ----------
 let render = function () {
   const v = S.view;
-  const views = { users: vUsers, projects: vProjects, calendar: vCalendar, menu: vMenu, inspections: vInspections, client: vClient, tests: vTests, link: vLink, logtest: vLogTest, biocheck: vBioCheck, allocate: vAllocate, mysection: vMySection, review: vReview, kpi: vKpi, rams: vRams, ramsdoc: vRamsDoc, drawings: vDrawings, drawing: vDrawing, diary: vDiary, dsti: vDsti, inspection: vInspection, check: vCheck, toolbox: vToolbox, incident: vIncident, si: vSI, order: vOrder, done: vDone, feedback: vFeedback, devices: vDevices, dash: vDash, qc: vQc, qcspot: vQcSpot, tsheets: vTsheets, tsheet: vTsheet, treport: vTreport, attendance: vAttendance, claude: vClaude, delays: vDelays, nearmiss: vNearMiss, jobobs: vJobObs, adhoc: vAdhoc, adhocjob: vAdhocJob, mychecks: vMyChecks, invest: vInvest, today: vToday };
+  const views = { users: vUsers, projects: vProjects, calendar: vCalendar, menu: vMenu, inspections: vInspections, client: vClient, tests: vTests, link: vLink, logtest: vLogTest, biocheck: vBioCheck, allocate: vAllocate, mysection: vMySection, review: vReview, kpi: vKpi, rams: vRams, ramsdoc: vRamsDoc, drawings: vDrawings, drawing: vDrawing, diary: vDiary, dsti: vDsti, inspection: vInspection, check: vCheck, toolbox: vToolbox, incident: vIncident, si: vSI, order: vOrder, done: vDone, feedback: vFeedback, devices: vDevices, dash: vDash, qc: vQc, qcspot: vQcSpot, tsheets: vTsheets, tsheet: vTsheet, treport: vTreport, attendance: vAttendance, claude: vClaude, delays: vDelays, nearmiss: vNearMiss, jobobs: vJobObs, adhoc: vAdhoc, adhocjob: vAdhocJob, mychecks: vMyChecks, invest: vInvest, today: vToday, records: vRecords };
   app.replaceChildren(...[].concat((views[v] || vProjects)()).filter(Boolean));
   pageForm();
 }
@@ -2803,7 +2908,7 @@ function pageForm(step) {
   if (!TILES() || !PAGED_VIEWS.includes(S.view)) return;
   const key = S.view === "adhocjob" ? S.adj : S.form;
   if (PG.key !== key) PG = { key, i: 0 };
-  const kids = [...app.children].filter(k => !k.classList.contains("fb-btn")), head = kids[0] && kids[0].classList.contains("bar") ? kids.shift() : null;
+  const kids = [...app.children].filter(k => !k.classList.contains("fb-btn") && !k.classList.contains("ro-bar")), head = kids[0] && kids[0].classList.contains("bar") ? kids.shift() : null;
   kids.forEach(k => k.hidden = false);
   // the form's own Submit moves into the green button on the last page; its error list stays on the page
   const sub = kids.length && (kids[kids.length - 1].matches("button.submit") || kids[kids.length - 1].querySelector(":scope > button.submit")) ? kids.pop() : null;
@@ -2818,7 +2923,7 @@ function pageForm(step) {
     pages[pages.length - 1].push(k); used += hh; });
   if (step) PG.i += step;
   PG.i = Math.max(0, Math.min(PG.i, pages.length - 1));
-  pages.forEach((pg, n) => pg.forEach(k => k.hidden = n !== PG.i));
+  pages.forEach((pg, n) => pg.forEach(k => k.hidden = n !== PG.i)); PG.pages = pages;
   const last = PG.i === pages.length - 1;
   if (sub) sub.hidden = !last;
   nav.append(
@@ -2828,6 +2933,11 @@ function pageForm(step) {
       : h("button", { type: "button", class: "pnext", onclick: () => { pageForm(1); window.scrollTo(0, 0); } }, "NEXT  ›"));
 }
 addEventListener("resize", () => { if (document.body.classList.contains("paged")) pageForm(); });
+function gotoPageOf(el) {
+  const i = (PG.pages || []).findIndex(pg => pg.some(k => k.contains(el)));
+  if (i >= 0 && i !== PG.i) { PG.i = i; pageForm(); }
+  setTimeout(() => el.scrollIntoView({ behavior: "smooth", block: "center" }), 30);
+}
 
 // ---------- live layer: identity, PIN, saving, sync, feedback ----------
 const CONF = { url: "https://ahbcixfknqgqvmauhnyo.supabase.co", anon: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFoYmNpeGZrbnFncXZtYXVobnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIxNzI0NDMsImV4cCI6MjEwNzc0ODQ0M30.n58qy_PcGFoi9-JGzUecra9ggxUn_Yprsg9kO_2M02c" };
@@ -2904,7 +3014,7 @@ function persistSoon() { clearTimeout(persistT); persistT = setTimeout(persist, 
 const saveLink = () => persist();
 ["input", "change", "click"].forEach(t => document.addEventListener(t, persistSoon, true));
 // Changes from other phones
-const SAFE_VIEWS = ["projects", "calendar", "menu", "adhoc", "mychecks", "today", "review", "kpi", "tests", "link", "client", "drawings", "rams"];
+const SAFE_VIEWS = ["projects", "calendar", "menu", "adhoc", "mychecks", "today", "records", "review", "kpi", "tests", "link", "client", "drawings", "rams"];
 function hydrate(ids) {
   let touched = false;
   for (const id of ids) {
@@ -2945,6 +3055,7 @@ Store.on((ids, state) => {
   if (state === "denied" && CFG && Date.now() - deniedAt > 60e3) { deniedAt = Date.now(); Store.whoami().then(me => { if (me.status !== "active") location.reload(); }).catch(e => { if (e.status) location.reload(); }); }
   if (state === "refused" && Date.now() - refusedAt > 30e3) { refusedAt = Date.now(); showInfo("Not saved", "That diary is already signed and locked, or it is not yours to change. The app has put back the signed version."); }
   if (ids.length) hydrate(ids);
+  if (CFG && ids.some(i => String(i).startsWith("alert|"))) setTimeout(checkAlerts, 200);
   if (CFG && ids.includes(sigId()) && !savedSig() && S.view !== "signature") setupSignature(() => render()); const p = document.querySelector(".bar .pill"); if (p) p.replaceWith(syncPill()); });
 
 // "Something wrong?" on every screen
@@ -2972,6 +3083,52 @@ function alertsBanner() {
       a.gps ? h("div", {}, h("a", { href: `https://maps.google.com/?q=${a.gps}`, target: "_blank" }, "Open location on the map")) : null))) : null,
     fb ? h("button", { class: "mbtn", onclick: () => go("feedback") }, `Feedback from the team (${fb})`) : null,
     devicesButton()];
+}
+// ---------- incoming emergency: siren, vibration and a red full screen on the office's and the site manager's phones ----------
+// (Wanro 26 Oct) Works while the app is open or in the background with the screen on. A closed app needs the push alert (server step).
+const ALERT_SEEN = "fib_alert_seen";
+const alertSeen = () => { try { return JSON.parse(localStorage.getItem(ALERT_SEEN) || "[]"); } catch (e) { return []; } };
+function myAlerts(hours = 24) {
+  const since = Date.now() - hours * 3600e3;
+  return Store.list("alert|").map(([id, o]) => o && Object.assign({ _id: id }, o))
+    .filter(a => a && Date.parse(a.at) > since && a.who !== S.user && (isAdmin(S.user) || roleIn(S.user, CFG.projects.find(p => p.id === a.project)) === "sm"))
+    .sort((a, b) => (b.at || "").localeCompare(a.at || ""));
+}
+let AC = null, sirenT = 0, vibT = 0;
+document.addEventListener("pointerdown", () => { try { if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)(); if (AC.state === "suspended") AC.resume(); } catch (e) {} }, { capture: true });
+function sirenOn() {
+  sirenOff();
+  try {
+    if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)(); if (AC.state === "suspended") AC.resume();
+    const o = AC.createOscillator(), g = AC.createGain(); o.type = "square"; g.gain.value = 0.35; o.connect(g); g.connect(AC.destination); o.start();
+    let up = true; const step = () => { const t = AC.currentTime; o.frequency.cancelScheduledValues(t); o.frequency.setValueAtTime(up ? 650 : 1150, t); o.frequency.linearRampToValueAtTime(up ? 1150 : 650, t + 0.6); up = !up; };
+    step(); sirenT = setInterval(step, 600); sirenOn.o = o;
+  } catch (e) {}
+  try { navigator.vibrate && navigator.vibrate([700, 300, 700, 300, 700]); vibT = setInterval(() => { try { navigator.vibrate([700, 300, 700, 300, 700]); } catch (e) {} }, 3200); } catch (e) {}
+}
+function sirenOff() { clearInterval(sirenT); clearInterval(vibT); try { sirenOn.o && sirenOn.o.stop(); } catch (e) {} sirenOn.o = null; try { navigator.vibrate && navigator.vibrate(0); } catch (e) {} }
+function checkAlerts() {
+  if (!CFG || !S.user || document.getElementById("sos-in")) return;
+  const seen = alertSeen(), fresh = myAlerts(2).filter(a => !seen.includes(a._id));
+  if (!fresh.length) return;
+  const a = fresh[0], p = CFG.projects.find(x => x.id === a.project), who = PEOPLE.find(x => x.name === a.who) || {};
+  const ack = () => { try { localStorage.setItem(ALERT_SEEN, JSON.stringify([...alertSeen(), ...fresh.map(x => x._id)].slice(-50))); } catch (e) {} sirenOff(); ov.remove(); render(); };
+  const ov = h("div", { id: "sos-in", class: "sos-in", role: "alertdialog", "aria-label": "Emergency alert" },
+    h("div", { class: "sos-in-b" }, h("div", { class: "sos-in-t" }, "EMERGENCY"),
+      h("div", { class: "sos-in-w" }, a.who), h("div", {}, `${p ? p.short : "No project"}  |  ${new Date(a.at).toLocaleTimeString("en-ZA", { hour: "2-digit", minute: "2-digit" })}`),
+      fresh.length > 1 ? h("div", { style: "margin-top:4px" }, `and ${fresh.length - 1} more alert${fresh.length > 2 ? "s" : ""}`) : null,
+      h("div", { class: "stack", style: "width:100%;max-width:340px;margin-top:16px" },
+        who.phone ? h("a", { class: "mbtn emergency", style: "text-decoration:none", href: `tel:${who.phone.replace(/\s/g, "")}` }, `Call ${a.who}`, h("small", {}, who.phone)) : null,
+        a.gps ? h("a", { class: "mbtn", style: "text-decoration:none", href: `https://maps.google.com/?q=${a.gps}`, target: "_blank" }, "Open his location on the map", h("small", {}, a.gps.replace(",", ", "))) : h("div", { class: "mbtn", style: "opacity:.8" }, "No location yet", h("small", {}, "It shows here as soon as his phone sends it")),
+        p && p.location ? h("div", { class: "sos-in-loc" }, p.location) : null),
+      h("button", { type: "button", class: "sos-in-ack", onclick: ack }, "I'M HANDLING IT  (stop the siren)")));
+  document.body.append(ov); sirenOn();
+}
+function alertSheet() {
+  const list = myAlerts(24); if (!list.length) return null;
+  return sheet("", h("div", { class: "band", style: "background:#c8102e" }, `EMERGENCY ALERTS, LAST 24 HOURS (${list.length})`),
+    ...list.map(a => h("div", { style: "padding:10px 12px;border-top:1px solid var(--line);font-size:13px" }, h("b", {}, a.who), ` on ${(CFG.projects.find(p => p.id === a.project) || {}).short || "no project"} at ${new Date(a.at).toLocaleString("en-ZA")}`,
+      a.gps ? h("div", {}, h("a", { href: `https://maps.google.com/?q=${a.gps}`, target: "_blank" }, "Open location on the map")) : null)));
 }
 // ---------- office: devices and access ----------
 let DEVS = null, devsAt = 0;
@@ -3522,7 +3679,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793044121"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793044121"); await loadJs("./js/pdf.js?v=1793044121");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793045415"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793045415"); await loadJs("./js/pdf.js?v=1793045415");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
@@ -3875,7 +4032,9 @@ async function startApp() {
   Store.sync();
   setInterval(() => Store.sync(), 30000);
   if (me.admin) { refreshDevices(true); setInterval(() => refreshDevices(), 30000); }
-  setTimeout(offerDraft, 600); setTimeout(processMailQ, 5000);
+  setTimeout(offerDraft, 600); setTimeout(processMailQ, 5000); setTimeout(checkAlerts, 3000); setTimeout(keepDrawings, 8000);
+  // the office and site managers check for alerts every 15 seconds instead of 30
+  if (me.admin || PROJECTS.some(p => roleIn(S.user, p) === "sm")) setInterval(() => Store.sync(), 15000);
 }
 // Ask the phone to keep the app's data for good, so Chrome never clears it to free up space.
 try { if (navigator.storage && navigator.storage.persist) navigator.storage.persisted().then(p => { if (!p) navigator.storage.persist(); }); } catch (e) {}
@@ -3935,9 +4094,14 @@ document.addEventListener("visibilitychange", () => {
   else { if (hiddenAt && Date.now() - hiddenAt > 10 * 60e3 && CFG) location.reload(); else Store.kick(); }
 });
 const _render = render;
-render = function () { _render(); if (S.view !== "drawing" && document.fullscreenElement) dwgFull(false); if (S.view === "claude" || S.view === "drawing") return;
+render = function () {
+  if (S.formRO && !RO_VIEWS.includes(S.view)) S.formRO = null;
+  document.body.classList.toggle("ro", !!S.formRO);
+  _render();
+  if (S.formRO) { const bar = app.querySelector(":scope > .bar"); const rb = roBar(); if (bar) bar.after(rb); else app.prepend(rb); }
+  if (S.view !== "drawing" && document.fullscreenElement) dwgFull(false); if (S.view === "claude" || S.view === "drawing") return;
   // on the tile screens the button sits under EMERGENCY instead of floating over it
-  const fb = feedbackButton(); if (TILES() && ["projects", "menu"].includes(S.view)) fb.classList.add("fb-inline"); app.append(fb); };
+  const fb = feedbackButton(); fb.classList.add("fb-inline"); app.append(fb); };
 const splash = document.getElementById("splash");
 const leave = () => { splash.hidden = true; };
 splash.addEventListener("click", leave);

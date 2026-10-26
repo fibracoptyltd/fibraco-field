@@ -190,6 +190,14 @@ const Store = (() => {
       const pt = await openBytes(await res.arrayBuffer());
       return URL.createObjectURL(new Blob([pt], { type: type || "image/jpeg" }));
     },
+    // keep drawings on the phone ahead of time, so they open with no signal (still encrypted in the cache)
+    async prefetch(urls) {
+      const cache = await caches.open("fibraco-enc").catch(() => null); if (!cache) return 0;
+      let n = 0;
+      for (const u of urls) { try { if (await cache.match(u)) { n++; continue; } if (!navigator.onLine) continue; const r = await fetch(u); if (r.ok) { await cache.put(u, r); n++; } } catch (e) {} }
+      return n;
+    },
+    async cachedCount(urls) { const cache = await caches.open("fibraco-enc").catch(() => null); if (!cache) return 0; let n = 0; for (const u of urls) if (await cache.match(u).catch(() => null)) n++; return n; },
     config(c) { CONF = c; },
     hasFiles: () => !!FK,
     async whoami() {
