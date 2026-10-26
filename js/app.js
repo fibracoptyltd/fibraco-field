@@ -312,7 +312,7 @@ function vProjects() {
         bioSetup(); } }, "Fingerprint")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1793015061";
+const APPV = "1793021006";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -386,7 +386,7 @@ async function sendRegister(p, d, days) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793015061"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793015061"); await loadJs("./js/pdf.js?v=1793015061");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793021006"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793021006"); await loadJs("./js/pdf.js?v=1793021006");
     const { html, title } = attDoc(p, d, days); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
@@ -490,7 +490,7 @@ async function timeZone() {
   try {
     try { Store.kick(); await refreshDevices(true); } catch (e) {}
     await new Promise(r => setTimeout(r, 1800));
-    await loadJs("./js/lib/html2canvas.min.js?v=1793015061"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793015061"); await loadJs("./js/pdf.js?v=1793015061");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793021006"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793021006"); await loadJs("./js/pdf.js?v=1793021006");
     const D = tzData(), stamp = `${dmy(new Date())} ${hhmm()}`, name = `FIBRACO - Time Zone (${stamp})`;
     const pdf = await window.FibPdf.diaryPdf(tzHtml(D), name);
     const json = new File([JSON.stringify(D, null, 1)], name.replace(/[\\/:*?"<>|]+/g, "-") + ".json", { type: "application/json" });
@@ -718,6 +718,8 @@ function vProjectsTiles() {
       installCard(),
       admin ? ((alertsBanner() || [])[0] || null) : null,
       safetyBanner(),
+      (() => { const ds = ymd(today()), n = dueToday().reduce((c, p) => c + checksOpen(p, S.user, ds), 0);
+        return n ? h("button", { type: "button", class: "mbtn today-bar", onclick: () => go("today") }, `${n} check${n === 1 ? "" : "s"} to do today`, h("small", {}, "Tap to see them. Clear every mustard one.")) : null; })(),
       admin ? (() => { const fb = Store.list("fb|").length, waiting = (DEVS || []).filter(d => d.status === "pending").length;
         return h("div", { class: "tgrid g2" },
           tile("fb", "Feedback\nfrom the team", () => go("feedback"), { badge: fb || "", cls: "slim" }),
@@ -764,8 +766,8 @@ function vMenuTiles() {
       myTasks(S.user).length ? tile("list", "My\ntasks", () => go("mysection")) : null,
       sm && p.qcSpots ? tile("check", "QC\nsheets", () => go("qc"), { cls: "qc" }) : null,
       tests,
-      tile("shield", "DSTI", () => startForm("dsti")),
-      APPT(p) ? tile("eye", "My\nchecks", () => go("mychecks"), { badge: checksOpen(p, S.user, ymd(d)) || "", bc: "o" }) : tile("eye", "Inspec-\ntions", () => go("inspections")),
+      tile("shield", "DSTI", () => startForm("dsti"), { cls: dstiDue(p, ymd(d)) ? "must" : "" }),
+      APPT(p) ? tile("eye", "My\nchecks", () => go("mychecks"), { badge: checksOpen(p, S.user, ymd(d)) || "", cls: checksOpen(p, S.user, ymd(d)) ? "must" : "ok" }) : tile("eye", "Inspec-\ntions", () => go("inspections")),
       tile("doc", "Site\ninstruction", () => startForm("si")),
       tile("cart", "Material\norder", () => startForm("order")),
       tile("warn", "Incident", () => startForm("incident")),
@@ -785,8 +787,8 @@ function vMenuTiles() {
       h("span", { class: "tst " + stc[1] }, stc[0]));
     grid = h("div", { class: "tgrid" },
       tile("book", "Daily\ndiary", () => go("mysection"), { cls: "hi" }),
-      tile("shield", "DSTI", () => startForm("dsti")),
-      APPT(p) ? tile("eye", "My\nchecks", () => go("mychecks"), { badge: checksOpen(p, S.user, ymd(d)) || "", bc: "o" }) : tile("eye", "Daily\ninspections", () => go("inspections")),
+      tile("shield", "DSTI", () => startForm("dsti"), { cls: dstiDue(p, ymd(d)) ? "must" : "" }),
+      APPT(p) ? tile("eye", "My\nchecks", () => go("mychecks"), { badge: checksOpen(p, S.user, ymd(d)) || "", cls: checksOpen(p, S.user, ymd(d)) ? "must" : "ok" }) : tile("eye", "Daily\ninspections", () => go("inspections")),
       tests,
       tile("cart", "Material\norder", () => startForm("order")),
       tile("doc", "Site\ninstruction", () => startForm("si")),
@@ -1044,7 +1046,7 @@ function vDone() {
     f.type === "diary" && f.project ? reportStatus(f.project, ymd(f.date)) : null,
     h("div", { class: "stack" },
       f.type === "diary" && f.project && S.final[f.project.id + "|" + ymd(f.date)] ? h("button", { class: "mbtn", onclick: () => { S.hist = ["projects", "calendar", "menu"]; S.view = "review"; render(); window.scrollTo(0, 0); } }, "Back to diary review", h("small", {}, "Client sign-off and KPIs")) : null,
-      f.project && APPT(f.project) ? h("button", { class: "mbtn", onclick: () => { S.hist = ["projects", "calendar", "menu"]; S.view = "mychecks"; render(); window.scrollTo(0, 0); } }, "Back to my checks") : null,
+      f.project && APPT(f.project) ? h("button", { class: "mbtn", onclick: () => { const t = S.ckBack === "today"; S.hist = t ? ["projects"] : ["projects", "calendar", "menu"]; S.view = t ? "today" : "mychecks"; render(); window.scrollTo(0, 0); } }, "Back to my checks") : null,
       f.project ? h("button", { class: "mbtn", onclick: () => { S.hist = ["projects", "calendar"]; S.view = "menu"; render(); window.scrollTo(0, 0); } }, "Back to project") : null,
       h("button", { class: "mbtn ghost", onclick: () => { S.hist = []; S.view = "projects"; render(); window.scrollTo(0, 0); } }, "Back to projects")))];
 }
@@ -1067,11 +1069,11 @@ const CHECKS = {
     details: [["Machine", "text", "e.g. JLG 450AJ"], ["Driver name", "staff"], ["Hour meter reading", "number"]], ans: INORDER,
     groups: [["Inspection checks", ["Check training certificate", "Check load test certificate", "SWL", "Working height 15.5 m", "Load chart visible and correct", "Emergency stops", "Strobe light", "Push buttons", "Switches (selector, key, limit)", "Cables, connections, batteries", "Control boards, joysticks, contactors", "Pulleys (wear, pins, runners)", "Tyres", "Runners (wear, pins, shafts)", "Wire ropes (anchor points, wear, lubrication)", "Platform (wear, pins, welding)", "Columns (wear, runners, pins, welding)", "Platform alignment", "Scissors (pins, bushes, wear)", "Boom (wear, play, straightness, cracks)", "Welding cracks (visual)", "Pump (leak, pressure, noise)", "Oil level", "Cylinders (leaks, mountings)", "Control valves (leaks, operation)", "Bypass valve (fitted, operation)", "Emergency valve", "Piping (leaks, condition)"]]] },
   // Hendrik from site, 26 Oct: cherry picker and harnesses checked together every morning, by Marcel (appointed operator)
-  mewph: { no: "FIBRACO-HSE-CHECK-009 and harness", title: "Cherry picker and harness check", freq: "Daily before first use", basis: "Cherry picker (MEWP) pre-use check (FIBRACO-HSE-CHECK-009, CR 53) by the appointed operator, plus the harness of every person going up in the basket (Construction Regulations 2014, regulation 10, and the site fall protection plan). JLG 450AJ, 15.5 m working height, SWL 227 kg. If anything is Not in order, nobody goes up.",
-    details: [["Machine", "text", "e.g. JLG 450AJ"], ["Operator", "staff"], ["Hour meter reading", "number"], ["Person 1 in the basket", "staff"], ["Harness 1 serial no", "text"], ["Person 2 in the basket", "staff"], ["Harness 2 serial no", "text"]], ans: INORDER,
+  mewph: { no: "FIBRACO-HSE-CHECK-009 and 010", title: "Cherry picker and harness check", freq: "Daily before first use", basis: "Cherry picker (MEWP) pre-use check (FIBRACO-HSE-CHECK-009, CR 53) by the appointed operator, plus the harness and lanyard of every person going up in the basket (FIBRACO-HSE-CHECK-010, Construction Regulations 2014, regulation 10, and the site fall protection plan). JLG 450AJ, 15.5 m working height, SWL 227 kg. If anything is Not in order, nobody goes up.",
+    details: [["Machine", "text", "e.g. JLG 450AJ"], ["Operator", "staff"], ["Hour meter reading", "number"], ["Person 1 in the basket", "staff"], ["Harness 1 serial no", "text"], ["Lanyard 1 serial no", "text"], ["Person 2 in the basket", "staff"], ["Harness 2 serial no", "text"], ["Lanyard 2 serial no", "text"]], ans: INORDER,
     groups: [["Cherry picker", ["Check training certificate", "Check load test certificate", "SWL", "Working height 15.5 m", "Load chart visible and correct", "Emergency stops", "Strobe light", "Push buttons", "Switches (selector, key, limit)", "Cables, connections, batteries", "Control boards, joysticks, contactors", "Pulleys (wear, pins, runners)", "Tyres", "Runners (wear, pins, shafts)", "Wire ropes (anchor points, wear, lubrication)", "Platform (wear, pins, welding)", "Columns (wear, runners, pins, welding)", "Platform alignment", "Scissors (pins, bushes, wear)", "Boom (wear, play, straightness, cracks)", "Welding cracks (visual)", "Pump (leak, pressure, noise)", "Oil level", "Cylinders (leaks, mountings)", "Control valves (leaks, operation)", "Bypass valve (fitted, operation)", "Emergency valve", "Piping (leaks, condition)", "Ground controls lower the basket (rescue)"]],
-             ["Harness, person 1", ["Webbing: no cuts, tears, burns or fraying", "Stitching complete", "D-rings: no cracks, bends or rust", "Buckles adjust and hold", "Lanyard in good condition", "Shock absorber sealed, not deployed", "Hooks close and lock by themselves", "Label legible, within service life", "Harness fitted and worn correctly", "Clipped to the basket anchor before lifting"]],
-             ["Harness, person 2 (N/A if only one goes up)", ["Webbing: no cuts, tears, burns or fraying", "Stitching complete", "D-rings: no cracks, bends or rust", "Buckles adjust and hold", "Lanyard in good condition", "Shock absorber sealed, not deployed", "Hooks close and lock by themselves", "Label legible, within service life", "Harness fitted and worn correctly", "Clipped to the basket anchor before lifting"]]] },
+             ["Harness and lanyard, person 1 (FIBRACO-HSE-CHECK-010)", ["Webbing free of cuts, fraying, burns, holes or melted fibres", "No chemical damage, paint, stains or hardening of the webbing", "No excessive wear, UV fading or stretching", "Stitching intact, no pulled, cut or broken stitches", "Fall indicator not deployed (harness has not arrested a fall)", "Dorsal and sternal D-rings free of cracks, bends, corrosion and sharp edges", "Buckles and adjusters work and lock correctly", "Keepers and strap ends in place", "Label legible with serial number, date of manufacture and standard", "Inspection tag present and within the 6-monthly date", "Harness within the manufacturer's service life", "Lanyard webbing or rope free of cuts, fraying and damage", "Energy absorber pack intact, cover closed, not deployed", "Snap hooks and karabiners close and lock automatically", "Connectors free of cracks, deformation and corrosion", "Short restraint lanyard used in the cherry picker basket", "Harness put on correctly, all straps adjusted snug, leg straps fastened", "Buddy check done before going up in the basket", "Harness and lanyard stored clean and dry in the bag after use"]],
+             ["Harness and lanyard, person 2 (N/A if only one goes up)", ["Webbing free of cuts, fraying, burns, holes or melted fibres", "No chemical damage, paint, stains or hardening of the webbing", "No excessive wear, UV fading or stretching", "Stitching intact, no pulled, cut or broken stitches", "Fall indicator not deployed (harness has not arrested a fall)", "Dorsal and sternal D-rings free of cracks, bends, corrosion and sharp edges", "Buckles and adjusters work and lock correctly", "Keepers and strap ends in place", "Label legible with serial number, date of manufacture and standard", "Inspection tag present and within the 6-monthly date", "Harness within the manufacturer's service life", "Lanyard webbing or rope free of cuts, fraying and damage", "Energy absorber pack intact, cover closed, not deployed", "Snap hooks and karabiners close and lock automatically", "Connectors free of cracks, deformation and corrosion", "Short restraint lanyard used in the cherry picker basket", "Harness put on correctly, all straps adjusted snug, leg straps fastened", "Buddy check done before going up in the basket", "Harness and lanyard stored clean and dry in the bag after use"]]] },
   ladder: { no: "FIBRACO-HSE-CHECK-001", title: "Ladder inspection", freq: "Before use, recorded monthly", basis: "General Safety Regulations 13A. " + LEG,
     details: [["Ladder number", "text"]], ans: OK3,
     groups: [["Inspection", ["Ladder number identified", "Safe load limit identified", "No damage, cracks or bends evident", "Ladder clean and free from splinters or exposed fibres", "Free of corrosion", "Spreader bars undamaged", "Non-skid devices fitted", "Extension locks not defective", "Rungs or steps not loose or missing", "No loose bolts or rivets"]],
@@ -1091,12 +1093,14 @@ const CHECKS = {
   firstaid: { no: "FIBRACO-HSE-CHECK-006", title: "First aid box register", freq: "Monthly and after use", basis: "General Safety Regulations 3(4), first aider. " + LEG,
     details: [["First aid box number", "text"], ["First aider", "staff"]], ans: OK3,
     groups: [["Inspection", ["First aid box identified", "Name of first aider identified on first aid box", "Material safety data sheets available", "Wound cleaner or antiseptic (100 ml)", "Swabs for cleaning wounds", "Cotton wool for padding (100 g)", "Sterile gauze (minimum of 10)", "Forceps (tweezers)", "Scissors (100 mm)", "Safety pins (minimum of 4)", "Triangular bandages (minimum 4)", "Roller bandages (4 x 75 mm x 5 m)", "Roller bandages (4 x 100 mm x 5 m)", "Elastic adhesive tape (25 mm x 3 m)", "Non-allergenic adhesive tape (25 mm x 3 m)", "Assorted adhesive dressing (plasters x 10)", "First aid dressings (4 x 75 mm x 100 mm)", "First aid dressings (4 x 150 mm x 200 mm)", "Straight splints (x 2)", "Disposable latex gloves (x 4)", "CPR mouth piece (x 2)", "Disposable sanitised eye wash water", "Eye patch", "Folding stretcher", "First aider certificate available", "First aid treatment register available", "Unit in good general condition", "Item number identified"]]] },
-  harness: { title: "Harness inspection", freq: "Before use, recorded monthly", basis: "Construction Regulations 2014, regulation 10 and the site fall protection plan.",
-    details: [["Harness serial no", "text"], ["Issued to", "staff"]], ans: OK3,
-    groups: [["Webbing", ["No cuts, tears or fraying", "No burns or melted fibres", "No chemical or paint damage", "Not faded or brittle from sun", "Stitching complete"]],
-             ["Metal parts", ["D rings, no cracks, bends or rust", "Buckles adjust and hold"]],
-             ["Lanyard", ["Lanyard in good condition", "Shock absorber sealed, not deployed", "Hooks close and lock by themselves"]],
-             ["Label", ["Label legible, within service life"]]] },
+  // FIBRACO-HSE-CHECK-010 Rev 00 (26 Oct 2026), word for word. Every day before use.
+  harness: { no: "FIBRACO-HSE-CHECK-010", title: "Harness and lanyard check", freq: "Daily before use", basis: "Construction Regulations 2014, regulation 10, and the site fall protection plan. SANS 50361 / 50355 / 50362. Any item Defect: remove the harness or lanyard from use at once, tag it DO NOT USE and hand it to the Site Manager. A harness that has arrested a fall is never used again.",
+    details: [["Name of user", "staff"], ["Harness make and model", "text"], ["Harness serial number", "text"], ["Date of manufacture", "date"], ["Lanyard serial number", "text"], ["Last formal inspection (6-monthly)", "date"]], ans: OK3,
+    groups: [["Harness webbing and stitching", ["Webbing free of cuts, fraying, burns, holes or melted fibres", "No chemical damage, paint, stains or hardening of the webbing", "No excessive wear, UV fading or stretching", "Stitching intact, no pulled, cut or broken stitches", "Fall indicator not deployed (harness has not arrested a fall)"]],
+             ["Hardware", ["Dorsal and sternal D-rings free of cracks, bends, corrosion and sharp edges", "Buckles and adjusters work and lock correctly", "Keepers and strap ends in place"]],
+             ["Labels and records", ["Label legible with serial number, date of manufacture and standard", "Inspection tag present and within the 6-monthly date", "Harness within the manufacturer's service life"]],
+             ["Lanyard and connectors", ["Lanyard webbing or rope free of cuts, fraying and damage", "Energy absorber pack intact, cover closed, not deployed", "Snap hooks and karabiners close and lock automatically", "Connectors free of cracks, deformation and corrosion", "Short restraint lanyard used in the cherry picker basket"]],
+             ["Fit and storage", ["Harness put on correctly, all straps adjusted snug, leg straps fastened", "Buddy check done before going up in the basket", "Harness and lanyard stored clean and dry in the bag after use"]]] },
   fire: { title: "Fire extinguishers", freq: "Before use, recorded monthly", basis: "Construction Regulations 2014, regulation 29(g) and (h), fire equipment inspector. Tagged with the client's monthly colour code. Yearly service by an accredited provider.",
     details: [["Colour code this month", "select", ["Red", "Yellow", "Blue", "Green", "White", "Orange"]]], ans: [["Pass", "Pass"], ["Fail", "Fail"], ["N/A", "N/A"]], addable: "+ Add extinguisher",
     groups: [["Extinguishers (gauge in green, pin and seal intact, hose clear, service in date, mounted and signed)", ["Vehicle 1", "Vehicle 2", "Cherry picker", "Work area"]]] },
@@ -1163,18 +1167,55 @@ function myChecks(p, who, ds) {
       }
       continue;
     }
-    const list = myForms(p, who, k).map(o => o.date).sort(), last = list[list.length - 1];
+    // the DSTI is one per crew per day: done when any supervisor on the project has done it
+    const forms = k === "dsti" ? Store.list(`form|${p.id}|`).map(([, o]) => o).filter(o => o && o.type === "dsti") : myForms(p, who, k);
+    const list = forms.map(o => o.date).sort(), last = list[list.length - 1];
     let done, late = false;
     if (often === "daily") done = list.includes(ds);
     else if (often === "weekly") { done = list.some(x => weekStart(x) === weekStart(ds) && x <= ds); late = new Date(ds + "T12:00:00").getDay() >= 5 || new Date(ds + "T12:00:00").getDay() === 0; }
     // monthly: due in the first week of the month, or in the first 3 days on a new site
     else if (often === "monthly") { done = list.some(x => x.slice(0, 7) === ds.slice(0, 7) && x <= ds); const st = p.start && p.start.slice(0, 7) === ds.slice(0, 7) ? p.start : null, dl = new Date((st || ds.slice(0, 8) + "01") + "T12:00:00"); dl.setDate(dl.getDate() + (st ? 2 : 6)); late = ds > ymd(dl); }
     else if (often === "once") { done = list.some(x => x <= ds); late = p.start ? ds > p.start : false; }
-    out.push({ k, often, title: ckName(k), st: done ? "done" : late ? "late" : "due", sub: `${OFTEN[often]}${CHECKS[k] && CHECKS[k].no ? "  |  " + CHECKS[k].no : ""}${last ? "  |  last " + dmy(new Date(last + "T12:00:00")) : ""}` });
+    let next = "";
+    if (done && often === "weekly") { const n = new Date(weekStart(ds) + "T12:00:00"); n.setDate(n.getDate() + 7); next = "  |  next due " + dmy(n); }
+    if (done && often === "monthly") { const n = new Date(ds.slice(0, 8) + "01T12:00:00"); n.setMonth(n.getMonth() + 1); next = "  |  next due " + dmy(n); }
+    const by = k === "dsti" && done ? (forms.find(o => o.date === ds) || {}).savedBy : "";
+    out.push({ k, often, title: ckName(k), st: done ? "done" : late ? "late" : "due",
+      sub: done ? `Done ${dmy(new Date(last + "T12:00:00"))}${by && by !== who ? " by " + by.split(" ")[0] : ""}${next}${CHECKS[k] && CHECKS[k].no ? "  |  " + CHECKS[k].no : ""}`
+        : `${OFTEN[often]}${CHECKS[k] && CHECKS[k].no ? "  |  " + CHECKS[k].no : ""}${last ? "  |  last " + dmy(new Date(last + "T12:00:00")) : ""}` });
   }
   return out;
 }
-const checksOpen = (p, who, ds) => myChecks(p, who, ds).filter(x => x.st !== "done" && x.st !== "wait").length;
+const checksOpen = (p, who, ds) => myChecks(p, who, ds).filter(x => !x.watch && x.st !== "done" && x.st !== "wait").length;
+// Wanro 26 Oct: every check a man still has to do shows MUSTARD. Once he has submitted it, it turns GREEN.
+const GROUPS = [["daily", "EVERY DAY"], ["weekly", "THIS WEEK"], ["monthly", "THIS MONTH (before use, record monthly)"], ["once", "ONCE"], ["event", "WHEN SOMETHING HAPPENS"]];
+const dstiDue = (p, ds) => !!APPT(p) && myChecks(p, S.user, ds).some(x => x.k === "dsti" && x.st !== "done");
+const dueToday = () => PROJECTS.filter(p => APPT(p) && projPhase(p) === "live");
+function checkRows(p, who, ds) {
+  const list = myChecks(p, who, ds), out = [];
+  for (const [often, lab] of GROUPS) {
+    const g = list.filter(x => x.often === often); if (!g.length) continue;
+    out.push(h("div", { class: "ck-head" }, lab));
+    for (const x of g) out.push(h("button", { type: "button", class: "mbtn ck-row " + (x.watch ? "watch " : "") + x.st, onclick: () => x.st === "wait" ? null : (S.project = p, S.ckBack = S.view, openCheck(x)) },
+      h("span", { class: "ck-t" }, x.title, h("small", {}, x.sub)),
+      x.st === "late" ? h("span", { class: "tst red" }, "LATE") : x.st === "wait" ? h("span", { class: "tst blue" }, "WAITING") : x.st === "done" ? h("span", { class: "ck-ok" }, "DONE \u2713") : x.watch ? h("span", { class: "tst blue" }, "NOT YET") : h("span", { class: "ck-todo" }, "TO DO")));
+  }
+  return out;
+}
+// The first time he opens the app each day he lands on today's checks.
+function vToday() {
+  const ds = ymd(today()), ps = dueToday(), left = ps.reduce((n, p) => n + checksOpen(p, S.user, ds), 0);
+  return [topbar("Today's checks", nice(today()), true),
+    h("div", { class: "today-sum " + (left ? "must" : "clear") }, left ? `${S.user.split(" ")[0]}, you have ${left} check${left === 1 ? "" : "s"} to do today. Clear every mustard one.` : `${S.user.split(" ")[0]}, all your checks are done for today.`),
+    ...ps.map(p => h("div", { class: "stack" }, h("div", { class: "ck-proj" }, p.name), ...checkRows(p, S.user, ds))),
+    h("button", { type: "button", class: "btn-w today-go", onclick: () => { S.view = "projects"; S.hist = []; render(); window.scrollTo(0, 0); } }, "Go to my projects"),
+    h("p", { class: "note" }, "The list comes from your appointments in the safety file. If something is wrong here, tell Wanro.")];
+}
+function morningChecks() {
+  if (!dueToday().length) return false;
+  try { const k = "fib_today_" + S.user, ds = ymd(today()); if (localStorage.getItem(k) === ds) return false; localStorage.setItem(k, ds); } catch (e) { return false; }
+  S.hist = ["projects"]; S.view = "today"; return true;
+}
 function openCheck(x) {
   if (x.watch) return showInfo(x.title, x.st === "done" ? `${x.person} did it today. It is filed under Inspections for the project.` : `${x.person} has not done it yet today. Nobody may go up in the cherry picker until he has. Phone him.`);
   if (x.k === "flash") return sendFlash(S.project, x.ref);
@@ -1184,11 +1225,9 @@ function openCheck(x) {
 }
 function vMyChecks() {
   const p = S.project, a = APPT(p), ds = ymd(S.date), list = myChecks(p, S.user, ds);
-  const chip = { done: ["DONE", "green"], due: ["DUE", "orange"], late: ["LATE", "red"], wait: ["WAITING", "blue"] };
   return [topbar("My checks", `${p.short}  |  ${nice(S.date)}`, true),
     h("div", { class: "appt-card" }, h("b", {}, `${S.user}, your appointments on ${p.short}`), h("ul", {}, a.appts.map(x => h("li", {}, x)))),
-    h("div", { class: "stack" }, list.length ? list.map(x => h("button", { type: "button", class: "mbtn ck-row " + x.st, onclick: () => x.st === "wait" ? null : openCheck(x) },
-      h("span", { class: "ck-t" }, x.title, h("small", {}, x.sub)), h("span", { class: "tst " + chip[x.st][1] }, chip[x.st][0]))) : h("p", { class: "note" }, "Nothing for you on this project.")),
+    h("div", { class: "stack" }, list.length ? checkRows(p, S.user, ds) : h("p", { class: "note" }, "Nothing for you on this project.")),
     h("button", { type: "button", class: "mbtn", onclick: () => go("inspections") }, "All checklists", h("small", {}, "Any other check you must do today")),
     h("p", { class: "note" }, "This list comes from the appointment register in the safety file. If something is wrong here, tell Wanro.")];
 }
@@ -1424,7 +1463,7 @@ async function sendOrder(f) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793015061"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793015061"); await loadJs("./js/pdf.js?v=1793015061");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793021006"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793021006"); await loadJs("./js/pdf.js?v=1793021006");
     const { html, title } = orderDoc(f);
     const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
@@ -2388,7 +2427,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793015061"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793015061"); await loadJs("./js/pdf.js?v=1793015061");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793021006"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793021006"); await loadJs("./js/pdf.js?v=1793021006");
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
     // Phones only open the share menu straight after a tap, so the last step is one tap on Share.
@@ -2441,7 +2480,7 @@ async function processMailQ() {
   const q = mqGet(); if (!q.length) return;
   mqBusy = true;
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793015061"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793015061"); await loadJs("./js/pdf.js?v=1793015061");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793021006"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793021006"); await loadJs("./js/pdf.js?v=1793021006");
     for (const j of q) {
       const p = CFG.projects.find(x => x.id === j.pid); if (!p) { j.done = true; continue; }
       if (j.flash) { // flash report of an incident or near miss
@@ -2483,7 +2522,7 @@ async function processMailQ() {
       } catch (e) { j.tries++; j.err = e.message; if (e.status === 403) j.done = true; }
     }
   } catch (e) { window.__mqErr = String(e && e.message || e); /* PDF tools not loaded yet; try again later */ }
-  finally { const jk = x => x.flash || x.pid + "|" + x.ds; mqSet(mqGet().map(x => q.find(y => jk(y) === jk(x)) || x).filter(x => !x.done)); mqBusy = false; if (["done", "review", "menu", "mychecks"].includes(S.view)) render(); }
+  finally { const jk = x => x.flash || x.pid + "|" + x.ds; mqSet(mqGet().map(x => q.find(y => jk(y) === jk(x)) || x).filter(x => !x.done)); mqBusy = false; if (["done", "review", "menu", "mychecks", "today"].includes(S.view)) render(); }
 }
 addEventListener("online", () => setTimeout(processMailQ, 2000));
 window.FibReports = { queue: (pid, ds) => queueReports(CFG.projects.find(x => x.id === pid), new Date(ds + "T12:00:00")), run: () => processMailQ(), pending: () => mqGet() };
@@ -2707,7 +2746,7 @@ function vDelays() {
 // ---------- render ----------
 let render = function () {
   const v = S.view;
-  const views = { users: vUsers, projects: vProjects, calendar: vCalendar, menu: vMenu, inspections: vInspections, client: vClient, tests: vTests, link: vLink, logtest: vLogTest, biocheck: vBioCheck, allocate: vAllocate, mysection: vMySection, review: vReview, kpi: vKpi, rams: vRams, ramsdoc: vRamsDoc, drawings: vDrawings, drawing: vDrawing, diary: vDiary, dsti: vDsti, inspection: vInspection, check: vCheck, toolbox: vToolbox, incident: vIncident, si: vSI, order: vOrder, done: vDone, feedback: vFeedback, devices: vDevices, dash: vDash, qc: vQc, qcspot: vQcSpot, tsheets: vTsheets, tsheet: vTsheet, treport: vTreport, attendance: vAttendance, claude: vClaude, delays: vDelays, nearmiss: vNearMiss, jobobs: vJobObs, adhoc: vAdhoc, adhocjob: vAdhocJob, mychecks: vMyChecks, invest: vInvest };
+  const views = { users: vUsers, projects: vProjects, calendar: vCalendar, menu: vMenu, inspections: vInspections, client: vClient, tests: vTests, link: vLink, logtest: vLogTest, biocheck: vBioCheck, allocate: vAllocate, mysection: vMySection, review: vReview, kpi: vKpi, rams: vRams, ramsdoc: vRamsDoc, drawings: vDrawings, drawing: vDrawing, diary: vDiary, dsti: vDsti, inspection: vInspection, check: vCheck, toolbox: vToolbox, incident: vIncident, si: vSI, order: vOrder, done: vDone, feedback: vFeedback, devices: vDevices, dash: vDash, qc: vQc, qcspot: vQcSpot, tsheets: vTsheets, tsheet: vTsheet, treport: vTreport, attendance: vAttendance, claude: vClaude, delays: vDelays, nearmiss: vNearMiss, jobobs: vJobObs, adhoc: vAdhoc, adhocjob: vAdhocJob, mychecks: vMyChecks, invest: vInvest, today: vToday };
   app.replaceChildren(...[].concat((views[v] || vProjects)()).filter(Boolean));
   pageForm();
 }
@@ -2820,7 +2859,7 @@ function persistSoon() { clearTimeout(persistT); persistT = setTimeout(persist, 
 const saveLink = () => persist();
 ["input", "change", "click"].forEach(t => document.addEventListener(t, persistSoon, true));
 // Changes from other phones
-const SAFE_VIEWS = ["projects", "calendar", "menu", "adhoc", "mychecks", "review", "kpi", "tests", "link", "client", "drawings", "rams"];
+const SAFE_VIEWS = ["projects", "calendar", "menu", "adhoc", "mychecks", "today", "review", "kpi", "tests", "link", "client", "drawings", "rams"];
 function hydrate(ids) {
   let touched = false;
   for (const id of ids) {
@@ -3438,7 +3477,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793015061"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793015061"); await loadJs("./js/pdf.js?v=1793015061");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793021006"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793021006"); await loadJs("./js/pdf.js?v=1793021006");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
@@ -3785,6 +3824,7 @@ async function startApp() {
   S.view = "projects"; S.hist = [];
   // every person has one saved signature. On a new phone, fetch it first before asking for a new one.
   if (!savedSig() && Store.online()) { screen(centre("Opening...")); await Store.sync(); }
+  morningChecks();
   if (!savedSig()) setupSignature(() => { render(); });
   else render();
   Store.sync();

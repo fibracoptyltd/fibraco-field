@@ -522,3 +522,26 @@ body.paged .fb-btn{bottom:calc(84px + env(safe-area-inset-bottom))}
 .docpage { width: 794px; background: #fff; }
 .docpage .doc { overflow: visible; font-size: 13px; }
 .docpage .doc table { min-width: 0; }
+/* My checks colours (Wanro 26 Oct): mustard = still to do today, green = done and submitted */
+.mbtn.ck-row.due,.mbtn.ck-row.late{background:#e1ad01;border-color:#c39500;color:#231a00;box-shadow:none}
+.mbtn.ck-row.due small,.mbtn.ck-row.late small{color:#3d2f00}
+.mbtn.ck-row.late{box-shadow:inset 5px 0 0 #c8102e}
+.mbtn.ck-row.done{background:#34e27c;border-color:#1fbf62;color:#05301a;opacity:1;box-shadow:none}
+.mbtn.ck-row.done small{color:#0b4a28}
+.mbtn.ck-row.watch.due{background:#fff;border-color:#d6dbe2;color:#15191e;box-shadow:inset 4px 0 0 #0069aa}
+.mbtn.ck-row.watch.due small{color:#5b6573}
+.ck-todo{background:#231a00;color:#e1ad01;font-weight:900;font-size:11px;letter-spacing:.06em;border-radius:4px;padding:4px 7px;white-space:nowrap}
+.ck-ok{background:#05301a;color:#34e27c;font-weight:900;font-size:11px;letter-spacing:.06em;border-radius:4px;padding:4px 7px;white-space:nowrap}
+.ck-head{font-size:11px;font-weight:900;letter-spacing:.08em;color:#5b6573;margin:12px 2px 2px}
+.ck-proj{font-weight:900;font-size:15px;margin:14px 2px 0;text-transform:uppercase;letter-spacing:.03em}
+.today-sum{border-radius:8px;padding:12px 14px;margin:10px 0;font-weight:800;font-size:15px}
+.today-sum.must{background:#e1ad01;color:#231a00}
+.today-sum.clear{background:#34e27c;color:#05301a}
+.today-go{width:100%;padding:13px;border-radius:6px;margin-top:16px;font-weight:800}
+.mbtn.today-bar{background:#e1ad01;border-color:#c39500;color:#231a00;font-weight:900;margin:10px 0}
+.mbtn.today-bar small{color:#3d2f00}
+.tile.must{background:#e1ad01;border-color:#c39500;color:#231a00}
+.tile.must .ti-ic svg{stroke:#231a00}
+.tile.must .tbadge{background:#231a00;color:#e1ad01}
+.tile.ok{background:#34e27c;border-color:#1fbf62;color:#05301a}
+.tile.ok .ti-ic svg{stroke:#05301a}
