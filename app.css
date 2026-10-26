@@ -566,3 +566,5 @@ body.paged .fb-btn{bottom:calc(84px + env(safe-area-inset-bottom))}
 details.appt-card summary{cursor:pointer;list-style:none}
 details.appt-card summary::after{content:" \25BE";color:#5b6573}
 details.appt-card[open] summary::after{content:" \25B4"}
+.ck-no{font-size:8.5px;font-weight:800;letter-spacing:.04em;color:#5b6573;font-family:var(--body)}
+.tile.ck-tile.later .ck-s{background:#d6dbe2;color:#15191e}

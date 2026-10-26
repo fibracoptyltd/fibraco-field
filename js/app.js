@@ -312,7 +312,7 @@ function vProjects() {
         bioSetup(); } }, "Fingerprint")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1793031410";
+const APPV = "1793033563";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -386,7 +386,7 @@ async function sendRegister(p, d, days) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793031410"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793031410"); await loadJs("./js/pdf.js?v=1793031410");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793033563"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793033563"); await loadJs("./js/pdf.js?v=1793033563");
     const { html, title } = attDoc(p, d, days); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
@@ -490,7 +490,7 @@ async function timeZone() {
   try {
     try { Store.kick(); await refreshDevices(true); } catch (e) {}
     await new Promise(r => setTimeout(r, 1800));
-    await loadJs("./js/lib/html2canvas.min.js?v=1793031410"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793031410"); await loadJs("./js/pdf.js?v=1793031410");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793033563"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793033563"); await loadJs("./js/pdf.js?v=1793033563");
     const D = tzData(), stamp = `${dmy(new Date())} ${hhmm()}`, name = `FIBRACO - Time Zone (${stamp})`;
     const pdf = await window.FibPdf.diaryPdf(tzHtml(D), name);
     const json = new File([JSON.stringify(D, null, 1)], name.replace(/[\\/:*?"<>|]+/g, "-") + ".json", { type: "application/json" });
@@ -779,13 +779,13 @@ function vMenuTiles() {
       sm && p.qcSpots ? tile("check", "QC\nsheets", () => go("qc"), { cls: "qc" }) : null,
       tests,
       tile("shield", "DSTI", () => startForm("dsti"), { cls: dstiDue(p, ymd(d)) ? "must" : "" }),
-      APPT(p) ? tile("eye", "My\nchecks", () => go("mychecks"), { badge: checksOpen(p, S.user, ymd(d)) || "", cls: checksOpen(p, S.user, ymd(d)) ? "must" : "ok" }) : tile("eye", "Inspec-\ntions", () => go("inspections")),
+      APPT(p) ? tile("eye", "My\nchecks", () => go("mychecks"), { badge: checksOpen(p, S.user, ymd(d)) || "", cls: checksOpen(p, S.user, ymd(d)) ? "must" : myChecks(p, S.user, ymd(d)).some(x => x.st === "later") ? "" : "ok" }) : tile("eye", "Inspec-\ntions", () => go("inspections")),
       tile("doc", "Site\ninstruction", () => startForm("si")),
       tile("cart", "Material\norder", () => startForm("order")),
       tile("warn", "Incident", () => startForm("incident")),
       tile("near", "Near\nmiss", () => startForm("nearmiss"), { cls: "nm" }),
       tile("obs", "Job\nobservation", () => startForm("jobobs")),
-      tile("map", "Drawings", () => go("drawings")),
+      tile("map", "Drawings and\nschedule", () => go("drawings")),
       tile("rams", "RAMS", () => go("rams")),
       tile("clock", "Internal\ndelays", () => go("delays"), dl),
       contacts].filter(Boolean);
@@ -800,13 +800,13 @@ function vMenuTiles() {
     grid = h("div", { class: "tgrid" },
       tile("book", "Daily\ndiary", () => go("mysection"), { cls: "hi" }),
       tile("shield", "DSTI", () => startForm("dsti"), { cls: dstiDue(p, ymd(d)) ? "must" : "" }),
-      APPT(p) ? tile("eye", "My\nchecks", () => go("mychecks"), { badge: checksOpen(p, S.user, ymd(d)) || "", cls: checksOpen(p, S.user, ymd(d)) ? "must" : "ok" }) : tile("eye", "Daily\ninspections", () => go("inspections")),
+      APPT(p) ? tile("eye", "My\nchecks", () => go("mychecks"), { badge: checksOpen(p, S.user, ymd(d)) || "", cls: checksOpen(p, S.user, ymd(d)) ? "must" : myChecks(p, S.user, ymd(d)).some(x => x.st === "later") ? "" : "ok" }) : tile("eye", "Daily\ninspections", () => go("inspections")),
       tests,
       tile("cart", "Material\norder", () => startForm("order")),
       tile("doc", "Site\ninstruction", () => startForm("si")),
       tile("warn", "Incident\nreport", () => startForm("incident")),
       tile("near", "Near\nmiss", () => startForm("nearmiss"), { cls: "nm" }),
-      tile("map", "Drawings", () => go("drawings")),
+      tile("map", "Drawings and\nschedule", () => go("drawings")),
       tile("rams", "RAMS", () => go("rams")),
       tile("clock", "Internal\ndelays", () => go("delays"), dl),
       contacts);
@@ -1141,11 +1141,18 @@ const CHECKS = {
 const INSPECT_ORDER = ["toolbox", "ppe", "vehicle", "mewph", "mewp", "ladder", "extension", "tools", "drill", "generator", "harness", "firstaid", "fire", "stacking", "siteinsp", "sherep", "edrill"];
 
 function vInspections() {
-  return [topbar("Daily inspections", S.project.short, true), projCard(S.project),
-    h("div", { class: "stack" }, INSPECT_ORDER.map(k => k === "toolbox"
-      ? h("button", { class: "mbtn", onclick: () => startForm("toolbox") }, "Daily toolbox talk", h("small", {}, "Daily before work"))
-      : h("button", { class: "mbtn", onclick: () => startForm("check", k) }, CHECKS[k].title, h("small", {}, CHECKS[k].freq + (CHECKS[k].no ? "  |  " + CHECKS[k].no : ""))))),
-    h("p", { class: "note" }, "Each one files under the project in its own folder, ready for audits.")];
+  // square tiles, three to a row, like the rest of the app (Wanro 26 Oct). Each job only shows its own checklists:
+  // the cherry picker is Bioseco's machine, never on the OPGW list (no cross-over between the two jobs).
+  const p = S.project, keys = INSPECT_ORDER.filter(k => p.kind === "opgw" ? !["mewph", "mewp"].includes(k) : k !== "mewp");
+  const OFT = f => /daily|every day/i.test(f) ? "DAILY" : /weekly/i.test(f) ? "WEEKLY" : /monthly/i.test(f) ? "MONTHLY" : "";
+  return [topbar("All checklists", `${p.short}  |  ${p.name}`, true),
+    h("div", { class: "tgrid ck-grid" }, ...keys.map(k => {
+      const [nm, ic] = k === "toolbox" ? ["Toolbox\ntalk", "users"] : (CK_TILE[k] || [CHECKS[k].title, "check"]), fr = k === "toolbox" ? "DAILY" : OFT(CHECKS[k].freq);
+      return h("button", { type: "button", class: "tile ck-tile", "aria-label": k === "toolbox" ? "Daily toolbox talk" : CHECKS[k].title, onclick: () => k === "toolbox" ? startForm("toolbox") : startForm("check", k) },
+        fr ? h("span", { class: "ck-f" }, fr) : null, ticon(ic), h("span", { class: "tl" }, ...nm.split("\n").flatMap((y, i) => i ? [h("br"), y] : [y])),
+        CHECKS[k] && CHECKS[k].no ? h("span", { class: "ck-no" }, CHECKS[k].no.replace("FIBRACO-HSE-", "")) : null);
+    })),
+    h("p", { class: "note" }, `Each one files under ${p.short} in its own folder, ready for audits.`)];
 }
 
 // ---------- My checks: each person's appointments from the safety file drive his own list of checks ----------
@@ -1164,6 +1171,7 @@ const incidentsOf = p => Store.list(`form|${p.id}|`).map(([id, o]) => o && Objec
 const investOf = (p, id) => Store.list(`form|${p.id}|`).map(([, o]) => o).find(o => o && o.type === "invest" && o.ref === id);
 function myChecks(p, who, ds) {
   const a = APPT(p, who); if (!a) return [];
+  if (p.start && ds < p.start) return a.checks.filter(([k, o]) => o !== "event").map(([k, often]) => k.startsWith("watch:") ? null : { k, often, title: ckName(k), st: "later", sub: `Starts ${dmy(new Date(p.start + "T12:00:00"))}` }).filter(Boolean);
   const out = [];
   for (const [k, often] of a.checks) {
     if (k.startsWith("watch:")) {
@@ -1199,7 +1207,7 @@ function myChecks(p, who, ds) {
   }
   return out;
 }
-const checksOpen = (p, who, ds) => myChecks(p, who, ds).filter(x => !x.watch && x.st !== "done" && x.st !== "wait").length;
+const checksOpen = (p, who, ds) => myChecks(p, who, ds).filter(x => !x.watch && !["done", "wait", "later"].includes(x.st)).length;
 // Wanro 26 Oct: every check a man still has to do shows MUSTARD. Once he has submitted it, it turns GREEN.
 const GROUPS = [["daily", "EVERY DAY"], ["weekly", "THIS WEEK"], ["monthly", "THIS MONTH (before use, record monthly)"], ["once", "ONCE"], ["event", "WHEN SOMETHING HAPPENS"]];
 const dstiDue = (p, ds) => !!APPT(p) && myChecks(p, S.user, ds).some(x => x.k === "dsti" && x.st !== "done");
@@ -1213,9 +1221,9 @@ function checkRows(p, who, ds) {
     out.push(h("div", { class: "tgrid ck-grid" }, ...g.map(x => { const often = x.often;
       const [nm, ic] = CK_TILE[x.watch ? x.key : x.k] || [x.title, "check"];
       const label = x.watch ? `${x.person.split(" ")[0]}'s\n${nm.split("\n")[0].toLowerCase()}` : x.ref ? `${nm}\n${x.ref.type === "nearmiss" ? "near miss" : "incident"} ${dmy(new Date(x.ref.date + "T12:00:00")).slice(0, 5)}` : nm;
-      const st = x.st === "done" ? "DONE \u2713" : x.st === "late" ? "LATE" : x.st === "wait" ? "WAITING" : x.watch ? "NOT YET" : "TO DO";
+      const st = x.st === "done" ? "DONE \u2713" : x.st === "late" ? "LATE" : x.st === "wait" ? "WAITING" : x.st === "later" ? "FROM " + x.sub.slice(7, 12) : x.watch ? "NOT YET" : "TO DO";
       return h("button", { type: "button", class: "tile ck-tile " + (x.watch ? "watch " : "") + x.st, "aria-label": `${x.title}. ${st}. ${x.sub}`,
-        onclick: () => x.st === "wait" ? null : (S.project = p, S.ckBack = S.view, openCheck(x)) },
+        onclick: () => x.st === "wait" ? null : x.st === "later" ? showInfo(x.title, `${p.short} ${x.sub.toLowerCase()}. This check starts on that day.`) : (S.project = p, S.ckBack = S.view, openCheck(x)) },
         h("span", { class: "ck-f" }, OFT[often]), ticon(ic), h("span", { class: "tl" }, ...label.split("\n").flatMap((y, i) => i ? [h("br"), y] : [y])), h("span", { class: "ck-s" }, st));
     })));
   }
@@ -1482,7 +1490,7 @@ async function sendOrder(f) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793031410"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793031410"); await loadJs("./js/pdf.js?v=1793031410");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793033563"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793033563"); await loadJs("./js/pdf.js?v=1793033563");
     const { html, title } = orderDoc(f);
     const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
@@ -1547,8 +1555,8 @@ addEventListener("resize", fitDocs);
 
 // ---------- site drawings ----------
 function vDrawings() {
-  return [topbar("Site drawings", S.project.short, true), projCard(S.project),
-    h("p", { class: "form-sub" }, (S.project.dwg || []).length ? "This project's drawings, latest revision only." : "No drawings loaded for this project yet. The office adds them."),
+  return [topbar("Drawings and schedule", S.project.short, true), projCard(S.project),
+    h("p", { class: "form-sub" }, (S.project.dwg || []).length ? "This project's drawings and schedule, latest revision only. Tap one to open it, pinch to zoom." : "No drawings or schedule loaded for this project yet. The office adds them."),
     ...(S.project.dwg || []).map(c => sheet("", h("div", { class: "band" }, `${c.name}  (${c.items.length})`),
       c.items.length ? h("table", {}, h("tbody", {}, c.items.map(d => h("tr", { style: "cursor:pointer", onclick: () => { S.dwg = d; S.zoom = 1; go("drawing"); } },
         h("td", { style: "width:92px;padding:6px" }, encImg(d.img, { alt: d.title, style: "width:80px;height:56px;object-fit:cover;border:1px solid #c9ced6;border-radius:4px;display:block;background:#e6e9ed" })),
@@ -2446,7 +2454,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793031410"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793031410"); await loadJs("./js/pdf.js?v=1793031410");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793033563"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793033563"); await loadJs("./js/pdf.js?v=1793033563");
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
     // Phones only open the share menu straight after a tap, so the last step is one tap on Share.
@@ -2499,7 +2507,7 @@ async function processMailQ() {
   const q = mqGet(); if (!q.length) return;
   mqBusy = true;
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793031410"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793031410"); await loadJs("./js/pdf.js?v=1793031410");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793033563"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793033563"); await loadJs("./js/pdf.js?v=1793033563");
     for (const j of q) {
       const p = CFG.projects.find(x => x.id === j.pid); if (!p) { j.done = true; continue; }
       if (j.flash) { // flash report of an incident or near miss
@@ -3496,7 +3504,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793031410"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793031410"); await loadJs("./js/pdf.js?v=1793031410");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793033563"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793033563"); await loadJs("./js/pdf.js?v=1793033563");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
