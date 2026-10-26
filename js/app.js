@@ -312,7 +312,7 @@ function vProjects() {
         bioSetup(); } }, "Fingerprint")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1793034471";
+const APPV = "1793034644";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -386,7 +386,7 @@ async function sendRegister(p, d, days) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793034471"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793034471"); await loadJs("./js/pdf.js?v=1793034471");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793034644"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793034644"); await loadJs("./js/pdf.js?v=1793034644");
     const { html, title } = attDoc(p, d, days); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
@@ -490,7 +490,7 @@ async function timeZone() {
   try {
     try { Store.kick(); await refreshDevices(true); } catch (e) {}
     await new Promise(r => setTimeout(r, 1800));
-    await loadJs("./js/lib/html2canvas.min.js?v=1793034471"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793034471"); await loadJs("./js/pdf.js?v=1793034471");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793034644"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793034644"); await loadJs("./js/pdf.js?v=1793034644");
     const D = tzData(), stamp = `${dmy(new Date())} ${hhmm()}`, name = `FIBRACO - Time Zone (${stamp})`;
     const pdf = await window.FibPdf.diaryPdf(tzHtml(D), name);
     const json = new File([JSON.stringify(D, null, 1)], name.replace(/[\\/:*?"<>|]+/g, "-") + ".json", { type: "application/json" });
@@ -1490,7 +1490,7 @@ async function sendOrder(f) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793034471"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793034471"); await loadJs("./js/pdf.js?v=1793034471");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793034644"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793034644"); await loadJs("./js/pdf.js?v=1793034644");
     const { html, title } = orderDoc(f);
     const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
@@ -1555,32 +1555,52 @@ addEventListener("resize", fitDocs);
 
 // ---------- site drawings ----------
 function vDrawings() {
-  return [topbar("Drawings and schedule", S.project.short, true), projCard(S.project),
-    h("p", { class: "form-sub" }, (S.project.dwg || []).length ? "This project's drawings and schedule, latest revision only. Tap one to open it, pinch to zoom." : "No drawings or schedule loaded for this project yet. The office adds them."),
-    ...(S.project.dwg || []).map(c => sheet("", h("div", { class: "band" }, `${c.name}  (${c.items.length})`),
-      c.items.length ? h("table", {}, h("tbody", {}, c.items.map(d => h("tr", { style: "cursor:pointer", onclick: () => { S.dwg = d; S.zoom = 1; go("drawing"); } },
-        h("td", { style: "width:92px;padding:6px" }, encImg(d.img, { alt: d.title, style: "width:80px;height:56px;object-fit:cover;border:1px solid #c9ced6;border-radius:4px;display:block;background:#e6e9ed" })),
-        h("td", { style: "padding:8px" }, h("div", { style: "font-weight:800;font-size:13.5px" }, d.title), h("div", { style: "font-size:12px;color:#5b6470;margin-top:2px" }, `${d.no}${d.rev ? "  |  Rev " + d.rev : ""}`), h("div", { style: "font-size:11.5px;color:#1e8e3e;font-weight:700;margin-top:2px" }, d.status)),
-        h("td", { style: "width:28px;text-align:center;color:#0069aa;font-weight:900" }, "›")))))
-      : h("div", { style: "padding:12px;color:#9aa3ad;font-style:italic;font-size:13px" }, "Nothing uploaded yet")))];
+  // square tiles, three to a row, grouped (Wanro 26 Oct). Tap one: it opens full screen.
+  const cats = S.project.dwg || [];
+  return [topbar("Drawings and schedule", S.project.short, true),
+    cats.length ? null : h("p", { class: "note" }, "No drawings or schedule loaded for this project yet. The office adds them."),
+    ...cats.map(c => h("div", { class: "dwg-cat" }, h("div", { class: "ck-head" }, `${c.name.toUpperCase()} (${c.items.length})`),
+      h("div", { class: "tgrid dwg-grid" }, ...c.items.map(d => h("button", { type: "button", class: "dwg-tile", "aria-label": `${d.title}, ${d.no}`, onclick: () => { S.dwg = d; S.zoom = 1; dwgFull(true); go("drawing"); } },
+        encImg(d.img, { alt: "", class: "dwg-th" }),
+        h("span", { class: "dwg-t" }, d.title), h("span", { class: "dwg-n" }, `${d.no.replace(/ page /, " p")}${d.rev ? "  Rev " + d.rev : ""}`)))))),
+    cats.length ? h("p", { class: "note" }, "Latest revision only. Tap one to open it full screen. Turn the phone sideways for a wide drawing.") : null];
+}
+// Full screen for drawings: the whole phone screen, and the phone may turn sideways while a drawing is open.
+function dwgFull(on) {
+  try {
+    if (on) {
+      const el = document.documentElement;
+      if (el.requestFullscreen && !document.fullscreenElement) el.requestFullscreen({ navigationUI: "hide" }).then(() => { try { screen.orientation.lock("any").catch(() => {}); } catch (e) {} }).catch(() => {});
+      else { try { screen.orientation.lock("any").catch(() => {}); } catch (e) {} }
+    } else {
+      try { screen.orientation.unlock(); } catch (e) {}
+      if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
+    }
+  } catch (e) {}
 }
 function vDrawing() {
   const d = S.dwg;
   const img = encImg(d.img, { alt: d.title, draggable: "false", style: "display:block;max-width:none;user-select:none;-webkit-user-select:none" });
-  const box = h("div", { class: "dwgbox" }, img);
-  const zl = h("span", { class: "zl" }, "");
+  const inner = h("div", { class: "dwg-in" }, img);
+  const box = h("div", { class: "dwg-box" }, inner);
+  const zl = h("span", { class: "dwg-z" }, "");
   const MAXZ = 12;
-  let hiLoaded = false;
-  const loadHi = () => { if (hiLoaded || !d.hi) return; hiLoaded = true; zl.title = "Loading full detail"; Store.fileURL(d.hi).then(u => { img.src = u; }).catch(() => {}); };
+  let hiLoaded = false, base = 0;
+  const loadHi = () => { if (hiLoaded || !d.hi) return; hiLoaded = true; Store.fileURL(d.hi).then(u => { img.src = u; }).catch(() => {}); };
+  // size 1 = the whole drawing fits the screen, whichever way the phone is held
+  const fit = () => { const w = img.naturalWidth || 1600, hh = img.naturalHeight || 1130, ar = w / hh; base = Math.min(box.clientWidth, box.clientHeight * ar) || box.clientWidth; };
   const setZoom = (nz, fx, fy) => {
-    // fx, fy: focal point inside the box (px). Keeps that spot under the fingers.
     nz = Math.min(MAXZ, Math.max(1, nz));
-    const old = S.zoom; if (fx == null) { fx = box.clientWidth / 2; fy = box.clientHeight / 2; }
+    const old = S.zoom || 1; if (fx == null) { fx = box.clientWidth / 2; fy = box.clientHeight / 2; }
     const ax = box.scrollLeft + fx, ay = box.scrollTop + fy;
-    S.zoom = nz; img.style.width = (nz * 100) + "%"; zl.textContent = Math.round(nz * 100) + "%"; if (nz > 1.6) loadHi();
+    S.zoom = nz; img.style.width = Math.round(base * nz) + "px"; zl.textContent = Math.round(nz * 100) + "%"; if (nz > 1.6) loadHi();
     const r = nz / old; box.scrollLeft = ax * r - fx; box.scrollTop = ay * r - fy;
   };
-  setTimeout(() => setZoom(S.zoom || 1));
+  const refit = () => { const z = S.zoom || 1; fit(); S.zoom = z; img.style.width = Math.round(base * z) + "px"; };
+  img.addEventListener("load", refit);
+  setTimeout(() => { fit(); setZoom(S.zoom || 1); });
+  const onTurn = () => { if (S.view !== "drawing") { window.removeEventListener("resize", onTurn); return; } setTimeout(refit, 120); };
+  window.addEventListener("resize", onTurn);
   // two-finger pinch, one-finger drag, double tap
   const pts = new Map(); let pinch = null, lastTap = 0, drag = null;
   const local = e => { const r = box.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
@@ -1606,13 +1626,11 @@ function vDrawing() {
   });
   const up = e => { pts.delete(e.pointerId); if (pts.size < 2) pinch = null; if (pts.size === 1) { const [x, y] = [...pts.values()][0]; drag = { x, y, sl: box.scrollLeft, st: box.scrollTop }; } if (!pts.size) drag = null; };
   ["pointerup", "pointercancel"].forEach(t => box.addEventListener(t, up));
-  // trackpad pinch and ctrl + mouse wheel on a computer
   box.addEventListener("wheel", e => { if (!e.ctrlKey) return; e.preventDefault(); const [x, y] = local(e); setZoom(S.zoom * Math.exp(-e.deltaY / 200), x, y); }, { passive: false });
-  return [topbar(d.no, S.project.short, true),
-    sheet("", h("div", { class: "band" }, d.title.toUpperCase()), h("div", { style: "padding:8px 12px;font-size:12.5px;color:#444" }, `${d.no}${d.rev ? "  |  Rev " + d.rev : ""}  |  ${d.status}`)),
-    h("div", { class: "zoombar" }, h("button", { type: "button", onclick: () => setZoom(S.zoom / 1.5), "aria-label": "Zoom out" }, "−"), zl, h("button", { type: "button", onclick: () => setZoom(S.zoom * 1.5), "aria-label": "Zoom in" }, "+"), h("button", { type: "button", onclick: () => { setZoom(1); box.scrollTo(0, 0); } }, "Fit")),
-    box,
-    h("p", { class: "hint", style: "margin-top:10px" }, "Pinch with two fingers to zoom up to 12 times, drag with one finger to move, double tap to jump in or out. Full detail loads as you zoom in.")];
+  const close = () => { dwgFull(false); goBack(); };
+  return [h("div", { class: "dwg-full" }, box,
+    h("button", { type: "button", class: "dwg-x", "aria-label": "Close drawing", onclick: close }, "\u2715"),
+    h("div", { class: "dwg-cap" }, `${d.title}  |  ${d.no}${d.rev ? "  Rev " + d.rev : ""}`), zl)];
 }
 
 // ---------- daily work allocation, crew sections and site manager review ----------
@@ -2454,7 +2472,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793034471"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793034471"); await loadJs("./js/pdf.js?v=1793034471");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793034644"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793034644"); await loadJs("./js/pdf.js?v=1793034644");
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
     // Phones only open the share menu straight after a tap, so the last step is one tap on Share.
@@ -2507,7 +2525,7 @@ async function processMailQ() {
   const q = mqGet(); if (!q.length) return;
   mqBusy = true;
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793034471"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793034471"); await loadJs("./js/pdf.js?v=1793034471");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793034644"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793034644"); await loadJs("./js/pdf.js?v=1793034644");
     for (const j of q) {
       const p = CFG.projects.find(x => x.id === j.pid); if (!p) { j.done = true; continue; }
       if (j.flash) { // flash report of an incident or near miss
@@ -3504,7 +3522,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793034471"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793034471"); await loadJs("./js/pdf.js?v=1793034471");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793034644"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793034644"); await loadJs("./js/pdf.js?v=1793034644");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
@@ -3911,7 +3929,7 @@ document.addEventListener("visibilitychange", () => {
   else { if (hiddenAt && Date.now() - hiddenAt > 10 * 60e3 && CFG) location.reload(); else Store.kick(); }
 });
 const _render = render;
-render = function () { _render(); if (S.view === "claude") return;
+render = function () { _render(); if (S.view !== "drawing" && document.fullscreenElement) dwgFull(false); if (S.view === "claude" || S.view === "drawing") return;
   // on the tile screens the button sits under EMERGENCY instead of floating over it
   const fb = feedbackButton(); if (TILES() && ["projects", "menu"].includes(S.view)) fb.classList.add("fb-inline"); app.append(fb); };
 const splash = document.getElementById("splash");
