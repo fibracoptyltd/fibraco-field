@@ -313,7 +313,7 @@ function vProjects() {
         bioSetup(); } }, "Fingerprint")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1793055421";
+const APPV = "1793055632";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -387,7 +387,7 @@ async function sendRegister(p, d, days) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793055421"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793055421"); await loadJs("./js/pdf.js?v=1793055421");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793055632"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793055632"); await loadJs("./js/pdf.js?v=1793055632");
     const { html, title } = attDoc(p, d, days); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
@@ -491,7 +491,7 @@ async function timeZone() {
   try {
     try { Store.kick(); await refreshDevices(true); } catch (e) {}
     await new Promise(r => setTimeout(r, 1800));
-    await loadJs("./js/lib/html2canvas.min.js?v=1793055421"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793055421"); await loadJs("./js/pdf.js?v=1793055421");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793055632"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793055632"); await loadJs("./js/pdf.js?v=1793055632");
     const D = tzData(), stamp = `${dmy(new Date())} ${hhmm()}`, name = `FIBRACO - Time Zone (${stamp})`;
     const pdf = await window.FibPdf.diaryPdf(tzHtml(D), name);
     const json = new File([JSON.stringify(D, null, 1)], name.replace(/[\\/:*?"<>|]+/g, "-") + ".json", { type: "application/json" });
@@ -913,14 +913,15 @@ function vDiary() {
     const actSel = () => {
       const all = [...(ACT[r.area] || []), ...DIARY_EXTRA], list = [...all.map(a => a[1]), OTHER_ACT];
       const own = r.act && !all.some(a => a[1] === r.act);
-      if (own || r.typeOwn) return h("div", { style: "display:flex;gap:6px" }, inp("text", own ? r.act : "", v => { r.act = v.trim(); r.unit = r.unit || "ea"; unitCell.textContent = r.unit; }, "Type the activity"),
+      if (own || r.typeOwn) return h("div", { style: "display:flex;gap:6px;align-items:flex-start" }, (() => { const t = txt(own ? r.act : "", v => { r.act = v.trim(); r.unit = r.unit || "ea"; unitCell.textContent = r.unit; }, "Type the activity"); t.className = "act-loc"; t.style.minHeight = "48px";
+          const grow = () => { t.style.height = "auto"; t.style.height = Math.max(48, t.scrollHeight + 2) + "px"; }; t.addEventListener("input", grow); setTimeout(grow); return t; })(),
         h("button", { type: "button", class: "btn-g", style: "padding:6px 9px;border-radius:6px;font-size:12px", onclick: () => { r.typeOwn = false; r.act = ""; actTd.replaceChildren(actSel()); } }, "List"));
       return sel(list, r.act, v => { if (v === OTHER_ACT) { r.typeOwn = true; r.act = ""; r.unit = "ea"; unitCell.textContent = "ea"; actTd.replaceChildren(actSel()); const i = actTd.querySelector("input"); if (i) i.focus(); return; }
         r.act = v; const m = all.find(a => a[1] === v); r.unit = m ? m[0] : ""; unitCell.textContent = r.unit || ""; }, r.area ? "Choose activity" : "Choose area first");
     };
-    const unitCell = h("td", { class: "ro", style: "text-align:center;width:52px" }, r.unit || "");
-    const actTd = h("td", { style: "min-width:220px" }, actSel());
-    const areaTd = h("td", { style: "min-width:130px" }, sel(AREAS, r.area, v => { r.area = v; r.act = ""; r.unit = ""; unitCell.textContent = ""; actTd.replaceChildren(actSel()); }, "Area"));
+    const unitCell = h("span", { class: "act-unit" }, r.unit || "");
+    const actTd = h("div", { class: "act-pick" }, actSel());
+    const areaTd = h("div", {}, sel(AREAS, r.area, v => { r.area = v; r.act = ""; r.unit = ""; unitCell.textContent = ""; actTd.replaceChildren(actSel()); }, "Area"));
     return [areaTd, actTd, unitCell];
   };
 
@@ -943,10 +944,21 @@ function vDiary() {
       h("tbody", {}, PLANT.map(p => h("tr", {}, h("td", { style: "padding:8px;text-align:center" }, p), h("td", { style: "width:86px" }, sel(numOpts(6), f.plant[p], v => f.plant[p] = v, "0")))),
         h("tr", {}, h("td", { class: "sub" }, "Equipment on site"), h("td", { class: "sub" }, "QTY")),
         EQUIPMENT.map(p => h("tr", {}, h("td", { style: "padding:8px;text-align:center" }, p), h("td", { style: "width:86px" }, sel(numOpts(6), f.equip[p], v => f.equip[p] = v, "0"))))))),
-    rowsTable("wide", ["No", "Work area", "Daily activities - work done", "Unit", "Location unit no", "QTY"], f.acts,
-      (r, i) => h("tr", {}, h("td", { class: "no" }, i + 1), ...areaFor(r), h("td", { style: "min-width:120px" }, inp("text", r.loc, v => r.loc = v, "e.g. ITS 13")), h("td", { style: "width:80px" }, inp("number", r.qty, v => r.qty = v, "0"))),
-      "+ Add activity", () => ({ area: f.acts.length ? f.acts[f.acts.length - 1].area : "" })),
-    h("p", { class: "hint" }, "Swipe the activity table sideways on a small phone. Units fill in from the Fibraco work activities list. Once the project quantities are loaded, a TOT % column shows progress against them."),
+    (() => { const box = h("div", { class: "act-cards" });
+      const draw = () => box.replaceChildren(...f.acts.map((r, i) => { const [areaTd, actTd, unitCell] = areaFor(r);
+        const loc = txt(r.loc, v => r.loc = v, "Where and what exactly, for example: WTG03, or collected 12 SFPs from CFS Bloemfontein"); loc.className = "act-loc";
+        const grow = () => { loc.style.height = "auto"; loc.style.height = Math.max(64, loc.scrollHeight + 2) + "px"; }; loc.addEventListener("input", grow); setTimeout(grow);
+        return sheet("", h("div", { class: "band activity-head" }, h("span", {}, `Work done, line ${i + 1}`), f.acts.length > 1 ? h("button", { type: "button", onclick: () => { f.acts.splice(i, 1); draw(); } }, "Remove") : h("span")),
+          h("div", { class: "act-card" },
+            h("label", {}, "Work area"), areaTd,
+            h("label", {}, "Activity"), actTd,
+            h("label", {}, "Where, and what was done"), loc,
+            h("div", { class: "act-qty" }, h("label", {}, "Quantity"), inp("number", r.qty, v => r.qty = v, "0"), unitCell)));
+      }));
+      draw();
+      return h("div", {}, box, h("button", { class: "addrow", type: "button", style: "width:100%;margin-top:-4px", onclick: () => { f.acts.push({ area: f.acts.length ? f.acts[f.acts.length - 1].area : "" }); draw(); } }, "+ Add a line of work"));
+    })(),
+    h("p", { class: "hint" }, "One card per line of work. Units fill in from the Fibraco work activities list. Pick Other at the bottom of the list to type your own."),
     f.combined ? projectBar("Project progress (fills itself)") : null,
     sheet("", h("div", { class: "band" }, "Schedule ", h("small", {}, "(On, Ahead or Behind and reason)")),
       seg([["On", "On"], ["Ahead", "Ahead"], ["Behind", "Behind"]], f.sched, v => f.sched = v), txt(f.schedWhy, v => f.schedWhy = v, "Reason")),
@@ -1332,7 +1344,7 @@ async function recordPdf() {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793055421"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793055421"); await loadJs("./js/pdf.js?v=1793055421");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793055632"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793055632"); await loadJs("./js/pdf.js?v=1793055632");
     const f = S.form, src = [...app.children].filter(k => !k.matches(".bar, .fb-btn, .ro-bar, .psub, .err, .pnav, .addrow"));
     const box = document.createElement("div");
     for (const k of src) {
@@ -1583,7 +1595,7 @@ async function sendOrder(f) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793055421"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793055421"); await loadJs("./js/pdf.js?v=1793055421");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793055632"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793055632"); await loadJs("./js/pdf.js?v=1793055632");
     const { html, title } = orderDoc(f);
     const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
@@ -2583,7 +2595,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793055421"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793055421"); await loadJs("./js/pdf.js?v=1793055421");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793055632"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793055632"); await loadJs("./js/pdf.js?v=1793055632");
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
     // Phones only open the share menu straight after a tap, so the last step is one tap on Share.
@@ -2636,7 +2648,7 @@ async function processMailQ() {
   const q = mqGet(); if (!q.length) return;
   mqBusy = true;
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793055421"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793055421"); await loadJs("./js/pdf.js?v=1793055421");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793055632"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793055632"); await loadJs("./js/pdf.js?v=1793055632");
     for (const j of q) {
       const p = CFG.projects.find(x => x.id === j.pid); if (!p) { j.done = true; continue; }
       if (j.flash) { // flash report of an incident or near miss
@@ -3745,7 +3757,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793055421"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793055421"); await loadJs("./js/pdf.js?v=1793055421");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793055632"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793055632"); await loadJs("./js/pdf.js?v=1793055632");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),

@@ -634,3 +634,14 @@ body:has(.lock.dark){background:#05070c}
 .lock.dark .bio-btn{color:#fff}
 .lock.dark .pin-warn{color:#15191e}
 .lock.dark a{color:#7cc4ff}
+/* diary work done: one card per line, no sideways swiping, big text box (Wanro 27 Oct) */
+.act-card{display:flex;flex-direction:column;gap:6px;padding:10px 12px 12px}
+.act-card label{font-size:11px;font-weight:900;letter-spacing:.06em;text-transform:uppercase;color:#5b6573;margin-top:4px}
+.act-card select,.act-card input[type=text]{width:100%;min-width:0;font-size:16px;padding:10px 8px}
+.act-pick>div{display:flex;gap:6px}
+.act-pick>div input{flex:1;min-width:0}
+.act-loc{width:100%;min-height:64px;font-size:16px;line-height:1.35;padding:9px 10px;border:1px solid var(--line);border-radius:6px;resize:none;overflow:hidden;box-sizing:border-box}
+.act-qty{display:flex;align-items:center;gap:10px;margin-top:4px}
+.act-qty label{margin:0}
+.act-qty input{width:110px;font-size:16px;padding:10px 8px}
+.act-unit{font-weight:800;color:#0069aa}
