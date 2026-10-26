@@ -252,6 +252,7 @@ const Store = (() => {
       catch (e) { const n = ((await metaGet("fails")) || 0) + 1; await metaSet("fails", n); return n; }
     },
     pending() { let n = 0; for (const v of mem.values()) if (v.dirty) n++; return n; },
+    async unsentLocked() { try { return (await allRecs()).filter(r => r.dirty).length; } catch (e) { return 0; } },
     kick() { clearTimeout(api._t); api._t = setTimeout(() => api.sync().catch(() => {}), 400); },
     async sync() {
       if (syncing || !CONF || !TOKEN) return;
@@ -263,10 +264,11 @@ const Store = (() => {
         const refused = [];
         for (let i = 0; i < recs.length; i += 20) {
           const batch = recs.slice(i, i + 20);
-          const rows = [];
+          const rows = [], sentAt = new Map();
           for (const r of batch) {
             const id = await open(r.idIv, r.idData), v = mem.get(id);
             if (!v) continue;
+            sentAt.set(r.hid, v.at);
             const box = await seal({ id, obj: v.obj, kind: v.kind, at: v.at });
             const meta = v.meta || {};
             const tags = meta.tags ? await Promise.all(meta.tags.map(t => hid("tag|" + t))) : null;
@@ -276,6 +278,8 @@ const Store = (() => {
           const rejected = new Set((res && res.rejected) || []);
           for (const r of batch) {
             const id = await open(r.idIv, r.idData), v = mem.get(id); if (!v) continue;
+            // typed again while this send was on its way: keep it waiting to send, never mark the newer edit as sent
+            if (!sentAt.has(r.hid) || v.at !== sentAt.get(r.hid) || !v.dirty) { if (rejected.has(r.hid)) refused.push([r.hid, id]); continue; }
             v.dirty = 0; const box = await seal({ obj: v.obj, kind: v.kind, at: v.at, dirty: 0, meta: v.meta });
             await putRec(Object.assign(r, { iv: box.iv, data: box.data, dirty: 0 }));
             if (rejected.has(r.hid)) refused.push([r.hid, id]);
@@ -309,7 +313,8 @@ const Store = (() => {
             lastPull = r.updated_at > lastPull ? r.updated_at : lastPull;
             let o; try { o = await open(r.iv, r.data); } catch (e) { continue; }
             const local = mem.get(o.id);
-            if (local && local.dirty && local.at > o.at) continue; // our newer edit wins
+            if (local && local.at > o.at) continue; // this phone has a newer copy (sent or still waiting): it wins
+            if (local && local.dirty) continue; // a change on this phone still waiting to send: it goes first, the server decides
             if (local && local.at === o.at) continue; // the same version we already have (often our own save coming back)
             mem.set(o.id, { obj: o.obj, kind: o.kind, at: o.at, dirty: 0 });
             const box = await seal({ obj: o.obj, kind: o.kind, at: o.at, dirty: 0 }), idBox = await seal(o.id);

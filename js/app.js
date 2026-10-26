@@ -312,7 +312,7 @@ function vProjects() {
         bioSetup(); } }, "Fingerprint")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1793034644";
+const APPV = "1793044121";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -386,7 +386,7 @@ async function sendRegister(p, d, days) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793034644"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793034644"); await loadJs("./js/pdf.js?v=1793034644");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793044121"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793044121"); await loadJs("./js/pdf.js?v=1793044121");
     const { html, title } = attDoc(p, d, days); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
@@ -490,7 +490,7 @@ async function timeZone() {
   try {
     try { Store.kick(); await refreshDevices(true); } catch (e) {}
     await new Promise(r => setTimeout(r, 1800));
-    await loadJs("./js/lib/html2canvas.min.js?v=1793034644"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793034644"); await loadJs("./js/pdf.js?v=1793034644");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793044121"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793044121"); await loadJs("./js/pdf.js?v=1793044121");
     const D = tzData(), stamp = `${dmy(new Date())} ${hhmm()}`, name = `FIBRACO - Time Zone (${stamp})`;
     const pdf = await window.FibPdf.diaryPdf(tzHtml(D), name);
     const json = new File([JSON.stringify(D, null, 1)], name.replace(/[\\/:*?"<>|]+/g, "-") + ".json", { type: "application/json" });
@@ -1490,7 +1490,7 @@ async function sendOrder(f) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793034644"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793034644"); await loadJs("./js/pdf.js?v=1793034644");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793044121"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793044121"); await loadJs("./js/pdf.js?v=1793044121");
     const { html, title } = orderDoc(f);
     const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
@@ -2472,7 +2472,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793034644"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793034644"); await loadJs("./js/pdf.js?v=1793034644");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793044121"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793044121"); await loadJs("./js/pdf.js?v=1793044121");
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
     // Phones only open the share menu straight after a tap, so the last step is one tap on Share.
@@ -2525,7 +2525,7 @@ async function processMailQ() {
   const q = mqGet(); if (!q.length) return;
   mqBusy = true;
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793034644"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793034644"); await loadJs("./js/pdf.js?v=1793034644");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793044121"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793044121"); await loadJs("./js/pdf.js?v=1793044121");
     for (const j of q) {
       const p = CFG.projects.find(x => x.id === j.pid); if (!p) { j.done = true; continue; }
       if (j.flash) { // flash report of an incident or near miss
@@ -3522,7 +3522,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793034644"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793034644"); await loadJs("./js/pdf.js?v=1793034644");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793044121"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793044121"); await loadJs("./js/pdf.js?v=1793044121");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
@@ -3914,12 +3914,18 @@ async function boot() {
       busy = false; };
     const fp = bio ? h("button", { class: "bio-btn", type: "button", "aria-label": "Use fingerprint", onclick: useBio }, FP_ICON(), h("span", {}, "Use fingerprint")) : null;
     if (bio) setTimeout(useBio, 350);
-    return pinPad("Type your PIN", bio ? "Or touch the fingerprint below." : "", (pin, say) => Store.unlock(pin).then(async ok => {
-      if (ok === true) { await startApp(); return offerBio(); }
+    // 10 wrong PINs clear the phone, but never while forms are still waiting to send: then it locks for 30 minutes per wrong try instead
+    const LOCK = "fib_pin_lock", lockedTill = () => { try { return +localStorage.getItem(LOCK) || 0; } catch (e) { return 0; } };
+    return pinPad("Type your PIN", bio ? "Or touch the fingerprint below." : "", async (pin, say) => {
+      if (lockedTill() > Date.now()) { const n = await Store.unsentLocked(); return say(`Locked until ${new Date(lockedTill()).toTimeString().slice(0, 5)}. Your ${n} unsent form${n === 1 ? " is" : "s are"} kept safe. Phone the office.`); }
+      const ok = await Store.unlock(pin);
+      if (ok === true) { try { localStorage.removeItem(LOCK); } catch (e) {} await startApp(); return offerBio(); }
       const left = 10 - ok;
-      if (left <= 0) { await Store.wipe(true); return screen(h("h1", { class: "big", style: "text-align:center" }, "App cleared"), centre("The PIN was wrong 10 times, so the app cleared itself on this phone."), centre("Ask the office to set it up again on this phone.")); }
+      if (left <= 0) { const n = await Store.unsentLocked();
+        if (n) { try { localStorage.setItem(LOCK, String(Date.now() + 30 * 60e3)); } catch (e) {} return say(`Wrong PIN too many times. Locked for 30 minutes. Your ${n} unsent form${n === 1 ? " is" : "s are"} kept safe. Phone the office.`); }
+        await Store.wipe(true); return screen(h("h1", { class: "big", style: "text-align:center" }, "App cleared"), centre("The PIN was wrong 10 times, so the app cleared itself on this phone."), centre("Ask the office to set it up again on this phone.")); }
       say(left <= 3 ? `Wrong PIN. ${left} ${left === 1 ? "try" : "tries"} left before the app clears itself on this phone.` : ok >= 3 ? "Wrong PIN. Forgot it? Ask the office to reset it." : "Wrong PIN. Try again.");
-    }), null, fp);
+    }, null, fp);
   }
   screen(h("h1", { class: "big", style: "text-align:center" }, "Fibraco Field"), h("p", { style: "text-align:center;padding:0 20px" }, "Open the app with your personal link from WhatsApp. It only works for you."));
 }
