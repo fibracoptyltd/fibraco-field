@@ -647,7 +647,7 @@ body:has(.lock.dark){background:#05070c}
 .act-unit{font-weight:800;color:#0069aa}
 /* Wanro 27 Oct: full legal DSTI, every hazard and PPE item with its picture */
 .hz-t td.hz-ic { width: 44px; padding: 3px; text-align: center; }
-.hz-t td.hz-ic img { width: 36px; height: 36px; display: block; margin: auto; }
+.hz-t td.hz-ic img { width: 40px; height: 36px; object-fit: contain; display: block; margin: auto; }
 .hz-t td.hz-n { padding: 8px 6px; font-weight: 600; font-size: 13.5px; }
 .hz-t td.hz-c { width: 46px; padding: 3px; text-align: center; }
 .hz-t td.hz-c button { width: 40px; height: 40px; border-radius: 8px; border: 1.5px solid var(--paper-line); background: #fff; color: #8a94a3; font-weight: 800; font-size: 14px; }
@@ -659,28 +659,44 @@ body:has(.lock.dark){background:#05070c}
 .hz-t tr.hz-extra td { background: #fffaf0; padding: 6px 8px 10px; }
 .ppe-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; padding: 10px; }
 .ppe-t { position: relative; aspect-ratio: 1; border: 2px solid var(--paper-line); background: #fff; color: var(--paper-ink); border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 8px 4px; font-weight: 600; font-size: 12.5px; line-height: 1.15; text-align: center; }
-.ppe-t img { width: 46px; height: 46px; }
+.ppe-t img { width: 50px; height: 50px; object-fit: contain; }
 .ppe-t .tk { display: none; position: absolute; top: 5px; right: 5px; width: 22px; height: 22px; border-radius: 50%; background: #1e8e3e; color: #fff; font-style: normal; font-size: 13px; line-height: 22px; }
 .ppe-t.on { border-color: #1e8e3e; background: #e9f8ef; }
 .ppe-t.on .tk { display: block; }
 .ack-st { background: #fff; color: var(--paper-ink); border: 2px solid var(--paper-line); border-radius: 10px; padding: 10px 12px; margin: 0 0 8px; font-size: 13.5px; line-height: 1.4; }
 .ack-st b { display: block; color: var(--blue); text-transform: uppercase; letter-spacing: .04em; font-size: 12px; margin-bottom: 3px; }
 body.ro #app .hz-c button, body.ro #app .ppe-t { pointer-events: none; }
-/* PDF */
-.pdoc table.hzp td, .pdoc table.hzp th { font-size: 8.6pt; padding: 2px 4px; vertical-align: middle; }
-.pdoc table.hzp td.ic { width: 30px; padding: 1px; text-align: center; }
-.pdoc table.hzp td.ic img { width: 26px; height: 26px; display: block; margin: auto; }
-.pdoc table.hzp td.r { width: 22px; text-align: center; font-weight: 800; font-size: 10pt; }
+/* PDF, laid out like FIBRASE003 */
+.pdoc .dst-hd { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.pdoc .dst-hd img { width: 190px; }
+.pdoc .dst-hd .dno { background: #dbeef4; padding: 6px 10px; text-align: right; font-size: 9.5pt; display: flex; flex-direction: column; gap: 4px; }
+.pdoc .dst-desc { background: #0069aa; color: #fff; text-align: center; font-weight: 700; font-size: 11pt; padding: 2px; margin: 0 30px; }
+.pdoc .dst-ti { border: 0.8pt solid #111; text-align: center; font-weight: 700; font-size: 13pt; padding: 3px 6px; margin: 0 30px 8px; }
+.pdoc .dst-nb { font-size: 9.5pt; margin: 4px 0 6px; }
+.pdoc .dst-nb2 { font-size: 9.5pt; margin: 8px 0 4px; }
+.pdoc table.dst-kv { margin-bottom: 6px; }
+.pdoc table.dst-kv th { width: 170px; font-size: 9pt; text-align: center; vertical-align: middle; background: #fff; }
+.pdoc table.hzp td, .pdoc table.hzp th { font-size: 9pt; padding: 2px 4px; vertical-align: middle; }
+.pdoc table.hzp td.ic { width: 44px; padding: 2px; text-align: center; }
+.pdoc table.hzp td.ic img { width: 40px; height: 34px; object-fit: contain; display: block; margin: auto; }
+.pdoc table.hzp td.hn { width: 96px; }
+.pdoc table.hzp td.hn.add { font-size: 8pt; }
+.pdoc table.hzp td.r { width: 20px; text-align: center; color: #333; }
 .pdoc table.hzp tr.on td { background: #fff3c4; }
-.pdoc table.hzp td.r.on { color: #fff; }
+.pdoc table.hzp td.r.on { color: #fff; font-weight: 800; }
 .pdoc table.hzp td.r.rH { background: #d93025; } .pdoc table.hzp td.r.rM { background: #e37400; } .pdoc table.hzp td.r.rL { background: #1e8e3e; }
-.pdoc .ppep { display: grid; grid-template-columns: repeat(9, 1fr); gap: 4px; margin: 4px 0 8px; }
-.pdoc .ppep div { border: 0.6pt solid #9aa5b1; border-radius: 4px; text-align: center; padding: 3px 2px; font-size: 7.4pt; line-height: 1.1; position: relative; color: #555; }
-.pdoc .ppep img { width: 28px; height: 28px; display: block; margin: 0 auto 2px; opacity: .45; }
-.pdoc .ppep div.on { border: 1.4pt solid #1e8e3e; background: #e9f8ef; color: #111; font-weight: 700; }
-.pdoc .ppep div.on img { opacity: 1; }
-.pdoc .ppep .bx { display: block; width: 11px; height: 11px; border: 0.8pt solid #555; margin: 2px auto 0; font-size: 9pt; line-height: 10px; font-weight: 800; }
-.pdoc .ppep div.on .bx { border-color: #1e8e3e; background: #1e8e3e; color: #fff; }
-.pdoc .ackp { border: 0.6pt solid #9aa5b1; padding: 5px 7px; margin: 6px 0 0; font-size: 9.5pt; }
+.pdoc .dst-band { background: #0069aa; color: #fff; font-weight: 700; font-size: 10pt; padding: 2px 6px; margin-top: 6px; }
+.pdoc table.ppet td { width: 5.88%; text-align: center; padding: 2px 1px; vertical-align: middle; }
+.pdoc table.ppet td img { width: 26px; height: 26px; object-fit: contain; display: block; margin: auto; }
+.pdoc table.ppet td.lb { font-size: 6.6pt; line-height: 1.1; height: 26px; }
+.pdoc table.ppet td.tk { height: 16px; font-weight: 800; color: #fff; }
+.pdoc table.ppet td.on { background: #e9f8ef; }
+.pdoc table.ppet td.lb.on { font-weight: 800; }
+.pdoc table.ppet td.tk.on { background: #1e8e3e; }
+.pdoc table.dst-sig td { height: 30px; }
+.pdoc table.dst-ra td { border: none; font-size: 10pt; padding: 4px 0; }
+.pdoc table.dst-ra td.v { border-bottom: 0.6pt solid #555; width: 75%; }
+.pdoc .dst-gap { height: 26px; }
+.pdoc .ackp { border: 0.6pt solid #9aa5b1; padding: 5px 7px; margin: 8px 0 0; font-size: 9pt; }
 .hz-t .hz-lab { display: block; font-size: 11.5px; font-weight: 700; color: #6b5a12; text-transform: uppercase; letter-spacing: .04em; margin: 4px 0 2px; }
 .hz-t tr.hz-extra input, .hz-t tr.hz-extra textarea { border: 1.5px solid var(--paper-line); background: #fff; border-radius: 8px; }

@@ -10,7 +10,7 @@
   function cutPoints(root) {
     const top0 = root.getBoundingClientRect().top;
     const pts = new Set([0]);
-    root.querySelectorAll(".pd-head, h1, h2, h3, p, tr, .sigs, .none, table, .ppep").forEach(el => {
+    root.querySelectorAll(".pd-head, h1, h2, h3, p, tr, .sigs, .none, table, .ppep, .dst-hd, .dst-band, .dst-desc").forEach(el => {
       pts.add(Math.floor(el.getBoundingClientRect().top - top0));
     });
     return [...pts].sort((a, b) => a - b);
