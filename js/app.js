@@ -362,7 +362,7 @@ function vProjects() {
         bioSetup(); } }, "Fingerprint")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1793083257";
+const APPV = "1793083499";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -436,7 +436,7 @@ async function sendRegister(p, d, days) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793083257"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793083257"); await loadJs("./js/pdf.js?v=1793083257");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793083499"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793083499"); await loadJs("./js/pdf.js?v=1793083499");
     const { html, title } = attDoc(p, d, days); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
@@ -540,7 +540,7 @@ async function timeZone() {
   try {
     try { Store.kick(); await refreshDevices(true); } catch (e) {}
     await new Promise(r => setTimeout(r, 1800));
-    await loadJs("./js/lib/html2canvas.min.js?v=1793083257"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793083257"); await loadJs("./js/pdf.js?v=1793083257");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793083499"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793083499"); await loadJs("./js/pdf.js?v=1793083499");
     const D = tzData(), stamp = `${dmy(new Date())} ${hhmm()}`, name = `FIBRACO - Time Zone (${stamp})`;
     const pdf = await window.FibPdf.diaryPdf(tzHtml(D), name);
     const json = new File([JSON.stringify(D, null, 1)], name.replace(/[\\/:*?"<>|]+/g, "-") + ".json", { type: "application/json" });
@@ -1416,7 +1416,7 @@ async function recordPdf() {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793083257"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793083257"); await loadJs("./js/pdf.js?v=1793083257");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793083499"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793083499"); await loadJs("./js/pdf.js?v=1793083499");
     const f = S.form, src = [...app.children].filter(k => !k.matches(".bar, .fb-btn, .ro-bar, .psub, .err, .pnav, .addrow"));
     const box = document.createElement("div");
     for (const k of src) {
@@ -1667,7 +1667,7 @@ async function sendOrder(f) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793083257"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793083257"); await loadJs("./js/pdf.js?v=1793083257");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793083499"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793083499"); await loadJs("./js/pdf.js?v=1793083499");
     const { html, title } = orderDoc(f);
     const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
@@ -2418,6 +2418,12 @@ function vAllocate() {
 // Other work: anything he did that was not on his list. Picked from the activity list, so it counts in the totals.
 // Other work: anything he did that was not on his list. He writes WHAT and WHERE only, no number.
 // The site manager puts in the quantity when he reviews the diary, so nothing is ever counted twice.
+// a text box that grows while you type, so nobody has to scroll sideways or squint
+function growTxt(v, on, ph, min) {
+  const t = h("textarea", { class: "act-loc", rows: 2, placeholder: ph || "", oninput: e => { on(e.target.value); grow(); } }, v || "");
+  const grow = () => { t.style.height = "auto"; t.style.height = Math.max(min || 64, t.scrollHeight + 2) + "px"; };
+  setTimeout(grow); return t;
+}
 function otherBox(sec, locked) {
   sec.other = sec.other || [];
   const acts = projActs(), box = h("div");
@@ -2427,9 +2433,17 @@ function otherBox(sec, locked) {
     return h("div", { class: "other-card" },
       h("div", { style: "display:flex;justify-content:space-between;align-items:center;margin-bottom:6px" }, h("b", {}, `Other work ${i + 1}`),
         h("button", { type: "button", class: "btn-g", style: "padding:4px 10px;font-size:12px", onclick: () => { sec.other.splice(i, 1); draw(); } }, "Remove")),
-      sel(acts.map(a => a.act), o.act, v => { o.act = v; o.unit = (acts.find(a => a.act === v) || {}).unit || ""; }, "What did you do?"),
-      h("div", { style: "margin-top:6px" }, inp("text", o.loc, v => o.loc = v, "Where, e.g. Control Room to battery 3")),
-      h("div", { style: "margin-top:6px" }, inp("text", o.what, v => o.what = v, "Who worked with you, or more detail (optional)")));
+      // Wanro 27 Oct: big boxes that grow while you type, and "Other" to type your own activity
+      h("label", { class: "oth-lab" }, "What did you do?"), (() => { const pick = h("div");
+        const all = [...acts.map(a => [a.unit, a.act]), ...DIARY_EXTRA.filter(x => !acts.some(a => a.act === x[1]))];
+        const drawPick = () => { const own = o.typeOwn || (o.act && !all.some(x => x[1] === o.act));
+          pick.replaceChildren(own ? h("div", { style: "display:flex;gap:6px;align-items:flex-start" }, growTxt(o.act, v => { o.act = v.trim(); o.unit = o.unit || "ea"; }, "Type the activity, e.g. Induction and onboarding at Wolf", 48),
+              h("button", { type: "button", class: "btn-g", style: "padding:6px 9px;border-radius:6px;font-size:12px", onclick: () => { o.typeOwn = false; o.act = ""; drawPick(); } }, "List"))
+            : sel([...all.map(x => x[1]), OTHER_ACT], o.act, v => { if (v === OTHER_ACT) { o.typeOwn = true; o.act = ""; o.unit = "ea"; drawPick(); const t = pick.querySelector("textarea"); if (t) t.focus(); return; }
+                o.act = v; o.unit = (all.find(x => x[1] === v) || [""])[0]; }, "Choose, or Other to type your own")); };
+        drawPick(); return pick; })(),
+      h("label", { class: "oth-lab" }, "Where, and what was done"), growTxt(o.loc, v => o.loc = v, "e.g. Control room to battery 3, pulled and terminated 2 cables", 72),
+      h("label", { class: "oth-lab" }, "Who worked with you, or more detail (optional)"), growTxt(o.what, v => o.what = v, "", 52));
   };
   const draw = () => box.replaceChildren(...sec.other.map(card), ...(sec.other.length ? [] : [h("div", { style: "padding:4px 12px 8px;font-size:13px;color:#5b6470" }, locked ? "None" : "Did work that is not in your list above? Write what and where. No number, the site manager puts that in.")]));
   draw();
@@ -2499,7 +2513,8 @@ function vMySection() {
         draw(); return box; })() : null;
       // his own note: where exactly, or anything the site manager must know
       const note = locked ? (r.note ? h("div", { class: "task-note-ro" }, `Note: ${r.note}`) : null)
-        : h("textarea", { class: "task-note", rows: 2, placeholder: "Note: where exactly, if not as planned, or why. The site manager and client see this.", "aria-label": `Note, ${nice2(t.act)}`, oninput: e => { r.note = e.target.value; } }, r.note || "");
+        : (() => { const tn = h("textarea", { class: "task-note", rows: 3, placeholder: "Note: where exactly, if not as planned, or why. The site manager and client see this.", "aria-label": `Note, ${nice2(t.act)}`, oninput: e => { r.note = e.target.value; g(); } }, r.note || "");
+            const g = () => { tn.style.height = "auto"; tn.style.height = Math.max(80, tn.scrollHeight + 2) + "px"; }; setTimeout(g); return tn; })();
       return h("div", { class: "task-card" + (t.crit ? " crit" : "") },
         t.crit ? h("div", { class: "task-crit" }, "CRITICAL, MUST BE DONE TODAY") : null,
         h("div", { class: "task-name" }, nice2(t.act)),
@@ -2667,7 +2682,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793083257"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793083257"); await loadJs("./js/pdf.js?v=1793083257");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793083499"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793083499"); await loadJs("./js/pdf.js?v=1793083499");
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
     // Phones only open the share menu straight after a tap, so the last step is one tap on Share.
@@ -2741,7 +2756,7 @@ async function processMailQ() {
   const q = mqGet(); if (!q.length) return;
   mqBusy = true;
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793083257"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793083257"); await loadJs("./js/pdf.js?v=1793083257");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793083499"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793083499"); await loadJs("./js/pdf.js?v=1793083499");
     for (const j of q) {
       const p = CFG.projects.find(x => x.id === j.pid); if (!p) { j.done = true; continue; }
       if (j.flash) { // flash report of an incident or near miss
@@ -3850,7 +3865,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793083257"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793083257"); await loadJs("./js/pdf.js?v=1793083257");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793083499"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793083499"); await loadJs("./js/pdf.js?v=1793083499");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
