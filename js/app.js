@@ -362,7 +362,7 @@ function vProjects() {
         bioSetup(); } }, "Fingerprint")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1793089621";
+const APPV = "1793090677";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -436,7 +436,7 @@ async function sendRegister(p, d, days) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793089621"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793089621"); await loadJs("./js/pdf.js?v=1793089621");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793090677"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793090677"); await loadJs("./js/pdf.js?v=1793090677");
     const { html, title } = attDoc(p, d, days); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
@@ -540,7 +540,7 @@ async function timeZone() {
   try {
     try { Store.kick(); await refreshDevices(true); } catch (e) {}
     await new Promise(r => setTimeout(r, 1800));
-    await loadJs("./js/lib/html2canvas.min.js?v=1793089621"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793089621"); await loadJs("./js/pdf.js?v=1793089621");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793090677"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793090677"); await loadJs("./js/pdf.js?v=1793090677");
     const D = tzData(), stamp = `${dmy(new Date())} ${hhmm()}`, name = `FIBRACO - Time Zone (${stamp})`;
     const pdf = await window.FibPdf.diaryPdf(tzHtml(D), name);
     const json = new File([JSON.stringify(D, null, 1)], name.replace(/[\\/:*?"<>|]+/g, "-") + ".json", { type: "application/json" });
@@ -928,7 +928,7 @@ function startForm(type, key) {
     plant: Object.fromEntries(PLANT.map(p => [p, ""])), equip: Object.fromEntries(EQUIPMENT.map(p => [p, ""])),
     acts: Array.from({ length: 4 }, () => ({ area: S.project && S.project.area || "" })),
     sched: "", schedWhy: "", written: "", verbal: "", mats: [{}, {}, {}], delays: [{}, {}, {}], clientRep: "", sigF: "", sigC: "" });
-  if (type === "dsti") Object.assign(base, { task: "", ms: "", tbt: "", hz: {}, hzx: [{ n: "" }, { n: "" }], ppe: [], ack: OCCUPATIONS.map(o => ({ occ: o, name: "", sig: "" })), assessor: riskAssessor(S.project) || S.user, sigA: "", wind: S.project && S.project.wind ? [{ t: hhmm(new Date()) }, {}, {}, {}, {}] : [] });
+  if (type === "dsti") Object.assign(base, { task: "", ms: "", tbt: "", hz: {}, hzx: [{ n: "" }, { n: "" }], ppe: [], ack: (TEAM_OF().length ? TEAM_OF() : [""]).map(n => ({ name: n, sig: "" })), assessor: riskAssessor(S.project) || S.user, sigA: "", wind: S.project && S.project.wind ? [{ t: hhmm(new Date()) }, {}, {}, {}, {}] : [] });
   if (type === "inspection") Object.assign(base, { company: "", contact: "", number: "", email: "", acts: [{ sow: "", comments: "", photos: [] }] });
   S.form = base; S.formDirty = false; go(type);
 }
@@ -1088,12 +1088,21 @@ function vDsti() {
     sheet("", h("div", { class: "band" }, "What hazards and risks can be identified? Refer to below hazards. ", h("small", {}, "(tick H, M or L for every hazard that applies, then add the associated risk and control measures)")), h("table", { class: "hz-t" }, h("thead", {}, h("tr", {}, h("th", {}, "No"), h("th", {}, ""), h("th", { class: "l" }, "Hazard"), h("th", {}, "H"), h("th", {}, "M"), h("th", {}, "L"))), tb, tbx)),
     sheet("", h("div", { class: "band" }, "What PPE is required for this task? ", h("small", {}, "(tick every item needed)")), ppe),
     h("div", { class: "ack-st" }, h("b", {}, "Acknowledgement"), DSTI_ACK),
-    rowsTable("", ["Occupation", "Name", "Signature"], f.ack, r => h("tr", {}, h("td", { style: "padding:8px;font-weight:600;font-size:12.5px" }, r.occ), h("td", { style: "min-width:120px" }, sel(STAFF, r.name, v => r.name = v, "Name")), h("td", { style: "width:110px" }, sigCell(() => r.sig, v => r.sig = v, `${r.occ} signature`))), "+ Add person", () => ({ occ: "Crew", name: "", sig: "" })),
+    // Wanro 27 Oct: like FIBRASE003, just Name and Signature. The job's crew is filled in already, each person
+    // signs on this phone. Anyone else on site (client, visitor) is added with "Someone else" and types the name.
+    rowsTable("", ["Name", "Signature"], f.ack, r => { const crew = CREW_OF(), OTHER_P = "Someone else (type the name)";
+      const nameTd = h("td", { style: "min-width:150px" }); const sigTd = h("td", { style: "width:120px" });
+      const drawSig = () => sigTd.replaceChildren(sigCell(() => r.sig, v => r.sig = v, `${r.name || "Person"} signature`, r.name === S.user));
+      const drawName = () => nameTd.replaceChildren(r.typeName || (r.name && !crew.includes(r.name))
+        ? h("div", { style: "display:flex;gap:6px" }, inp("text", r.name, v => { r.name = v.trim(); }, "Full name and company"),
+            h("button", { type: "button", class: "btn-g", style: "padding:6px 9px;border-radius:6px;font-size:12px", onclick: () => { r.typeName = false; r.name = ""; r.sig = ""; drawName(); drawSig(); } }, "List"))
+        : sel([...crew, OTHER_P], r.name, v => { if (v === OTHER_P) { r.typeName = true; r.name = ""; r.sig = ""; drawName(); drawSig(); const t = nameTd.querySelector("input"); if (t) t.focus(); return; } if (v !== r.name) r.sig = ""; r.name = v; drawSig(); }, "Choose name"));
+      drawName(); drawSig(); return h("tr", {}, nameTd, sigTd); }, "+ Add person", () => ({ name: "", sig: "" })),
     h("p", { class: "hint", style: "font-weight:700" }, DSTI_NB),
     sheet("", h("table", {}, h("tbody", {},
       h("tr", {}, h("td", { class: "lab" }, "CR 9(1) risk assessor"), h("td", {}, sel(STAFF, f.assessor, v => f.assessor = v, "Name"))),
       h("tr", {}, h("td", { class: "lab" }, f.assessor && f.assessor !== S.user ? `Signature (${S.user}, completed by)` : "Signature"), h("td", {}, sigCell(() => f.sigA, v => f.sigA = v, "Risk assessor signature", true)))))),
-    submitBtn(() => { const e = []; if (!f.task.trim()) e.push("Describe the task being performed today."); if (f.project && f.project.wind && !(f.wind || []).some(r => r.t && r.ms !== undefined && r.ms !== "" && r.cond)) e.push("Take the first wind reading: time, m/s and weather."); if (!Object.values(f.hz).some(x => x.r) && !(f.hzx || []).some(x => x.r && x.n)) e.push("Rate at least one hazard."); if ((f.hzx || []).some(x => x.r && !String(x.n || "").trim())) e.push("Type the name of the additional hazard you rated."); if (!f.ack.some(a => a.name && a.sig)) e.push("At least one crew member must sign on."); if (!f.sigA) e.push("The risk assessor must sign."); return e; })];
+    submitBtn(() => { const e = []; if (!f.task.trim()) e.push("Describe the task being performed today."); if (f.project && f.project.wind && !(f.wind || []).some(r => r.t && r.ms !== undefined && r.ms !== "" && r.cond)) e.push("Take the first wind reading: time, m/s and weather."); if (!Object.values(f.hz).some(x => x.r) && !(f.hzx || []).some(x => x.r && x.n)) e.push("Rate at least one hazard."); if ((f.hzx || []).some(x => x.r && !String(x.n || "").trim())) e.push("Type the name of the additional hazard you rated."); if (!f.ack.some(a => a.name && a.sig)) e.push("At least one crew member must sign on."); f.ack.filter(a => a.name && !a.sig).forEach(a => e.push(`${a.name} has not signed yet. Sign, or remove the name.`)); if (!f.sigA) e.push("The risk assessor must sign."); return e; })];
 }
 
 function vInspection() {
@@ -1416,7 +1425,7 @@ async function recordPdf() {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793089621"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793089621"); await loadJs("./js/pdf.js?v=1793089621");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793090677"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793090677"); await loadJs("./js/pdf.js?v=1793090677");
     const f = S.form, src = [...app.children].filter(k => !k.matches(".bar, .fb-btn, .ro-bar, .psub, .err, .pnav, .addrow"));
     const box = document.createElement("div");
     for (const k of src) {
@@ -1667,7 +1676,7 @@ async function sendOrder(f) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793089621"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793089621"); await loadJs("./js/pdf.js?v=1793089621");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793090677"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793090677"); await loadJs("./js/pdf.js?v=1793090677");
     const { html, title } = orderDoc(f);
     const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
@@ -2682,7 +2691,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793089621"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793089621"); await loadJs("./js/pdf.js?v=1793089621");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793090677"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793090677"); await loadJs("./js/pdf.js?v=1793090677");
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
     // Phones only open the share menu straight after a tap, so the last step is one tap on Share.
@@ -2768,7 +2777,7 @@ async function processMailQ1() {
   const go = q.filter(j => !j.unsure); if (!go.length) { if (["review", "menu", "today"].includes(S.view)) render(); return; }
   mqBusy = true;
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793089621"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793089621"); await loadJs("./js/pdf.js?v=1793089621");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793090677"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793090677"); await loadJs("./js/pdf.js?v=1793090677");
     for (const j of go) {
       const p = CFG.projects.find(x => x.id === j.pid); if (!p) { j.done = true; continue; }
       if (!j.flash) { const m0 = Store.get(`mail|${j.pid}|${j.ds}`); if (m0 && m0.jobAt && m0.jobAt >= j.at) { j.done = true; continue; } } // another phone already sent it
@@ -3891,7 +3900,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793089621"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793089621"); await loadJs("./js/pdf.js?v=1793089621");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793090677"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793090677"); await loadJs("./js/pdf.js?v=1793090677");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
