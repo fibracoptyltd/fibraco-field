@@ -362,7 +362,7 @@ function vProjects() {
         bioSetup(); } }, "Fingerprint")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1793083499";
+const APPV = "1793089621";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -436,7 +436,7 @@ async function sendRegister(p, d, days) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793083499"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793083499"); await loadJs("./js/pdf.js?v=1793083499");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793089621"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793089621"); await loadJs("./js/pdf.js?v=1793089621");
     const { html, title } = attDoc(p, d, days); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
@@ -540,7 +540,7 @@ async function timeZone() {
   try {
     try { Store.kick(); await refreshDevices(true); } catch (e) {}
     await new Promise(r => setTimeout(r, 1800));
-    await loadJs("./js/lib/html2canvas.min.js?v=1793083499"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793083499"); await loadJs("./js/pdf.js?v=1793083499");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793089621"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793089621"); await loadJs("./js/pdf.js?v=1793089621");
     const D = tzData(), stamp = `${dmy(new Date())} ${hhmm()}`, name = `FIBRACO - Time Zone (${stamp})`;
     const pdf = await window.FibPdf.diaryPdf(tzHtml(D), name);
     const json = new File([JSON.stringify(D, null, 1)], name.replace(/[\\/:*?"<>|]+/g, "-") + ".json", { type: "application/json" });
@@ -1416,7 +1416,7 @@ async function recordPdf() {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793083499"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793083499"); await loadJs("./js/pdf.js?v=1793083499");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793089621"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793089621"); await loadJs("./js/pdf.js?v=1793089621");
     const f = S.form, src = [...app.children].filter(k => !k.matches(".bar, .fb-btn, .ro-bar, .psub, .err, .pnav, .addrow"));
     const box = document.createElement("div");
     for (const k of src) {
@@ -1667,7 +1667,7 @@ async function sendOrder(f) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793083499"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793083499"); await loadJs("./js/pdf.js?v=1793083499");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793089621"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793089621"); await loadJs("./js/pdf.js?v=1793089621");
     const { html, title } = orderDoc(f);
     const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
@@ -2682,7 +2682,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793083499"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793083499"); await loadJs("./js/pdf.js?v=1793083499");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793089621"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793089621"); await loadJs("./js/pdf.js?v=1793089621");
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
     // Phones only open the share menu straight after a tap, so the last step is one tap on Share.
@@ -2707,7 +2707,7 @@ const mqSet = q => { try { localStorage.setItem(MQ_KEY, JSON.stringify(q)); } ca
 const repTo = (p, kind) => ((p.reports || {})[kind] || []).filter(x => x && /@/.test(x.email || ""));
 function queueReports(p, d) {
   const ds = ymd(d), q = mqGet().filter(j => j.flash || !(j.pid === p.id && j.ds === ds));
-  q.push({ pid: p.id, ds, by: S.user, at: new Date().toISOString(), tries: 0 }); mqSet(q);
+  q.push({ id: Math.random().toString(36).slice(2, 10), pid: p.id, ds, by: S.user, at: new Date().toISOString(), tries: 0 }); mqSet(q);
   setTimeout(processMailQ, 1500);
 }
 function dstiDoc(p, ds) {
@@ -2751,25 +2751,40 @@ function dstiDoc(p, ds) {
 }
 const fileB64 = f => new Promise((ok, bad) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(",")[1]); r.onerror = bad; r.readAsDataURL(f); });
 let mqBusy = false;
+// Wanro 27 Oct: clients got the same diary and DSTIs 3 and 4 times. The phone sent, then lost the answer
+// (app closed or put away while sending), so it sent again every time the app opened. Now:
+// only one copy of the app may send at a time, a job is marked "on its way" before it goes, and a job whose
+// answer was lost is never sent again by itself. The person is asked to check their inbox first.
 async function processMailQ() {
+  if (navigator.locks && navigator.locks.request) return navigator.locks.request("fib-mailq", { ifAvailable: true }, lock => lock ? processMailQ1() : null);
+  return processMailQ1();
+}
+const mqSave = j => mqSet(mqGet().map(x => (x.id && x.id === j.id) || (!x.id && !j.id && (x.flash || x.pid + "|" + x.ds) === (j.flash || j.pid + "|" + j.ds)) ? Object.assign({}, j) : x));
+async function processMailQ1() {
   if (mqBusy || !Store.online() || !S.user) return;
-  const q = mqGet(); if (!q.length) return;
+  const q = mqGet().filter(j => !j.done && !j.unsure); if (!q.length) return;
+  // an older job that already tried and never got an answer: do not send again, ask first
+  for (const j of q) if (j.inflight || (!j.id && j.tries > 0)) { j.unsure = true; delete j.inflight; mqSave(j); }
+  const go = q.filter(j => !j.unsure); if (!go.length) { if (["review", "menu", "today"].includes(S.view)) render(); return; }
   mqBusy = true;
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793083499"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793083499"); await loadJs("./js/pdf.js?v=1793083499");
-    for (const j of q) {
+    await loadJs("./js/lib/html2canvas.min.js?v=1793089621"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793089621"); await loadJs("./js/pdf.js?v=1793089621");
+    for (const j of go) {
       const p = CFG.projects.find(x => x.id === j.pid); if (!p) { j.done = true; continue; }
+      if (!j.flash) { const m0 = Store.get(`mail|${j.pid}|${j.ds}`); if (m0 && m0.jobAt && m0.jobAt >= j.at) { j.done = true; continue; } } // another phone already sent it
       if (j.flash) { // flash report of an incident or near miss
         const r = incidentsOf(p).find(x => x._id === j.flash); if (!r) { j.done = true; continue; }
         const doc = incidentDoc(p, r), file = await window.FibPdf.diaryPdf(doc.html, doc.title), to = [...repTo(p, "diary"), ...repTo(p, "dsti")], smP = PEOPLE.find(x => x.name === j.by) || {};
         const nm = r.type === "nearmiss" ? "near miss" : "incident";
         try {
+          j.inflight = Date.now(); mqSave(j);
           const res = ((await Store.sendReport({ project: p.id, day: r.date, mails: [{ kind: "flash", to: to.map(x => x.email), bcc: CFG.office ? [CFG.office] : [], replyTo: smP.email, subject: `Fibraco flash report, ${nm}, ${p.name}, ${nice(new Date(r.date + "T12:00:00"))}`,
             text: `Good day ${to.length ? to.map(x => x.name.split(" ")[0]).join(" and ") : "team"},\n\nAttached is Fibraco's flash report of a ${nm} on ${p.name} on ${nice(new Date(r.date + "T12:00:00"))}${r.where ? " at " + r.where : ""}. The investigation follows.\n\nReply to this email and it goes to ${j.by.split(" ")[0]}.\n\nRegards\nFibraco site team`,
             files: [{ name: file.name, b64: await fileB64(file) }] }] })) || {}).results || [];
+          delete j.inflight;
           if (res.length && res.every(x => x.ok)) { j.done = true; Store.put(`flash|${r._id}`, { at: hhmm(new Date()) + " " + dmy(new Date()), by: S.user, to: to.map(x => x.name) }, "r", { tags: [`mgr:${p.id}`] }); }
           else { j.tries++; j.err = (res.find(x => !x.ok) || {}).error || "not sent"; }
-        } catch (e) { j.tries++; j.err = e.message; if (e.status === 403) j.done = true; }
+        } catch (e) { j.tries++; j.err = e.message; if (e.status === 403) j.done = true; else if (!e.status) j.unsure = true; delete j.inflight; }
         continue;
       }
       const d = new Date(j.ds + "T12:00:00"), k = p.id + "|" + j.ds, fin = Store.get("final|" + k) || {};
@@ -2790,16 +2805,21 @@ async function processMailQ() {
           text: `Good day ${sTo.length ? sTo.map(first).join(" and ") : "team"},\n\nAttached ${sd.n === 1 ? "is the DSTI" : `are the ${sd.n} DSTIs`} Fibraco completed on ${p.name} on ${nice(d)}, signed by the crew before work started.\n\nIf you have any questions, reply to this email and it goes to ${sm.split(" ")[0]}.\n\nRegards\nFibraco site team`,
           files: [{ name: sFile.name, b64: await fileB64(sFile) }] }); }
       try {
-        const r = await Store.sendReport({ project: p.id, day: j.ds, mails });
-        const res = (r && r.results) || [];
-        if (res.length && res.every(x => x.ok)) {
+        const todo = mails.filter(m => !(j.sent || []).includes(m.kind)); // only what has not gone yet
+        if (!todo.length) { j.done = true; continue; }
+        j.inflight = Date.now(); mqSave(j);
+        const r = await Store.sendReport({ project: p.id, day: j.ds, mails: todo });
+        const res = (r && r.results) || []; delete j.inflight;
+        j.sent = [...(j.sent || []), ...todo.filter((m, i) => res[i] && res[i].ok).map(m => m.kind)];
+        if (mails.every(m => j.sent.includes(m.kind))) {
           j.done = true;
-          Store.put(`mail|${k}`, { at: hhmm(new Date()), by: S.user, diary: dTo.map(x => x.name), dsti: sd ? repTo(p, "dsti").map(x => x.name) : [], nDsti: sd ? sd.n : 0, office: !!office.length }, "r", { tags: [`mgr:${p.id}`] });
-        } else { j.tries++; j.err = (res.find(x => !x.ok) || {}).error || "not sent"; }
-      } catch (e) { j.tries++; j.err = e.message; if (e.status === 403) j.done = true; }
+          Store.put(`mail|${k}`, { job: j.id, jobAt: j.at, at: hhmm(new Date()), by: S.user, diary: dTo.map(x => x.name), dsti: sd ? repTo(p, "dsti").map(x => x.name) : [], nDsti: sd ? sd.n : 0, office: !!office.length }, "r", { tags: [`mgr:${p.id}`] });
+        } else { j.tries++; j.err = (res.find(x => !x.ok) || {}).error || "not sent"; if (j.tries >= 3) j.unsure = true; }
+      } catch (e) { j.tries++; j.err = e.message; delete j.inflight; if (e.status === 403) j.done = true; else if (!e.status) j.unsure = true; /* no answer: it may have gone, ask */ }
+      mqSave(j);
     }
   } catch (e) { window.__mqErr = String(e && e.message || e); /* PDF tools not loaded yet; try again later */ }
-  finally { const jk = x => x.flash || x.pid + "|" + x.ds; mqSet(mqGet().map(x => q.find(y => jk(y) === jk(x)) || x).filter(x => !x.done)); mqBusy = false; if (["done", "review", "menu", "mychecks", "today"].includes(S.view)) render(); }
+  finally { const jk = x => x.id || x.flash || x.pid + "|" + x.ds; mqSet(mqGet().map(x => go.find(y => jk(y) === jk(x)) || x).filter(x => !x.done)); mqBusy = false; if (["done", "review", "menu", "mychecks", "today"].includes(S.view)) render(); }
 }
 addEventListener("online", () => setTimeout(processMailQ, 2000));
 window.FibReports = { queue: (pid, ds) => queueReports(CFG.projects.find(x => x.id === pid), new Date(ds + "T12:00:00")), run: () => processMailQ(), pending: () => mqGet() };
@@ -2828,7 +2848,13 @@ function approveDiary(k) {
 function reportStatus(p, ds) {
   if (pmWait(p.id + "|" + ds)) return h("div", { class: "rep-st wait" }, `Waiting for ${adminName()} to check and sign it off.`, h("small", {}, "The diary and DSTIs go to the client only after that."));
   const m = Store.get(`mail|${p.id}|${ds}`), pend = mqGet().find(j => !j.flash && j.pid === p.id && j.ds === ds);
+  if (m && m.confirmed) return h("div", { class: "rep-st ok" }, `Marked as sent by ${m.by} at ${m.at}.`, h("small", {}, "Checked in the inbox. The app will not send it again."));
   if (m) return h("div", { class: "rep-st ok" }, `Emailed to the client at ${m.at}.`, h("small", {}, [m.diary && m.diary.length ? `Diary to ${m.diary.join(", ")}` : "Diary to the office only (no client email set up yet)", m.nDsti ? (m.dsti && m.dsti.length ? `. DSTIs to ${m.dsti.join(", ")}` : ". DSTIs to the office only") : ". No DSTI was done that day", "."].join("")));
+  if (pend && pend.unsure) return h("div", { class: "rep-st wait" }, "Not sure the diary and DSTIs went out. The phone lost the answer while sending.",
+    h("small", {}, `Check your inbox first (${adminName()} gets a copy of every report). Only send again if it is not there.`),
+    h("div", { style: "display:flex;gap:8px;margin-top:8px" },
+      h("button", { type: "button", class: "btn-g", onclick: () => { mqSet(mqGet().filter(x => x.flash || x.pid !== pend.pid || x.ds !== pend.ds)); Store.put(`mail|${p.id}|${ds}`, { job: pend.id, jobAt: pend.at, at: hhmm(new Date()), by: S.user, diary: [], dsti: [], nDsti: 0, office: true, confirmed: true }, "r", { tags: [`mgr:${p.id}`] }); render(); } }, "It went, clear this"),
+      h("button", { type: "button", class: "btn-g", onclick: () => { mqSet(mqGet().map(x => !x.flash && x.pid === pend.pid && x.ds === pend.ds ? Object.assign({}, x, { unsure: false, inflight: undefined, tries: 0, id: x.id || Math.random().toString(36).slice(2, 10) }) : x)); processMailQ(); render(); } }, "Send again")));
   if (pend) return h("div", { class: "rep-st wait" }, Store.online() ? "Sending the diary and DSTIs to the client..." : "Waiting for signal. The diary and DSTIs go to the client by themselves as soon as the phone has reception.", pend.err ? h("small", {}, `Last try: ${pend.err}`) : null);
   return null;
 }
@@ -3865,7 +3891,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793083499"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793083499"); await loadJs("./js/pdf.js?v=1793083499");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793089621"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793089621"); await loadJs("./js/pdf.js?v=1793089621");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
