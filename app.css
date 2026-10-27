@@ -645,3 +645,42 @@ body:has(.lock.dark){background:#05070c}
 .act-qty label{margin:0}
 .act-qty input{width:110px;font-size:16px;padding:10px 8px}
 .act-unit{font-weight:800;color:#0069aa}
+/* Wanro 27 Oct: full legal DSTI, every hazard and PPE item with its picture */
+.hz-t td.hz-ic { width: 44px; padding: 3px; text-align: center; }
+.hz-t td.hz-ic img { width: 36px; height: 36px; display: block; margin: auto; }
+.hz-t td.hz-n { padding: 8px 6px; font-weight: 600; font-size: 13.5px; }
+.hz-t td.hz-c { width: 46px; padding: 3px; text-align: center; }
+.hz-t td.hz-c button { width: 40px; height: 40px; border-radius: 8px; border: 1.5px solid var(--paper-line); background: #fff; color: #8a94a3; font-weight: 800; font-size: 14px; }
+.hz-t tr.hz-row.on td { background: #fff3c4; }
+.hz-t td.hz-c.on button { color: #fff; font-size: 18px; border-color: transparent; }
+.hz-t td.hz-c.rH button { background: #d93025; }
+.hz-t td.hz-c.rM button { background: #e37400; }
+.hz-t td.hz-c.rL button { background: #1e8e3e; }
+.hz-t tr.hz-extra td { background: #fffaf0; padding: 6px 8px 10px; }
+.ppe-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; padding: 10px; }
+.ppe-t { position: relative; aspect-ratio: 1; border: 2px solid var(--paper-line); background: #fff; color: var(--paper-ink); border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 8px 4px; font-weight: 600; font-size: 12.5px; line-height: 1.15; text-align: center; }
+.ppe-t img { width: 46px; height: 46px; }
+.ppe-t .tk { display: none; position: absolute; top: 5px; right: 5px; width: 22px; height: 22px; border-radius: 50%; background: #1e8e3e; color: #fff; font-style: normal; font-size: 13px; line-height: 22px; }
+.ppe-t.on { border-color: #1e8e3e; background: #e9f8ef; }
+.ppe-t.on .tk { display: block; }
+.ack-st { background: #fff; color: var(--paper-ink); border: 2px solid var(--paper-line); border-radius: 10px; padding: 10px 12px; margin: 0 0 8px; font-size: 13.5px; line-height: 1.4; }
+.ack-st b { display: block; color: var(--blue); text-transform: uppercase; letter-spacing: .04em; font-size: 12px; margin-bottom: 3px; }
+body.ro #app .hz-c button, body.ro #app .ppe-t { pointer-events: none; }
+/* PDF */
+.pdoc table.hzp td, .pdoc table.hzp th { font-size: 8.6pt; padding: 2px 4px; vertical-align: middle; }
+.pdoc table.hzp td.ic { width: 30px; padding: 1px; text-align: center; }
+.pdoc table.hzp td.ic img { width: 26px; height: 26px; display: block; margin: auto; }
+.pdoc table.hzp td.r { width: 22px; text-align: center; font-weight: 800; font-size: 10pt; }
+.pdoc table.hzp tr.on td { background: #fff3c4; }
+.pdoc table.hzp td.r.on { color: #fff; }
+.pdoc table.hzp td.r.rH { background: #d93025; } .pdoc table.hzp td.r.rM { background: #e37400; } .pdoc table.hzp td.r.rL { background: #1e8e3e; }
+.pdoc .ppep { display: grid; grid-template-columns: repeat(9, 1fr); gap: 4px; margin: 4px 0 8px; }
+.pdoc .ppep div { border: 0.6pt solid #9aa5b1; border-radius: 4px; text-align: center; padding: 3px 2px; font-size: 7.4pt; line-height: 1.1; position: relative; color: #555; }
+.pdoc .ppep img { width: 28px; height: 28px; display: block; margin: 0 auto 2px; opacity: .45; }
+.pdoc .ppep div.on { border: 1.4pt solid #1e8e3e; background: #e9f8ef; color: #111; font-weight: 700; }
+.pdoc .ppep div.on img { opacity: 1; }
+.pdoc .ppep .bx { display: block; width: 11px; height: 11px; border: 0.8pt solid #555; margin: 2px auto 0; font-size: 9pt; line-height: 10px; font-weight: 800; }
+.pdoc .ppep div.on .bx { border-color: #1e8e3e; background: #1e8e3e; color: #fff; }
+.pdoc .ackp { border: 0.6pt solid #9aa5b1; padding: 5px 7px; margin: 6px 0 0; font-size: 9.5pt; }
+.hz-t .hz-lab { display: block; font-size: 11.5px; font-weight: 700; color: #6b5a12; text-transform: uppercase; letter-spacing: .04em; margin: 4px 0 2px; }
+.hz-t tr.hz-extra input, .hz-t tr.hz-extra textarea { border: 1.5px solid var(--paper-line); background: #fff; border-radius: 8px; }
