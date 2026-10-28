@@ -705,3 +705,22 @@ body.ro #app .hz-c button, body.ro #app .ppe-t { pointer-events: none; }
 .sheet .other-card textarea.act-loc{border:1px solid #c9d0d8;border-radius:8px;background:#fff;color:#15191e}
 .sheet .task-card textarea.task-note{min-height:80px;font-size:16px;resize:none;overflow:hidden}
 .act-card textarea.act-loc{border:1px solid #c9d0d8;border-radius:8px;background:#fff}
+/* the all-day DSTI */
+.dsti-card{display:grid;grid-template-columns:1fr auto;gap:4px 10px;width:100%;text-align:left;background:#fff;color:#15191e;border:2px solid var(--paper-line);border-radius:14px;padding:12px 14px;margin-bottom:10px;font:inherit}
+.dsti-card.open{border-color:#34e27c;box-shadow:0 0 0 3px rgba(52,226,124,.25)}
+.dsti-card b{grid-column:1/-1;font-size:16px}
+.dsti-card small{grid-column:1/-1;color:#5b6470;font-size:12.5px}
+.dsti-st{grid-column:1;justify-self:start;font-size:11px;font-weight:900;letter-spacing:.08em;padding:2px 8px;border-radius:999px;background:#e7ebf0;color:#3a4250}
+.dsti-card.open .dsti-st{background:#34e27c;color:#08311a}
+.dsti-go{grid-column:2;grid-row:1;font-weight:800;color:#0069aa;font-size:13px}
+.dsti-banner{border-radius:12px;padding:12px 14px;margin-bottom:10px;background:#e7ebf0;color:#15191e;font-size:13.5px;line-height:1.4}
+.dsti-banner b{display:inline-block;margin-right:8px;font-size:12px;letter-spacing:.08em;padding:2px 8px;border-radius:999px;background:#3a4250;color:#fff}
+.dsti-banner.open{background:#e9fbf0;border:2px solid #34e27c}
+.dsti-banner.open b{background:#34e27c;color:#08311a}
+.dsti-hz{display:flex;flex-direction:column}
+.dsti-hzr{display:grid;grid-template-columns:48px 1fr;gap:10px;align-items:center;padding:8px 12px;border-top:1px solid var(--paper-line);color:#15191e}
+.dsti-hzr img{width:46px;height:40px;object-fit:contain}
+.dsti-hzr b{font-size:14.5px}
+.dsti-hzr small{display:block;font-size:12.5px;color:#5b6470;margin-top:2px}
+.dsti-hzr .rt{display:inline-block;color:#fff;font-size:11px;padding:1px 7px;border-radius:6px;margin-left:4px}
+.dsti-hzr .rt.rH{background:#d93025}.dsti-hzr .rt.rM{background:#e37400}.dsti-hzr .rt.rL{background:#1e8e3e}

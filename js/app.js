@@ -362,7 +362,7 @@ function vProjects() {
         bioSetup(); } }, "Fingerprint")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1793090677";
+const APPV = "1793199038";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -436,7 +436,7 @@ async function sendRegister(p, d, days) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793090677"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793090677"); await loadJs("./js/pdf.js?v=1793090677");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793199038"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793199038"); await loadJs("./js/pdf.js?v=1793199038");
     const { html, title } = attDoc(p, d, days); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
@@ -540,7 +540,7 @@ async function timeZone() {
   try {
     try { Store.kick(); await refreshDevices(true); } catch (e) {}
     await new Promise(r => setTimeout(r, 1800));
-    await loadJs("./js/lib/html2canvas.min.js?v=1793090677"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793090677"); await loadJs("./js/pdf.js?v=1793090677");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793199038"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793199038"); await loadJs("./js/pdf.js?v=1793199038");
     const D = tzData(), stamp = `${dmy(new Date())} ${hhmm()}`, name = `FIBRACO - Time Zone (${stamp})`;
     const pdf = await window.FibPdf.diaryPdf(tzHtml(D), name);
     const json = new File([JSON.stringify(D, null, 1)], name.replace(/[\\/:*?"<>|]+/g, "-") + ".json", { type: "application/json" });
@@ -912,6 +912,9 @@ function vMenu() {
 // ---------- forms ----------
 function startForm(type, key) {
   S.formRO = null;
+  // Wanro 27 Oct: a DSTI stays open all day. The DSTI tile shows today's DSTIs first, so visitors are added to the open one.
+  if (type === "dsti" && key !== "new" && S.project && dstiList(S.project.id, ymd(S.date || today())).length) { go("dstilist"); return; }
+  if (key === "new") key = undefined;
   const base = { type, key, date: S.date || today(), project: S.project, user: S.user, photos: [] };
   if (type === "check") Object.assign(base, { d: {}, outcome: "", sig: "", items: CHECKS[key].groups.map(g => g[1].map(n => ({ name: n }))) });
   if (type === "toolbox") Object.assign(base, { talk: "", talkLabel: "", att: [{ name: S.user }, {}, {}, {}], q: "" });
@@ -1092,19 +1095,90 @@ function vDsti() {
     // signs on this phone. Anyone else on site (client, visitor) is added with "Someone else" and types the name.
     rowsTable("", ["Name", "Signature"], f.ack, r => { const crew = CREW_OF(), OTHER_P = "Someone else (type the name)";
       const nameTd = h("td", { style: "min-width:150px" }); const sigTd = h("td", { style: "width:120px" });
-      const drawSig = () => sigTd.replaceChildren(sigCell(() => r.sig, v => r.sig = v, `${r.name || "Person"} signature`, r.name === S.user));
+      const drawSig = () => sigTd.replaceChildren(sigCell(() => r.sig, v => { r.sig = v; r.sigAt = hhmm(new Date()); }, `${r.name || "Person"} signature`, r.name === S.user));
       const drawName = () => nameTd.replaceChildren(r.typeName || (r.name && !crew.includes(r.name))
         ? h("div", { style: "display:flex;gap:6px" }, inp("text", r.name, v => { r.name = v.trim(); }, "Full name and company"),
             h("button", { type: "button", class: "btn-g", style: "padding:6px 9px;border-radius:6px;font-size:12px", onclick: () => { r.typeName = false; r.name = ""; r.sig = ""; drawName(); drawSig(); } }, "List"))
         : sel([...crew, OTHER_P], r.name, v => { if (v === OTHER_P) { r.typeName = true; r.name = ""; r.sig = ""; drawName(); drawSig(); const t = nameTd.querySelector("input"); if (t) t.focus(); return; } if (v !== r.name) r.sig = ""; r.name = v; drawSig(); }, "Choose name"));
-      drawName(); drawSig(); return h("tr", {}, nameTd, sigTd); }, "+ Add person", () => ({ name: "", sig: "" })),
+      drawName(); drawSig(); return h("tr", {}, nameTd, sigTd); }, "+ Add person", () => ({ id: rid(), name: "", sig: "", typeName: true })),
     h("p", { class: "hint", style: "font-weight:700" }, DSTI_NB),
     sheet("", h("table", {}, h("tbody", {},
       h("tr", {}, h("td", { class: "lab" }, "CR 9(1) risk assessor"), h("td", {}, sel(STAFF, f.assessor, v => f.assessor = v, "Name"))),
       h("tr", {}, h("td", { class: "lab" }, f.assessor && f.assessor !== S.user ? `Signature (${S.user}, completed by)` : "Signature"), h("td", {}, sigCell(() => f.sigA, v => f.sigA = v, "Risk assessor signature", true)))))),
-    submitBtn(() => { const e = []; if (!f.task.trim()) e.push("Describe the task being performed today."); if (f.project && f.project.wind && !(f.wind || []).some(r => r.t && r.ms !== undefined && r.ms !== "" && r.cond)) e.push("Take the first wind reading: time, m/s and weather."); if (!Object.values(f.hz).some(x => x.r) && !(f.hzx || []).some(x => x.r && x.n)) e.push("Rate at least one hazard."); if ((f.hzx || []).some(x => x.r && !String(x.n || "").trim())) e.push("Type the name of the additional hazard you rated."); if (!f.ack.some(a => a.name && a.sig)) e.push("At least one crew member must sign on."); f.ack.filter(a => a.name && !a.sig).forEach(a => e.push(`${a.name} has not signed yet. Sign, or remove the name.`)); if (!f.sigA) e.push("The risk assessor must sign."); return e; })];
+    submitBtn(() => { const e = []; if (!f.task.trim()) e.push("Describe the task being performed today."); if (f.project && f.project.wind && !(f.wind || []).some(r => r.t && r.ms !== undefined && r.ms !== "" && r.cond)) e.push("Take the first wind reading: time, m/s and weather."); if (!Object.values(f.hz).some(x => x.r) && !(f.hzx || []).some(x => x.r && x.n)) e.push("Rate at least one hazard."); if ((f.hzx || []).some(x => x.r && !String(x.n || "").trim())) e.push("Type the name of the additional hazard you rated."); if (!f.ack.some(a => a.name && a.sig)) e.push("At least one crew member must sign on."); f.ack.filter(a => a.name && !a.sig).forEach(a => e.push(`${a.name} has not signed yet. Sign, or remove the name.`)); if (!f.sigA) e.push("The risk assessor must sign."); return e; }, { label: f._rid ? "Save the changes" : "Sign on and start work", onDone: () => { saveDsti(f); if (f._rid0) { S.hist.pop(); S.view = "dstiopen"; render(); window.scrollTo(0, 0); } else go("done"); } })];
 }
 
+// ---------- the DSTI stays open for the whole working day (Wanro 27 Oct) ----------
+// Morning: the crew does the risk assessment and signs on, the DSTI is OPEN. During the day anyone who comes into
+// the work area (visitor, client, delivery) reads the hazards and PPE on the phone, types his name and signs.
+// Evening: the site manager closes it, or it closes by itself when he signs the day's diary. Then it goes to the client.
+const dstiList = (pid, ds) => Store.list(`form|${pid}|${ds}|dsti|`).filter(([, o]) => o).sort((a, b) => (a[1].openedAt || a[1].savedAt || "").localeCompare(b[1].openedAt || b[1].savedAt || ""));
+const dstiOpenList = (pid, ds) => dstiList(pid, ds).filter(([, o]) => o.status === "open");
+const canCloseDsti = (o, p) => isAdmin(S.user) || ["sm", "sup"].includes(roleIn(S.user, p)) || (o && o.assessor === S.user);
+function saveDsti(f) {
+  clearDraft(); S.formDirty = false;
+  f.ack = (f.ack || []).map(r => r.id ? r : Object.assign(r, { id: rid() }));
+  if (!f._rid) { f._rid = `form|${f.project ? f.project.id : "none"}|${ymd(f.date)}|dsti|${Date.now().toString(36)}${rid()}`; f.status = "open"; f.openedAt = new Date().toISOString(); f.openedBy = S.user; }
+  // two phones may add people to the same DSTI: keep everyone who signed on either phone
+  const cur = Store.get(f._rid);
+  if (cur && cur.ack) for (const r of cur.ack) { if (!r.id) continue; const mine = f.ack.find(x => x.id === r.id); if (!mine) f.ack.push(r); else if (!mine.sig && r.sig) Object.assign(mine, r); }
+  const rec = formRecord(Object.assign({}, f, { _rid: undefined, _rid0: undefined, typeName: undefined }));
+  rec.ack = rec.ack.map(r => { const x = Object.assign({}, r); delete x.typeName; return x; });
+  Store.put(f._rid, rec);
+}
+function closeDstis(pid, ds, by) {
+  for (const [id, o] of dstiOpenList(pid, ds)) Store.put(id, Object.assign({}, o, { status: "closed", closedBy: by, closedAt: hhmm(new Date()), ack: (o.ack || []).filter(a => a.name && a.sig) }));
+}
+function openDsti(id) {
+  const o = Store.get(id); if (!o) return;
+  S.form = Object.assign(JSON.parse(JSON.stringify(o)), { date: new Date(o.date + "T12:00:00"), project: CFG.projects.find(p => p.id === o.project) || S.project, _rid: id });
+  S.form.ack = (S.form.ack || []).map(r => r.id ? r : Object.assign(r, { id: rid() }));
+  S.formRO = null; S.formDirty = false; go("dstiopen");
+}
+function vDstiList() {
+  const p = S.project, ds = ymd(S.date), list = dstiList(p.id, ds);
+  const t = x => x ? new Date(x).toTimeString().slice(0, 5).replace(":", "h") : "";
+  return [topbar("DSTI", `${p.short}  |  ${dmy(S.date)}`, true),
+    h("p", { class: "form-sub" }, "A DSTI stays open the whole day. Open it to add a visitor: he reads the hazards and PPE, types his name and signs. It closes at the end of the day."),
+    ...list.map(([id, o]) => { const open = o.status === "open", n = (o.ack || []).filter(a => a.name && a.sig).length;
+      return h("button", { type: "button", class: "dsti-card" + (open ? " open" : ""), onclick: () => openDsti(id) },
+        h("span", { class: "dsti-st" }, open ? "OPEN" : o.status === "closed" ? "CLOSED" : "SIGNED"),
+        h("b", {}, o.task || "DSTI"),
+        h("small", {}, `Started ${t(o.openedAt || o.savedAt)} by ${o.openedBy || o.savedBy || o.user}  |  ${n} signed${o.closedAt ? `  |  closed ${o.closedAt}` : ""}`),
+        h("span", { class: "dsti-go" }, open ? "Open, add people" : "View")); }),
+    h("button", { type: "button", class: "mbtn", style: "margin-top:10px", onclick: () => startForm("dsti", "new") }, "+ NEW DSTI", h("small", {}, "Only for a new task. Visitors sign on the open DSTI above."))];
+}
+function vDstiOpen() {
+  const f = S.form, p = f.project, open = f.status === "open", t = x => x ? new Date(x).toTimeString().slice(0, 5).replace(":", "h") : "";
+  const hz = [...HAZARDS.filter(k => f.hz && f.hz[k] && f.hz[k].r).map(k => [k, f.hz[k]]), ...(f.hzx || []).filter(x => x.r && x.n).map(x => [x.n, x])];
+  const tb = h("tbody");
+  const save = () => { saveDsti(f); toast("Saved"); };
+  const draw = () => tb.replaceChildren(...f.ack.map(r => {
+    const done = !!r.sig;
+    const nameTd = h("td", {}, done || !open ? h("div", { style: "padding:8px;font-weight:700" }, r.name) : inp("text", r.name, v => { r.name = v.trim(); }, "Type your name and company"));
+    const sigTd = h("td", { style: "width:118px" }, done || !open ? (r.sig ? h("img", { src: r.sig, alt: "Signature", style: "height:34px" }) : "") :
+      sigCell(() => r.sig, v => { if (!r.name) { toast("Type the name first."); return; } r.sig = v; r.sigAt = hhmm(new Date()); save(); draw(); }, `${r.name || "Person"} signature`, r.name === S.user));
+    return h("tr", {}, nameTd, sigTd, h("td", { style: "width:58px;text-align:center;font-size:12.5px" }, r.sigAt || ""));
+  }));
+  draw();
+  const addBtn = open ? h("button", { class: "addrow", type: "button", onclick: () => { f.ack.push({ id: rid(), name: "", sig: "" }); draw(); setTimeout(() => { const i = tb.querySelectorAll("input"); if (i.length) { i[i.length - 1].focus(); i[i.length - 1].scrollIntoView({ block: "center" }); } }, 50); } }, "+ Add person (visitor or crew)") : null;
+  return [topbar("DSTI", `${p ? p.short : ""}  |  ${dmy(f.date)}`, true),
+    h("div", { class: "dsti-banner" + (open ? " open" : "") }, h("b", {}, open ? "OPEN" : "CLOSED"),
+      open ? `Since ${t(f.openedAt || f.savedAt)}, started by ${f.openedBy || f.savedBy}. Everyone who comes into this work area reads the hazards and PPE below, then signs.` : `Closed at ${f.closedAt || "?"} by ${f.closedBy || "?"}. Nobody can sign on any more.`),
+    sheet("", h("div", { class: "band" }, "Task"), h("div", { style: "padding:10px 12px;font-size:15px;font-weight:700" }, f.task || ""), f.ms ? h("div", { style: "padding:0 12px 10px;font-size:13px;color:#5b6470" }, f.ms) : null),
+    sheet("", h("div", { class: "band" }, "Hazards on this task"), h("div", { class: "dsti-hz" }, ...hz.map(([k, v]) => h("div", { class: "dsti-hzr" },
+      DSTI_ICON[k] ? h("img", { src: DSTI_ICON[k], alt: "" }) : h("span"), h("div", {}, h("b", {}, k, " ", h("span", { class: "rt r" + v.r }, v.r)), v.ctrl ? h("small", {}, v.ctrl) : null))))),
+    sheet("", h("div", { class: "band" }, "PPE you must wear here"), h("div", { class: "ppe-grid" }, ...(f.ppe || []).map(x => PPE_OLD[x] || x).map(x => h("div", { class: "ppe-t on" }, PPE_ICON[x] ? h("img", { src: PPE_ICON[x], alt: "" }) : null, h("span", {}, x))))),
+    p && p.wind && f.wind ? windTable(f) : null,
+    h("div", { class: "ack-st" }, h("b", {}, "Acknowledgement"), DSTI_ACK),
+    sheet("", h("table", {}, h("thead", {}, h("tr", {}, h("th", {}, "Name"), h("th", {}, "Signature"), h("th", {}, "Time"))), tb), addBtn),
+    open ? h("button", { class: "submit", type: "button", onclick: save }, "Save") : null,
+    open ? h("button", { class: "mbtn", type: "button", style: "margin-top:10px", onclick: () => { f._rid0 = f._rid; S.hist.push(S.view); S.view = "dsti"; render(); window.scrollTo(0, 0); } }, "Change the hazards, PPE or task", h("small", {}, "The full DSTI form. Your changes are saved on this same DSTI.")) : null,
+    open && canCloseDsti(f, p) ? h("button", { class: "mbtn", type: "button", style: "margin-top:10px;background:#0f2b3d;color:#fff", onclick: () => {
+      const miss = f.ack.filter(a => a.name && !a.sig); if (miss.length) { toast(`${miss.map(a => a.name).join(", ")} has not signed yet. Sign or clear the name first.`); return; }
+      mySig(v => { if (!v) return; f.ack = f.ack.filter(a => a.name && a.sig); f.status = "closed"; f.closedBy = S.user; f.closedAt = hhmm(new Date()); f.sigClose = v; saveDsti(f); toast("DSTI closed for the day"); render(); });
+    } }, "CLOSE THE DSTI FOR THE DAY", h("small", {}, "End of the day. It also closes by itself when the site manager signs the diary.")) : open ? h("p", { class: "hint" }, "The site manager closes it at the end of the day.") : null];
+}
 function vInspection() {
   const f = S.form;
   const box = h("div");
@@ -1425,7 +1499,7 @@ async function recordPdf() {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793090677"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793090677"); await loadJs("./js/pdf.js?v=1793090677");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793199038"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793199038"); await loadJs("./js/pdf.js?v=1793199038");
     const f = S.form, src = [...app.children].filter(k => !k.matches(".bar, .fb-btn, .ro-bar, .psub, .err, .pnav, .addrow"));
     const box = document.createElement("div");
     for (const k of src) {
@@ -1676,7 +1750,7 @@ async function sendOrder(f) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793090677"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793090677"); await loadJs("./js/pdf.js?v=1793090677");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793199038"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793199038"); await loadJs("./js/pdf.js?v=1793199038");
     const { html, title } = orderDoc(f);
     const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
@@ -2629,7 +2703,7 @@ function vReview() {
       h("button", { class: "submit", type: "button", style: s1 && s2 ? "" : "opacity:.45", onclick: () => { if (!(s1 && s2)) return showInfo("Not yet", !s1 ? `First approve every crew section. Still waiting: ${pending.join(", ")}.` : "First fill in your part of the diary (button 2 above), then sign.");
         const noQty = people.flatMap(pn => (((S.sections[k] || {})[pn] || {}).other || []).filter(o => o.act && (o.qty === undefined || o.qty === "")).map(o => `${pn}: ${nice2(o.act)}, ${o.loc || ""}`));
         if (noQty.length) return showInfo("Quantities missing", "Put the quantity on every Other work line before you sign (0 if two men wrote the same job, so it counts once): " + noQty.join("  |  "));
-        mySig(v => { if (!v) return; S.final[k] = new Date().toLocaleTimeString("en-ZA", { hour: "2-digit", minute: "2-digit" }).replace(":", "h"); S.done[k] = true; persist(); Store.put("final|" + k, { at: S.final[k], by: S.user, sig: v, date: ymd(S.date), needPM: !isAdmin(S.user) }); people.forEach(pn => putProg(S.project.id, ymd(S.date), pn, myTasks(pn), ((S.sections[k] || {})[pn] || {}).rows || [], ((S.sections[k] || {})[pn] || {}).other || [])); Store.lock(["alloc|" + k, "site|" + k, "final|" + k, ...people.map(p => `sec|${k}|${p}`)]); if (isAdmin(S.user)) queueReports(S.project, S.date); S.form = { type: "diary", project: S.project, date: S.date, user: S.user, photos: [] }; go("done"); }); } }, "3. Sign and make final"))];
+        mySig(v => { if (!v) return; S.final[k] = new Date().toLocaleTimeString("en-ZA", { hour: "2-digit", minute: "2-digit" }).replace(":", "h"); S.done[k] = true; persist(); Store.put("final|" + k, { at: S.final[k], by: S.user, sig: v, date: ymd(S.date), needPM: !isAdmin(S.user) }); people.forEach(pn => putProg(S.project.id, ymd(S.date), pn, myTasks(pn), ((S.sections[k] || {})[pn] || {}).rows || [], ((S.sections[k] || {})[pn] || {}).other || [])); Store.lock(["alloc|" + k, "site|" + k, "final|" + k, ...people.map(p => `sec|${k}|${p}`)]); closeDstis(S.project.id, ymd(S.date), S.user); if (isAdmin(S.user)) queueReports(S.project, S.date); S.form = { type: "diary", project: S.project, date: S.date, user: S.user, photos: [] }; go("done"); }); } }, "3. Sign and make final"))];
 }
 // ---------- daily diary as PDF (made on the phone, then shared) ----------
 function diaryDoc(k, project, date) {
@@ -2691,7 +2765,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793090677"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793090677"); await loadJs("./js/pdf.js?v=1793090677");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793199038"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793199038"); await loadJs("./js/pdf.js?v=1793199038");
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
     // Phones only open the share menu straight after a tap, so the last step is one tap on Share.
@@ -2728,7 +2802,7 @@ function dstiDoc(p, ds) {
   // every hazard with its picture and H, M, L, the two additional hazard rows, the full PPE row, the acknowledgement,
   // the NB line and the CR 9(1) risk assessor block. The crew's choices are ticked and highlighted.
   const one = (f, i) => {
-    const sv = f.savedAt ? new Date(f.savedAt) : null;
+    const sv = (f.openedAt || f.savedAt) ? new Date(f.openedAt || f.savedAt) : null, by0 = f.openedBy || f.savedBy || f.user;
     const rc = v => ["H", "M", "L"].map(r => `<td class="r${v.r === r ? " on r" + r : ""}">${v.r === r ? "&#10004;" : r}</td>`).join("");
     const hz = HAZARDS.map(k => { const v = (f.hz || {})[k] || {};
       return `<tr class="${v.r ? "on" : ""}"><td class="ic">${DSTI_ICON[k] ? `<img src="${DSTI_ICON[k]}">` : ""}</td><td class="hn">${esc(k)}</td>${rc(v)}<td>${esc(v.risk)}</td><td>${esc(v.ctrl)}</td></tr>`; }).join("")
@@ -2737,9 +2811,10 @@ function dstiDoc(p, ds) {
     const ppe = `<table class="ppet"><tr>${ppeAll.map(x => `<td class="${pp.includes(x) ? "on" : ""}">${PPE_ICON[x] ? `<img src="${PPE_ICON[x]}">` : ""}</td>`).join("")}</tr>
       <tr>${ppeAll.map(x => `<td class="lb${pp.includes(x) ? " on" : ""}">${esc(x)}</td>`).join("")}</tr>
       <tr>${ppeAll.map(x => `<td class="tk${pp.includes(x) ? " on" : ""}">${pp.includes(x) ? "&#10004;" : ""}</td>`).join("")}</tr></table>`;
-    const people = (f.ack || []).filter(a => a.name), rows = [];
+    const people = (f.ack || []).filter(a => a.name && a.sig), rows = [];
     for (let n = 0; n < Math.max(4, Math.ceil(people.length / 2)); n++) rows.push([people[n * 2], people[n * 2 + 1]]);
-    const pc = a => a ? `<td>${esc(a.name)}</td><td>${a.sig ? `<img src="${a.sig}" style="height:26px">` : ""}</td>` : "<td></td><td></td>";
+    const pc = a => a ? `<td>${esc(a.name)}</td><td>${a.sig ? `<img src="${a.sig}" style="height:26px">` : ""}${a.sigAt ? `<span style="float:right;font-size:8pt;color:#555">${esc(a.sigAt)}</span>` : ""}</td>` : "<td></td><td></td>";
+    const ot = f.openedAt ? new Date(f.openedAt).toTimeString().slice(0, 5).replace(":", "h") : "";
     const ack = rows.map(([x, y]) => `<tr>${pc(x)}${pc(y)}</tr>`).join("");
     return `<div class="dst-hd"><img src="${LOGO}" alt="Fibraco"><div class="dno"><b>DOCUMENT NUMBER: FIBRASE003- DISCIPLINE:</b><b>DST Rev. Date : 25 June 2022</b></div></div>
     <div class="dst-desc">DESCRIPTION:</div><div class="dst-ti">TASK SPECIFIC HAZARD IDENTIFICATION AND RISK ASSESSMENT RECORDING SHEET</div>
@@ -2753,10 +2828,29 @@ function dstiDoc(p, ds) {
     <p class="ackp"><b>Acknowledgement:</b>&nbsp; ${esc(DSTI_ACK)}</p>
     <table class="g dst-sig"><thead><tr><th>Name</th><th>Signature</th><th>Name</th><th>Signature</th></tr></thead><tbody>${ack}</tbody></table>
     <p class="dst-nb2"><b>${esc(DSTI_NB)}</b></p>
-    <table class="dst-ra"><tr><td>CR 9(1)-Risk Assessor Name:</td><td class="v">${esc(f.assessor)}${f.assessor && f.assessor !== (f.savedBy || f.user) ? ` (completed by ${esc(f.savedBy || f.user)})` : ""}</td></tr>
+    <table class="dst-ra"><tr><td>CR 9(1)-Risk Assessor Name:</td><td class="v">${esc(f.assessor)}${f.assessor && f.assessor !== by0 ? ` (completed by ${esc(by0)})` : ""}</td></tr>
+    ${ot || f.closedAt ? `<tr><td>DSTI open:</td><td class="v">${ot ? "from " + esc(ot) : ""}${f.closedAt ? ` to ${esc(f.closedAt)}, closed by ${esc(f.closedBy || "")}` : f.status === "open" ? ", still open" : ""}</td></tr>` : ""}
     <tr><td>Signature:</td><td class="v">${f.sigA ? `<img src="${f.sigA}" style="height:30px">` : ""} <span style="margin-left:30px">Date: ${esc(dmy(d))}${sv ? ", " + esc(sv.toLocaleTimeString("en-ZA", { hour: "2-digit", minute: "2-digit" })) : ""}</span></td></tr></table>`;
   };
   return { html: list.map(one).join('<div class="dst-gap"></div>'), title: `FIBRACO - DSTI - ${p.short} (${dmy(d)})`, n: list.length };
+}
+// every inspection checklist done on the project that day, one after the other, for the client's safety officer
+function checksDoc(p, ds) {
+  const esc = x => String(x == null ? "" : x).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+  const list = Store.list(`form|${p.id}|${ds}|check|`).map(([, o]) => o).filter(o => o && CHECKS[o.key]).sort((a, b) => (a.savedAt || "").localeCompare(b.savedAt || ""));
+  if (!list.length) return null;
+  const d = new Date(ds + "T12:00:00");
+  const BAD = ["Defect", "Replace", "Short", "Fail"];
+  const one = (f, i) => { const c = CHECKS[f.key], lab = v => ((c.ans || []).find(a => a[0] === v) || [v, v])[1];
+    const t = f.savedAt ? new Date(f.savedAt).toTimeString().slice(0, 5).replace(":", "h") : "";
+    const det = (c.details || []).map(([l]) => `<tr><th>${esc(l)}</th><td>${esc((f.d || {})[l])}</td></tr>`).join("");
+    const groups = c.groups.map((g, gi) => `<table class="g"><thead><tr><th>${esc(g[0])}</th><th style="width:110px;text-align:center">Result</th><th style="width:35%">Comment</th></tr></thead><tbody>${((f.items || [])[gi] || []).filter(it => it.name).map(it => `<tr><td>${esc(it.name)}</td><td style="text-align:center;font-weight:700;${BAD.includes(it.a) ? "background:#fde2e1;color:#a50e0e" : it.a ? "color:#1e6e34" : ""}">${esc(it.a ? lab(it.a) : "Not marked")}</td><td>${esc(it.c)}</td></tr>`).join("")}</tbody></table>`).join("");
+    return `<h2>${i + 1}. ${esc(c.title)}${c.no ? ` (${esc(c.no)})` : ""}</h2>
+    <table class="kv"><tr><th>Inspected by</th><td>${esc(f.savedBy || f.user)}${t ? ", " + esc(t) : ""}</td></tr>${det}</table>${groups}
+    <table class="kv"><tr><th>Outcome</th><td style="font-weight:700;${f.outcome && f.outcome !== "Fit" ? "color:#a50e0e" : ""}">${esc(f.outcome === "Fit" ? "Fit for use" : f.outcome ? "Not fit, taken out of use" : "")}</td></tr>
+    <tr><th>Signature</th><td>${f.sig ? `<img src="${f.sig}" style="height:30px">` : ""}</td></tr></table>`; };
+  return { html: `<div class="pd-head"><img src="${LOGO}" alt="Fibraco"><div><h1>DAILY INSPECTION CHECKLISTS</h1><div>${esc(p.name)}</div><div>${esc(nice(d))}  |  ${list.length} checklist${list.length === 1 ? "" : "s"}</div></div></div>` + list.map(one).join('<div style="height:18px"></div>'),
+    title: `FIBRACO - Inspection Checklists - ${p.short} (${dmy(d)})`, n: list.length };
 }
 const fileB64 = f => new Promise((ok, bad) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(",")[1]); r.onerror = bad; r.readAsDataURL(f); });
 let mqBusy = false;
@@ -2777,7 +2871,7 @@ async function processMailQ1() {
   const go = q.filter(j => !j.unsure); if (!go.length) { if (["review", "menu", "today"].includes(S.view)) render(); return; }
   mqBusy = true;
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793090677"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793090677"); await loadJs("./js/pdf.js?v=1793090677");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793199038"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793199038"); await loadJs("./js/pdf.js?v=1793199038");
     for (const j of go) {
       const p = CFG.projects.find(x => x.id === j.pid); if (!p) { j.done = true; continue; }
       if (!j.flash) { const m0 = Store.get(`mail|${j.pid}|${j.ds}`); if (m0 && m0.jobAt && m0.jobAt >= j.at) { j.done = true; continue; } } // another phone already sent it
@@ -2802,17 +2896,23 @@ async function processMailQ1() {
       const first = x => (x.name || "").split(" ")[0] || "there";
       const mails = [];
       // the diary maker reads the open project and day, so borrow them for a moment
-      const keep = [S.project, S.date]; S.project = p; S.date = d; let dd, sd;
-      try { ensureDay(k); dd = diaryDoc(k, p, d); sd = dstiDoc(p, j.ds); } finally { [S.project, S.date] = keep; }
+      const keep = [S.project, S.date]; S.project = p; S.date = d; let dd, sd, cd;
+      try { ensureDay(k); dd = diaryDoc(k, p, d); sd = dstiDoc(p, j.ds); cd = checksDoc(p, j.ds); } finally { [S.project, S.date] = keep; }
       const dFile = await window.FibPdf.diaryPdf(dd.html, dd.title);
       const dTo = repTo(p, "diary");
       mails.push({ kind: "diary", to: dTo.map(x => x.email), bcc: office, replyTo: smP.email, subject: `Fibraco daily diary, ${p.name}, ${nice(d)}`,
         text: `Good day ${dTo.length ? dTo.map(first).join(" and ") : "team"},\n\nAttached is Fibraco's signed daily diary for ${p.name} for ${nice(d)}. It was signed off on site by ${sm}${fin.at ? " at " + fin.at : ""}.\n\nIf you have any questions, reply to this email and it goes to ${sm.split(" ")[0]}.\n\nRegards\nFibraco site team`,
         files: [{ name: dFile.name, b64: await fileB64(dFile) }] });
-      if (sd) { const sFile = await window.FibPdf.diaryPdf(sd.html, sd.title), sTo = repTo(p, "dsti");
-        mails.push({ kind: "dsti", to: sTo.map(x => x.email), bcc: office, replyTo: smP.email, subject: `Fibraco DSTIs, ${p.name}, ${nice(d)}`,
-          text: `Good day ${sTo.length ? sTo.map(first).join(" and ") : "team"},\n\nAttached ${sd.n === 1 ? "is the DSTI" : `are the ${sd.n} DSTIs`} Fibraco completed on ${p.name} on ${nice(d)}, signed by the crew before work started.\n\nIf you have any questions, reply to this email and it goes to ${sm.split(" ")[0]}.\n\nRegards\nFibraco site team`,
-          files: [{ name: sFile.name, b64: await fileB64(sFile) }] }); }
+      // Wanro 28 Oct: Ernest (the client's safety officer) gets ONE email a day with the signed diary, the day's DSTIs
+      // and every inspection checklist done that day. The diary contact still gets the diary on its own.
+      { const sTo = repTo(p, "dsti"), files = [{ name: dFile.name, b64: await fileB64(dFile) }];
+        if (sd) { const sFile = await window.FibPdf.diaryPdf(sd.html, sd.title); files.push({ name: sFile.name, b64: await fileB64(sFile) }); }
+        if (cd) { const cFile = await window.FibPdf.diaryPdf(cd.html, cd.title); files.push({ name: cFile.name, b64: await fileB64(cFile) }); }
+        const what = [`the signed daily diary`, sd ? (sd.n === 1 ? "the DSTI" : `the ${sd.n} DSTIs`) : "", cd ? (cd.n === 1 ? "the inspection checklist" : `the ${cd.n} inspection checklists`) : ""].filter(Boolean);
+        const list = what.length > 1 ? what.slice(0, -1).join(", ") + " and " + what[what.length - 1] : what[0];
+        mails.push({ kind: "hse", to: sTo.map(x => x.email), bcc: office, replyTo: smP.email, subject: `Fibraco daily diary, DSTIs and checklists, ${p.name}, ${nice(d)}`,
+          text: `Good day ${sTo.length ? sTo.map(first).join(" and ") : "team"},\n\nAttached ${what.length > 1 ? "are" : "is"} ${list} for Fibraco's work on ${p.name} on ${nice(d)}.${sd ? "" : "\n\nNo DSTI was done that day."}${cd ? "" : "\n\nNo inspection checklist was done that day."}\n\nIf you have any questions, reply to this email and it goes to ${sm.split(" ")[0]}.\n\nRegards\nFibraco site team`,
+          files }); }
       try {
         const todo = mails.filter(m => !(j.sent || []).includes(m.kind)); // only what has not gone yet
         if (!todo.length) { j.done = true; continue; }
@@ -2822,7 +2922,7 @@ async function processMailQ1() {
         j.sent = [...(j.sent || []), ...todo.filter((m, i) => res[i] && res[i].ok).map(m => m.kind)];
         if (mails.every(m => j.sent.includes(m.kind))) {
           j.done = true;
-          Store.put(`mail|${k}`, { job: j.id, jobAt: j.at, at: hhmm(new Date()), by: S.user, diary: dTo.map(x => x.name), dsti: sd ? repTo(p, "dsti").map(x => x.name) : [], nDsti: sd ? sd.n : 0, office: !!office.length }, "r", { tags: [`mgr:${p.id}`] });
+          Store.put(`mail|${k}`, { job: j.id, jobAt: j.at, at: hhmm(new Date()), by: S.user, diary: dTo.map(x => x.name), dsti: repTo(p, "dsti").map(x => x.name), nDsti: sd ? sd.n : 0, nChk: cd ? cd.n : 0, office: !!office.length }, "r", { tags: [`mgr:${p.id}`] });
         } else { j.tries++; j.err = (res.find(x => !x.ok) || {}).error || "not sent"; if (j.tries >= 3) j.unsure = true; }
       } catch (e) { j.tries++; j.err = e.message; delete j.inflight; if (e.status === 403) j.done = true; else if (!e.status) j.unsure = true; /* no answer: it may have gone, ask */ }
       mqSave(j);
@@ -2850,7 +2950,7 @@ function approveDiary(k) {
   mySig(v => { if (!v) return;
     const fin = Store.get("final|" + k) || {}, now = new Date();
     Store.put("final|" + k, Object.assign({}, fin, { pmOk: true, pmBy: S.user, pmSig: v, pmAt: hhmm(now), pmDate: dmy(now) }));
-    queueReports(S.project, S.date); render();
+    closeDstis(S.project.id, ymd(S.date), S.user); queueReports(S.project, S.date); render();
     showInfo("Approved", "The diary and the day's DSTIs go to the client now, with your sign-off.");
   });
 }
@@ -2858,7 +2958,7 @@ function reportStatus(p, ds) {
   if (pmWait(p.id + "|" + ds)) return h("div", { class: "rep-st wait" }, `Waiting for ${adminName()} to check and sign it off.`, h("small", {}, "The diary and DSTIs go to the client only after that."));
   const m = Store.get(`mail|${p.id}|${ds}`), pend = mqGet().find(j => !j.flash && j.pid === p.id && j.ds === ds);
   if (m && m.confirmed) return h("div", { class: "rep-st ok" }, `Marked as sent by ${m.by} at ${m.at}.`, h("small", {}, "Checked in the inbox. The app will not send it again."));
-  if (m) return h("div", { class: "rep-st ok" }, `Emailed to the client at ${m.at}.`, h("small", {}, [m.diary && m.diary.length ? `Diary to ${m.diary.join(", ")}` : "Diary to the office only (no client email set up yet)", m.nDsti ? (m.dsti && m.dsti.length ? `. DSTIs to ${m.dsti.join(", ")}` : ". DSTIs to the office only") : ". No DSTI was done that day", "."].join("")));
+  if (m) return h("div", { class: "rep-st ok" }, `Emailed to the client at ${m.at}.`, h("small", {}, [m.diary && m.diary.length ? `Diary to ${m.diary.join(", ")}` : "Diary to the office only (no client email set up yet)", m.dsti && m.dsti.length ? `. Diary, ${m.nDsti || 0} DSTI${m.nDsti === 1 ? "" : "s"} and ${m.nChk || 0} checklist${m.nChk === 1 ? "" : "s"} to ${m.dsti.join(", ")}` : ". DSTIs and checklists to the office only", "."].join("")));
   if (pend && pend.unsure) return h("div", { class: "rep-st wait" }, "Not sure the diary and DSTIs went out. The phone lost the answer while sending.",
     h("small", {}, `Check your inbox first (${adminName()} gets a copy of every report). Only send again if it is not there.`),
     h("div", { style: "display:flex;gap:8px;margin-top:8px" },
@@ -3117,7 +3217,7 @@ function vDelays() {
 // ---------- render ----------
 let render = function () {
   const v = S.view;
-  const views = { users: vUsers, projects: vProjects, calendar: vCalendar, menu: vMenu, inspections: vInspections, client: vClient, tests: vTests, link: vLink, logtest: vLogTest, biocheck: vBioCheck, allocate: vAllocate, mysection: vMySection, review: vReview, kpi: vKpi, rams: vRams, ramsdoc: vRamsDoc, drawings: vDrawings, drawing: vDrawing, diary: vDiary, dsti: vDsti, inspection: vInspection, check: vCheck, toolbox: vToolbox, incident: vIncident, si: vSI, order: vOrder, done: vDone, feedback: vFeedback, devices: vDevices, dash: vDash, qc: vQc, qcspot: vQcSpot, tsheets: vTsheets, tsheet: vTsheet, treport: vTreport, attendance: vAttendance, claude: vClaude, delays: vDelays, nearmiss: vNearMiss, jobobs: vJobObs, adhoc: vAdhoc, adhocjob: vAdhocJob, mychecks: vMyChecks, invest: vInvest, today: vToday, records: vRecords };
+  const views = { users: vUsers, projects: vProjects, calendar: vCalendar, menu: vMenu, inspections: vInspections, client: vClient, tests: vTests, link: vLink, logtest: vLogTest, biocheck: vBioCheck, allocate: vAllocate, mysection: vMySection, review: vReview, kpi: vKpi, rams: vRams, ramsdoc: vRamsDoc, drawings: vDrawings, drawing: vDrawing, diary: vDiary, dsti: vDsti, dstilist: vDstiList, dstiopen: vDstiOpen, inspection: vInspection, check: vCheck, toolbox: vToolbox, incident: vIncident, si: vSI, order: vOrder, done: vDone, feedback: vFeedback, devices: vDevices, dash: vDash, qc: vQc, qcspot: vQcSpot, tsheets: vTsheets, tsheet: vTsheet, treport: vTreport, attendance: vAttendance, claude: vClaude, delays: vDelays, nearmiss: vNearMiss, jobobs: vJobObs, adhoc: vAdhoc, adhocjob: vAdhocJob, mychecks: vMyChecks, invest: vInvest, today: vToday, records: vRecords };
   app.replaceChildren(...[].concat((views[v] || vProjects)()).filter(Boolean));
   pageForm();
 }
@@ -3266,6 +3366,7 @@ Store.metaFor = (id, obj) => {
   if (kind === "att") return { tags: [`user:${idOf(x.slice(3).join("|")) || me}`, `mgr:${pid}`] };
   if (kind === "final" || kind === "site" || kind === "qc") return { tags: [`mgr:${pid}`] };
   if (kind === "link" || kind === "issue" || kind === "bio" || kind === "idel" || kind === "dcause") return { shared: true, tags: [`proj:${pid}`] };
+  if (kind === "form" && x[3] === "dsti" && pid && pid !== "none") return { shared: true, tags: [`user:${me}`, `mgr:${pid}`, `proj:${pid}`] };
   if (kind === "form") return { tags: pid && pid !== "none" ? [`user:${me}`, `mgr:${pid}`] : [`user:${me}`] };
   if (kind === "alert") return { tags: obj && obj.project ? [`user:${me}`, `mgr:${obj.project}`] : [`user:${me}`] };
   if (kind === "ph") return { tags: S.project ? [`user:${me}`, `proj:${S.project.id}`] : [`user:${me}`] };
@@ -3900,7 +4001,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793090677"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793090677"); await loadJs("./js/pdf.js?v=1793090677");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793199038"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793199038"); await loadJs("./js/pdf.js?v=1793199038");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
