@@ -724,3 +724,18 @@ body.ro #app .hz-c button, body.ro #app .ppe-t { pointer-events: none; }
 .dsti-hzr small{display:block;font-size:12.5px;color:#5b6470;margin-top:2px}
 .dsti-hzr .rt{display:inline-block;color:#fff;font-size:11px;padding:1px 7px;border-radius:6px;margin-left:4px}
 .dsti-hzr .rt.rH{background:#d93025}.dsti-hzr .rt.rM{background:#e37400}.dsti-hzr .rt.rL{background:#1e8e3e}
+/* voice to text */
+.vfield{display:flex;flex-direction:column;gap:6px;width:100%}
+.vbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.vbar small{font-size:11.5px;color:#5b6470}
+.vbtn{border:1.5px solid #c9d0d8;background:#fff;color:#15191e;border-radius:999px;padding:8px 12px;font:inherit;font-weight:800;font-size:13px;min-height:40px}
+.vbtn.vmic{background:#0069aa;border-color:#0069aa;color:#fff}
+.vbtn.vok{background:#34e27c;border-color:#34e27c;color:#08311a}
+textarea.vlock{background:#f4f6f8 !important;color:#15191e}
+.vrec-ov .modal.vrec{text-align:center;max-width:360px}
+.vrec .vrow{display:flex;gap:10px;justify-content:center;margin-top:14px}
+.vrec .vgo{background:#34e27c;color:#08311a;border:none;border-radius:12px;padding:14px 26px;font:inherit;font-weight:900;font-size:18px;letter-spacing:.04em}
+.vrec .btn-g{padding:14px 18px;border-radius:12px}
+.vrec .vclock{font-size:40px;font-weight:900;font-variant-numeric:tabular-nums;margin:4px 0}
+.vrec .vdot{width:22px;height:22px;border-radius:50%;background:#d93025;margin:4px auto 0;animation:vpulse 1s infinite}
+@keyframes vpulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.8)}}

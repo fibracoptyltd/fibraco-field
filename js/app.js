@@ -2,7 +2,7 @@
 (() => {
 const LOGO = "icons/logo.png";
 let CREW = [], USERS = [], ROLE = {}, STAFF = [], PROJECTS = [], PEOPLE = [];
-const DIARY_EXTRA = [["ea", "INDUCTION AND ONBOARDING"], ["ea", "SAFETY FILE AND PAPERWORK"], ["ea", "COLLECT MATERIAL (OFF SITE)"], ["ea", "MATERIAL TO SITE"], ["ea", "TRAVEL TO OR FROM SITE"], ["hrs", "STANDBY (WAITING ON CLIENT)"], ["ea", "MEETING OR INVESTIGATION"]].filter((x, i, a) => a.findIndex(y => y[1] === x[1]) === i), OTHER_ACT = "OTHER (TYPE YOUR OWN)";
+const DIARY_EXTRA = [["ea", "SITE ESTABLISHMENT"], ["ea", "INDUCTION AND ONBOARDING"], ["ea", "SAFETY FILE AND PAPERWORK"], ["ea", "COLLECT MATERIAL (OFF SITE)"], ["ea", "MATERIAL TO SITE"], ["ea", "TRAVEL TO OR FROM SITE"], ["hrs", "STANDBY (WAITING ON CLIENT)"], ["ea", "MEETING OR INVESTIGATION"]].filter((x, i, a) => a.findIndex(y => y[1] === x[1]) === i), OTHER_ACT = "OTHER (TYPE YOUR OWN)";
 const DESIGNATIONS = ["Project Manager", "Quality Control", "Site Manager", "Technician", "Assistant", "SCADA Engineer", "SCADA Assistance"];
 const PLANT = ["Double Cab Pickup"];
 const EQUIPMENT = ["FOC - OTDR Test Machine", "FOC - OLTS Test Machine", "FOC - Light Source / FOC", "FOC - Splicing Machine", "Hand Tools for FOC and CAT Cable"];
@@ -362,7 +362,7 @@ function vProjects() {
         bioSetup(); } }, "Fingerprint")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1793199038";
+const APPV = "1793214060";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -436,7 +436,7 @@ async function sendRegister(p, d, days) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793199038"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793199038"); await loadJs("./js/pdf.js?v=1793199038");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793214060"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793214060"); await loadJs("./js/pdf.js?v=1793214060");
     const { html, title } = attDoc(p, d, days); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
@@ -540,7 +540,7 @@ async function timeZone() {
   try {
     try { Store.kick(); await refreshDevices(true); } catch (e) {}
     await new Promise(r => setTimeout(r, 1800));
-    await loadJs("./js/lib/html2canvas.min.js?v=1793199038"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793199038"); await loadJs("./js/pdf.js?v=1793199038");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793214060"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793214060"); await loadJs("./js/pdf.js?v=1793214060");
     const D = tzData(), stamp = `${dmy(new Date())} ${hhmm()}`, name = `FIBRACO - Time Zone (${stamp})`;
     const pdf = await window.FibPdf.diaryPdf(tzHtml(D), name);
     const json = new File([JSON.stringify(D, null, 1)], name.replace(/[\\/:*?"<>|]+/g, "-") + ".json", { type: "application/json" });
@@ -915,6 +915,9 @@ function startForm(type, key) {
   // Wanro 27 Oct: a DSTI stays open all day. The DSTI tile shows today's DSTIs first, so visitors are added to the open one.
   if (type === "dsti" && key !== "new" && S.project && dstiList(S.project.id, ymd(S.date || today())).length) { go("dstilist"); return; }
   if (key === "new") key = undefined;
+  // Wanro 28 Oct: the DSTI is done on site with the crew, not at home or on the road. A new one opens from 07h00.
+  if (type === "dsti" && !isAdmin(S.user) && new Date().getHours() < 7 && ymd(S.date || today()) === ymd(today())) {
+    showInfo("The DSTI opens at 07h00", "Do the DSTI on site with the crew, after 07h00. Not at home or on the road."); return; }
   const base = { type, key, date: S.date || today(), project: S.project, user: S.user, photos: [] };
   if (type === "check") Object.assign(base, { d: {}, outcome: "", sig: "", items: CHECKS[key].groups.map(g => g[1].map(n => ({ name: n }))) });
   if (type === "toolbox") Object.assign(base, { talk: "", talkLabel: "", att: [{ name: S.user }, {}, {}, {}], q: "" });
@@ -1004,7 +1007,7 @@ function vDiary() {
           h("div", { class: "act-card" },
             h("label", {}, "Work area"), areaTd,
             h("label", {}, "Activity"), actTd,
-            h("label", {}, "Where, and what was done"), loc,
+            h("label", {}, "Where, and what was done"), voiceField(loc, () => r.locV, x => r.locV = x),
             h("div", { class: "act-qty" }, h("label", {}, "Quantity"), inp("number", r.qty, v => r.qty = v, "0"), unitCell)));
       }));
       draw();
@@ -1057,8 +1060,8 @@ function vDsti() {
         h("td", { class: "hz-ic" }, h("img", { src: DSTI_ICON[hz] || "", alt: "" })), h("td", { class: "hz-n" }, hz), cell("H"), cell("M"), cell("L"));
       if (!v.r) return [main];
       return [main, h("tr", { class: "hz-extra" }, h("td", { colspan: 6 },
-        h("label", { class: "hz-lab" }, "Associated risk"), inp("text", v.risk, x => v.risk = x, "e.g. electric shock"),
-        h("label", { class: "hz-lab" }, "Control measures"), txt(v.ctrl, x => v.ctrl = x, "e.g. permit to work, earthing, test before touch")))];
+        h("label", { class: "hz-lab" }, "Associated risk"), voiceField(growTxt(v.risk, x => v.risk = x, "What could go wrong here today?", 52), () => v.riskV, x => v.riskV = x),
+        h("label", { class: "hz-lab" }, "Control measures"), voiceField(growTxt(v.ctrl, x => v.ctrl = x, "What are you doing about it today?", 72), () => v.ctrlV, x => v.ctrlV = x)))];
     }));
   };
   drawHz();
@@ -1072,8 +1075,8 @@ function vDsti() {
       h("td", { colspan: 2 }, inp("text", v.n, x => v.n = x, "List additional hazard identified")), cell("H"), cell("M"), cell("L"));
     if (!v.r) return [main];
     return [main, h("tr", { class: "hz-extra" }, h("td", { colspan: 6 },
-      h("label", { class: "hz-lab" }, "Associated risk"), inp("text", v.risk, x => v.risk = x, ""),
-      h("label", { class: "hz-lab" }, "Control measures"), txt(v.ctrl, x => v.ctrl = x, "")))];
+      h("label", { class: "hz-lab" }, "Associated risk"), voiceField(growTxt(v.risk, x => v.risk = x, "What could go wrong here today?", 52), () => v.riskV, x => v.riskV = x),
+      h("label", { class: "hz-lab" }, "Control measures"), voiceField(growTxt(v.ctrl, x => v.ctrl = x, "What are you doing about it today?", 72), () => v.ctrlV, x => v.ctrlV = x)))];
   }));
   drawHx();
   f.ppe = [...new Set((f.ppe || []).map(x => PPE_OLD[x] || x))];
@@ -1499,7 +1502,7 @@ async function recordPdf() {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793199038"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793199038"); await loadJs("./js/pdf.js?v=1793199038");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793214060"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793214060"); await loadJs("./js/pdf.js?v=1793214060");
     const f = S.form, src = [...app.children].filter(k => !k.matches(".bar, .fb-btn, .ro-bar, .psub, .err, .pnav, .addrow"));
     const box = document.createElement("div");
     for (const k of src) {
@@ -1750,7 +1753,7 @@ async function sendOrder(f) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793199038"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793199038"); await loadJs("./js/pdf.js?v=1793199038");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793214060"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793214060"); await loadJs("./js/pdf.js?v=1793214060");
     const { html, title } = orderDoc(f);
     const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
@@ -2501,6 +2504,92 @@ function vAllocate() {
 // Other work: anything he did that was not on his list. Picked from the activity list, so it counts in the totals.
 // Other work: anything he did that was not on his list. He writes WHAT and WHERE only, no number.
 // The site manager puts in the quantity when he reviews the diary, so nothing is ever counted twice.
+// ---------- voice to text (Wanro 28 Oct) ----------
+// Tap SPEAK and talk, in English only. Pauses are fine: it keeps recording until DONE is tapped. The phone then turns the
+// recording into text word for word (Whisper, on the phone itself, so it also works with no signal once downloaded).
+// Nothing is reworded or translated. Afterwards: EDIT to fix a misheard word, RE-RECORD to say it again, PLAY to listen.
+// The recording is kept with the form as proof of what was said.
+const VOICE = "./voice/", VOICE_CACHE = "fibraco-voice-1";
+const VOICE_FILES = ["worker.js?v=2", "tf/transformers.min.js", "tf/ort-wasm-simd-threaded.jsep.js", "tf/ort-wasm-simd-threaded.jsep.wasm",
+  ...["config.json", "generation_config.json", "preprocessor_config.json", "tokenizer.json", "tokenizer_config.json", "onnx/encoder_model_quantized.onnx", "onnx/decoder_model_merged_quantized.onnx"].map(f => "models/Xenova/whisper-base/" + f)];
+const vUrl = f => new URL(VOICE + f, location.href).href;
+async function voiceOnPhone() { try { const c = await caches.open(VOICE_CACHE); for (const f of VOICE_FILES) if (!(await c.match(vUrl(f)))) return false; return true; } catch (e) { return false; } }
+let vDl = null;
+function voiceDownload(onPct) { // fetch every file once, the service worker keeps them in the voice cache
+  if (vDl) return vDl;
+  vDl = (async () => { let n = 0; for (const f of VOICE_FILES) { const r = await fetch(vUrl(f)); if (!r.ok) throw new Error("download failed"); await r.arrayBuffer(); n++; if (onPct) onPct(Math.round(n / VOICE_FILES.length * 100)); } return true; })().finally(() => { vDl = null; });
+  return vDl;
+}
+// on Wi-Fi, the engine comes down by itself in the background
+setTimeout(async () => { try { const c = navigator.connection; if (c && c.type === "wifi" && Store.online() && !(await voiceOnPhone())) voiceDownload().catch(() => {}); } catch (e) {} }, 20000);
+let vWorker = null, vSeq = 0; const vWait = new Map(); let vProg = null;
+function vAsk(audio) {
+  if (!vWorker) { vWorker = new Worker(VOICE + "worker.js?v=2", { type: "module" });
+    vWorker.onmessage = e => { const d = e.data; if (d.progress) { if (vProg) vProg(d); return; } const w = vWait.get(d.id); if (w) { vWait.delete(d.id); d.error ? w.bad(new Error(d.error)) : w.ok(d); } };
+    vWorker.onerror = e => { for (const w of vWait.values()) w.bad(new Error(e.message || "voice engine failed")); vWait.clear(); vWorker = null; }; }
+  return new Promise((ok, bad) => { const id = ++vSeq; vWait.set(id, { ok, bad }); vWorker.postMessage({ id, audio }, audio ? [audio.buffer] : []); });
+}
+const vModal = (...kids) => { const ov = h("div", { class: "overlay vrec-ov", role: "dialog" }, h("div", { class: "modal vrec" }, ...kids)); document.body.append(ov); return ov; };
+// records until DONE, returns { text, clip, secs } or null
+async function voiceCapture() {
+  if (!(await voiceOnPhone())) {
+    if (!Store.online()) { showInfo("Voice not on this phone yet", "The voice engine downloads once, about 100 MB, then it works without signal. There is no signal now, so type for now and download it on Wi-Fi."); return null; }
+    const go = await new Promise(res => { const ov = vModal(h("h2", {}, "Download the voice engine?"),
+      h("p", {}, "It downloads once, about 100 MB, then it works without signal. Use Wi-Fi if you can."),
+      h("div", { class: "vrow" }, h("button", { type: "button", class: "btn-g", onclick: () => { ov.remove(); res(false); } }, "Not now, I'll type"), h("button", { type: "button", class: "vgo", onclick: () => { ov.remove(); res(true); } }, "Download now")));
+    }); if (!go) return null;
+    const pct = h("b", {}, "0%"), ov = vModal(h("h2", {}, "Downloading the voice engine"), h("p", {}, "Only this once. Keep the app open."), pct);
+    try { await voiceDownload(p => pct.textContent = p + "%"); } catch (e) { ov.remove(); showInfo("Download stopped", "The signal dropped. Try again on Wi-Fi."); return null; }
+    ov.remove();
+  }
+  let stream; try { stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, channelCount: 1 } }); }
+  catch (e) { showInfo("Microphone blocked", "Allow the microphone for this app in the phone's settings, then try again."); return null; }
+  const mime = ["audio/webm;codecs=opus", "audio/ogg;codecs=opus", "audio/mp4"].find(m => window.MediaRecorder && MediaRecorder.isTypeSupported(m)) || "";
+  const rec = new MediaRecorder(stream, mime ? { mimeType: mime, audioBitsPerSecond: 24000 } : undefined), parts = [];
+  rec.ondataavailable = e => { if (e.data && e.data.size) parts.push(e.data); };
+  const t0 = Date.now(), clock = h("div", { class: "vclock" }, "0:00");
+  const tick = setInterval(() => { const s = Math.floor((Date.now() - t0) / 1000); clock.textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; }, 250);
+  const done = await new Promise(res => { const ov = vModal(h("div", { class: "vdot" }), h("h2", {}, "Recording"), clock,
+      h("p", {}, "Speak in English. Take your time, pauses are fine. It keeps recording until you tap DONE."),
+      h("div", { class: "vrow" }, h("button", { type: "button", class: "btn-g", onclick: () => { ov.remove(); res(false); } }, "Cancel"), h("button", { type: "button", class: "vgo", onclick: () => { ov.remove(); res(true); } }, "DONE")));
+    rec.start(1000); });
+  clearInterval(tick);
+  const secs = Math.round((Date.now() - t0) / 1000);
+  await new Promise(r => { rec.onstop = r; rec.stop(); }); stream.getTracks().forEach(t => t.stop());
+  if (!done) return null;
+  const blob = new Blob(parts, { type: rec.mimeType || mime || "audio/webm" });
+  const msg = h("p", {}, "Turning your words into text. This stays on the phone."), ov = vModal(h("h2", {}, "One moment"), msg);
+  vProg = d => { msg.textContent = `Starting the voice engine ${d.pct || 0}%`; };
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+    const buf = await ctx.decodeAudioData(await blob.arrayBuffer()); const audio = buf.getChannelData(0).slice(); ctx.close();
+    const r = await vAsk(audio); vProg = null; ov.remove();
+    const clip = await new Promise(ok => { const fr = new FileReader(); fr.onload = () => ok(fr.result); fr.readAsDataURL(blob); });
+    if (!r.text) { showInfo("Nothing heard", "The phone did not pick up any words. Hold it closer and try again, or type."); return null; }
+    return { text: r.text, clip, secs };
+  } catch (e) { vProg = null; ov.remove(); showInfo("Could not turn it into text", `${e.message}. Type it for now.`); return null; }
+}
+// puts SPEAK, EDIT, RE-RECORD and PLAY under a text box. getV/setV keep the link to the recording.
+function voiceField(t, getV, setV) {
+  const bar = h("div", { class: "vbar" });
+  const put = x => { t.value = x; t.dispatchEvent(new Event("input", { bubbles: true })); };
+  const b = (cls, label, fn) => h("button", { type: "button", class: "vbtn " + cls, onclick: fn }, label);
+  const draw = () => { const v = getV(), edit = !!t._edit;
+    t.readOnly = !!v && !edit; t.classList.toggle("vlock", !!v && !edit);
+    bar.replaceChildren(...(v ? [edit ? b("vok", "Done editing", () => { t._edit = false; draw(); }) : b("", "✎ Edit", () => { t._edit = true; draw(); t.focus(); }),
+        b("vmic", "🎙 Re-record", () => go(true)), b("", "▶ Play", play), h("small", {}, `Recorded ${v.at}`)]
+      : [b("vmic", "🎙 Speak (English)", () => go(false)), h("small", {}, "or type")]));
+  };
+  const play = async () => { const v = getV(); if (!v) return; let d = PHOTO_CACHE.get(v.id); if (!d) d = await Store.photo(v.id).catch(() => null); if (!d) { toast("The recording plays when there is signal."); return; } PHOTO_CACHE.set(v.id, d); new Audio(d).play().catch(() => toast("Could not play it.")); };
+  async function go(redo) {
+    const r = await voiceCapture(); if (!r) return;
+    const id = "ph|v" + Date.now().toString(36) + rid(); PHOTO_CACHE.set(id, r.clip); Store.put(id, r.clip, "ph");
+    put(redo || !t.value.trim() ? r.text : t.value.trim() + " " + r.text);
+    setV({ id, s: r.secs, at: hhmm(new Date()) }); t._edit = false; draw(); S.formDirty = true;
+  }
+  draw();
+  return h("div", { class: "vfield" }, t, bar);
+}
 // a text box that grows while you type, so nobody has to scroll sideways or squint
 function growTxt(v, on, ph, min) {
   const t = h("textarea", { class: "act-loc", rows: 2, placeholder: ph || "", oninput: e => { on(e.target.value); grow(); } }, v || "");
@@ -2525,7 +2614,7 @@ function otherBox(sec, locked) {
             : sel([...all.map(x => x[1]), OTHER_ACT], o.act, v => { if (v === OTHER_ACT) { o.typeOwn = true; o.act = ""; o.unit = "ea"; drawPick(); const t = pick.querySelector("textarea"); if (t) t.focus(); return; }
                 o.act = v; o.unit = (all.find(x => x[1] === v) || [""])[0]; }, "Choose, or Other to type your own")); };
         drawPick(); return pick; })(),
-      h("label", { class: "oth-lab" }, "Where, and what was done"), growTxt(o.loc, v => o.loc = v, "e.g. Control room to battery 3, pulled and terminated 2 cables", 72),
+      h("label", { class: "oth-lab" }, "Where, and what was done"), voiceField(growTxt(o.loc, v => o.loc = v, "e.g. Control room to battery 3, pulled and terminated 2 cables", 72), () => o.locV, x => o.locV = x),
       h("label", { class: "oth-lab" }, "Who worked with you, or more detail (optional)"), growTxt(o.what, v => o.what = v, "", 52));
   };
   const draw = () => box.replaceChildren(...sec.other.map(card), ...(sec.other.length ? [] : [h("div", { style: "padding:4px 12px 8px;font-size:13px;color:#5b6470" }, locked ? "None" : "Did work that is not in your list above? Write what and where. No number, the site manager puts that in.")]));
@@ -2597,7 +2686,7 @@ function vMySection() {
       // his own note: where exactly, or anything the site manager must know
       const note = locked ? (r.note ? h("div", { class: "task-note-ro" }, `Note: ${r.note}`) : null)
         : (() => { const tn = h("textarea", { class: "task-note", rows: 3, placeholder: "Note: where exactly, if not as planned, or why. The site manager and client see this.", "aria-label": `Note, ${nice2(t.act)}`, oninput: e => { r.note = e.target.value; g(); } }, r.note || "");
-            const g = () => { tn.style.height = "auto"; tn.style.height = Math.max(80, tn.scrollHeight + 2) + "px"; }; setTimeout(g); return tn; })();
+            const g = () => { tn.style.height = "auto"; tn.style.height = Math.max(80, tn.scrollHeight + 2) + "px"; }; setTimeout(g); return voiceField(tn, () => r.noteV, x => r.noteV = x); })();
       return h("div", { class: "task-card" + (t.crit ? " crit" : "") },
         t.crit ? h("div", { class: "task-crit" }, "CRITICAL, MUST BE DONE TODAY") : null,
         h("div", { class: "task-name" }, nice2(t.act)),
@@ -2765,7 +2854,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793199038"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793199038"); await loadJs("./js/pdf.js?v=1793199038");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793214060"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793214060"); await loadJs("./js/pdf.js?v=1793214060");
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
     // Phones only open the share menu straight after a tap, so the last step is one tap on Share.
@@ -2871,7 +2960,7 @@ async function processMailQ1() {
   const go = q.filter(j => !j.unsure); if (!go.length) { if (["review", "menu", "today"].includes(S.view)) render(); return; }
   mqBusy = true;
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793199038"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793199038"); await loadJs("./js/pdf.js?v=1793199038");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793214060"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793214060"); await loadJs("./js/pdf.js?v=1793214060");
     for (const j of go) {
       const p = CFG.projects.find(x => x.id === j.pid); if (!p) { j.done = true; continue; }
       if (!j.flash) { const m0 = Store.get(`mail|${j.pid}|${j.ds}`); if (m0 && m0.jobAt && m0.jobAt >= j.at) { j.done = true; continue; } } // another phone already sent it
@@ -4001,7 +4090,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793199038"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793199038"); await loadJs("./js/pdf.js?v=1793199038");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793214060"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793214060"); await loadJs("./js/pdf.js?v=1793214060");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
