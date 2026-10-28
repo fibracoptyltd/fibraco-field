@@ -137,9 +137,11 @@ function toast(t) {
 }
 function leaveFormCheck(then) {
   if (!(FORM_VIEWS.includes(S.view) && S.formDirty)) return then();
+  // Wanro 28 Oct: a half-done diary is kept on the phone. Open the diary again and you carry on where you stopped.
+  const keepIt = S.view === "diary" && S.form && !S.form.correcting;
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Leave this page" }, h("div", { class: "modal" }, h("h2", {}, "Leave this page?"),
-    h("p", {}, S.view === "mysection" ? "Your diary section is kept on the phone. You can come back to it." : "What you filled in on this form is not submitted yet. If you leave, it is lost."),
-    h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Stay"), h("button", { class: "btn-w", type: "button", onclick: () => { ov.remove(); S.formDirty = false; clearDraft(); then(); } }, "Leave"))));
+    h("p", {}, S.view === "mysection" ? "Your diary section is kept on the phone. You can come back to it." : keepIt ? "Your diary is kept on the phone. Open the diary again and you carry on where you stopped." : "What you filled in on this form is not submitted yet. If you leave, it is lost."),
+    h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Stay"), h("button", { class: "btn-w", type: "button", onclick: () => { ov.remove(); if (keepIt) saveDraftNow(); else clearDraft(); S.formDirty = false; then(); } }, "Leave"))));
   document.body.append(ov);
 }
 addEventListener("input", () => { if (FORM_VIEWS.includes(S.view)) { S.formDirty = true; saveDraft(); } }, true);
@@ -148,21 +150,30 @@ addEventListener("change", () => { if (FORM_VIEWS.includes(S.view)) { S.formDirt
 // An unfinished form is kept on the phone, so it survives the app closing (camera, WhatsApp, an update or the
 // 10 minute lock). When the app opens again it offers to carry on.
 const FORM_NAMES = { check: "an inspection checklist", toolbox: "a toolbox talk", incident: "an incident report", nearmiss: "a near-miss report", jobobs: "a job observation", si: "a site instruction", order: "a material order", diary: "the diary", dsti: "a DSTI", inspection: "a site inspection" };
-let draftT = 0;
-function saveDraft() {
-  clearTimeout(draftT);
-  draftT = setTimeout(() => { try {
-    if (!S.form || S.formRO || !FORM_VIEWS.includes(S.view) || S.view === "mysection" || !Store.keepLocal) return;
-    const f = Object.assign({}, S.form, { project: S.form.project ? S.form.project.id : null, date: S.form.date ? new Date(S.form.date).toISOString() : null });
-    Store.keepLocal("draft", { view: S.view, at: Date.now(), f }).catch(() => {});
-  } catch (e) {} }, 600);
+let draftT = 0, lastDraft = null;
+function draftNow() { try {
+  if (!S.form || S.formRO || !FORM_VIEWS.includes(S.view) || S.view === "mysection" || !Store.keepLocal) return;
+  const f = Object.assign({}, S.form, { project: S.form.project ? S.form.project.id : null, date: S.form.date ? new Date(S.form.date).toISOString() : null });
+  lastDraft = { view: S.view, at: Date.now(), f };
+  Store.keepLocal("draft", lastDraft).catch(() => {});
+} catch (e) {} }
+function saveDraft() { clearTimeout(draftT); draftT = setTimeout(draftNow, 600); }
+function saveDraftNow() { clearTimeout(draftT); draftNow(); }
+function clearDraft() { clearTimeout(draftT); lastDraft = null; try { Store.keepLocal("draft", null).catch(() => {}); } catch (e) {} }
+// Wanro 28 Oct: open the diary again and carry on where you stopped, nothing to fill in twice
+function restoreDiaryDraft(f) {
+  const d = lastDraft;
+  if (!d || !d.f || d.view !== "diary" || d.f.type !== "diary" || d.f.correcting || !f || !f.project || d.f.project !== f.project.id) return false;
+  if (!d.f.date || !f.date || ymd(new Date(d.f.date)) !== ymd(new Date(f.date)) || !!d.f.combined !== !!f.combined) return false;
+  Object.assign(f, d.f, { type: f.type, project: f.project, date: f.date, user: f.user });
+  S.formDirty = true; return true;
 }
-function clearDraft() { clearTimeout(draftT); try { Store.keepLocal("draft", null).catch(() => {}); } catch (e) {} }
 async function offerDraft() {
   let d = null; try { d = await Store.readLocal("draft"); } catch (e) {}
   if (!d || !d.f || Date.now() - d.at > 3 * 864e5) return;
   const p = d.f.project ? PROJECTS.find(x => x.id === d.f.project) : null;
   if (d.f.project && !p) return;
+  lastDraft = d;
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Carry on" }, h("div", { class: "modal" }, h("h2", {}, "Carry on where you were?"),
     h("p", {}, `You were busy with ${FORM_NAMES[d.f.type] || "a form"}${p ? ` on ${p.short}` : ""} when the app closed. Everything you typed is still here.`),
     h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => { ov.remove(); clearDraft(); } }, "Throw it away"),
@@ -362,7 +373,7 @@ function vProjects() {
         bioSetup(); } }, "Fingerprint")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1793214060";
+const APPV = "1793215463";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -436,7 +447,7 @@ async function sendRegister(p, d, days) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793214060"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793214060"); await loadJs("./js/pdf.js?v=1793214060");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793215463"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793215463"); await loadJs("./js/pdf.js?v=1793215463");
     const { html, title } = attDoc(p, d, days); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
@@ -540,7 +551,7 @@ async function timeZone() {
   try {
     try { Store.kick(); await refreshDevices(true); } catch (e) {}
     await new Promise(r => setTimeout(r, 1800));
-    await loadJs("./js/lib/html2canvas.min.js?v=1793214060"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793214060"); await loadJs("./js/pdf.js?v=1793214060");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793215463"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793215463"); await loadJs("./js/pdf.js?v=1793215463");
     const D = tzData(), stamp = `${dmy(new Date())} ${hhmm()}`, name = `FIBRACO - Time Zone (${stamp})`;
     const pdf = await window.FibPdf.diaryPdf(tzHtml(D), name);
     const json = new File([JSON.stringify(D, null, 1)], name.replace(/[\\/:*?"<>|]+/g, "-") + ".json", { type: "application/json" });
@@ -929,14 +940,16 @@ function startForm(type, key) {
   if (type === "order") Object.assign(base, { need: "", reason: "", items: [{}, {}, {}], notes: "", sig: "" });
   if (type === "diary") Object.assign(base, {
     applicable: S.project && S.project.area ? S.project.area : "", start: "07h00", end: "17h00", weather: "", w: {},
-    team: [{ name: S.user, hrs: "" }, {}, {}, {}, {}, {}],
+    team: [{ name: S.user, hrs: "9" }, {}, {}, {}, {}, {}],
     desig: Object.fromEntries(DESIGNATIONS.map(d => [d, ""])),
     plant: Object.fromEntries(PLANT.map(p => [p, ""])), equip: Object.fromEntries(EQUIPMENT.map(p => [p, ""])),
     acts: Array.from({ length: 4 }, () => ({ area: S.project && S.project.area || "" })),
     sched: "", schedWhy: "", written: "", verbal: "", mats: [{}, {}, {}], delays: [{}, {}, {}], clientRep: "", sigF: "", sigC: "" });
   if (type === "dsti") Object.assign(base, { task: "", ms: "", tbt: "", hz: {}, hzx: [{ n: "" }, { n: "" }], ppe: [], ack: (TEAM_OF().length ? TEAM_OF() : [""]).map(n => ({ name: n, sig: "" })), assessor: riskAssessor(S.project) || S.user, sigA: "", wind: S.project && S.project.wind ? [{ t: hhmm(new Date()) }, {}, {}, {}, {}] : [] });
   if (type === "inspection") Object.assign(base, { company: "", contact: "", number: "", email: "", acts: [{ sow: "", comments: "", photos: [] }] });
-  S.form = base; S.formDirty = false; go(type);
+  S.form = base; S.formDirty = false;
+  if (type === "diary" && restoreDiaryDraft(S.form)) toast("Carried on where you stopped");
+  go(type);
 }
 function formHead(title, docNote) {
   const f = S.form;
@@ -992,6 +1005,7 @@ function vDiary() {
         h("td", {}, h("div", { style: "display:grid;grid-template-columns:1fr 1fr" }, inp("number", f.w[k + "min"], v => f.w[k + "min"] = v, "Min"), inp("number", f.w[k + "max"], v => f.w[k + "max"] = v, "Max"))))),
       ...[["Weather - Humidity (%)", "hum"], ["Weather - Visibility (km)", "vis"], ["Rain (mm)", "rain"]].map(([lab, k]) => h("tr", {}, h("td", { class: "lab" }, lab, h("span", { class: "auto" }, "auto")), h("td", {}, inp("number", f.w[k], v => f.w[k] = v, ""))))))),
     h("p", { class: "hint" }, "Type the weather from the phone's weather app. Automatic weather comes in a later update."),
+    pmPerson() ? h("p", { class: "hint", style: "font-weight:700;color:#0069AA" }, `Project Manager: ${pmPerson().name} (office based). On every diary by itself.`) : null,
     team,
     sheet("desig", h("table", {}, h("thead", {}, h("tr", {}, h("th", { class: "l" }, "Designation"), h("th", {}, "QTY"))),
       h("tbody", {}, DESIGNATIONS.map(d => h("tr", {}, h("td", { style: "padding:8px;font-weight:600" }, d), h("td", { style: "width:86px" }, sel(numOpts(9), f.desig[d], v => f.desig[d] = v, "0"))))))),
@@ -1502,7 +1516,7 @@ async function recordPdf() {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793214060"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793214060"); await loadJs("./js/pdf.js?v=1793214060");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793215463"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793215463"); await loadJs("./js/pdf.js?v=1793215463");
     const f = S.form, src = [...app.children].filter(k => !k.matches(".bar, .fb-btn, .ro-bar, .psub, .err, .pnav, .addrow"));
     const box = document.createElement("div");
     for (const k of src) {
@@ -1753,7 +1767,7 @@ async function sendOrder(f) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793214060"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793214060"); await loadJs("./js/pdf.js?v=1793214060");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793215463"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793215463"); await loadJs("./js/pdf.js?v=1793215463");
     const { html, title } = orderDoc(f);
     const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
@@ -2052,7 +2066,7 @@ function ensureDay(k = dayKey()) {
 function myTasks(u) { return (S.alloc[dayKey()] || []).map((t, i) => ({ ...t, i })).filter(t => t.who === u); }
 function sectionOf(u) {
   const k = dayKey(); const secs = S.sections[k];
-  if (!secs[u]) secs[u] = { status: "draft", hrs: "", rows: myTasks(u).map(() => ({})), other: [], delays: [], sig: "" };
+  if (!secs[u]) secs[u] = { status: "draft", hrs: "9", rows: myTasks(u).map(() => ({})), other: [], delays: [], sig: "" };
   return secs[u];
 }
 function statusPill(st) {
@@ -2175,7 +2189,9 @@ const SWATCH = { Blue: "#1565c0", Orange: "#f57c00", Green: "#2e9e3e", Brown: "#
 let DESIGN = null; // turbine design data comes with the project in the setup file
 const SYS = () => (S.project && S.project.sys) || "System";
 const OEM = () => (S.project && S.project.oem) || "Turbine";
-const adminName = () => (PEOPLE.find(x => x.admin) || {}).name || "the office";
+// Wanro 28 Oct: Wanro is the Project Manager on every job, found by name so another admin never takes his place
+const pmPerson = () => PEOPLE.find(x => /^wanro\b/i.test(x.name || "")) || PEOPLE.find(x => x.admin);
+const adminName = () => (pmPerson() || {}).name || "the office";
 function designTurbines() {
   const out = [];
   DESIGN.collectors.forEach(c => {
@@ -2804,7 +2820,7 @@ function diaryDoc(k, project, date) {
   const w = site.w || {};
   const team = (site.team && site.team.some(r => r.name) ? site.team : people.map(p => ({ name: p, hrs: (secs[p] || {}).hrs })) ).filter(r => r.name);
   // Wanro 27 Oct: the PM is on every daily diary of every job, office based
-  const pmP = PEOPLE.find(x => x.admin);
+  const pmP = pmPerson();
   if (pmP && !team.some(r => (r.name || "").startsWith(pmP.name))) team.unshift({ name: `${pmP.name}, Project Manager (office based)`, hrs: "Office" });
   const d0 = site.desig || {}, desigPM = Object.assign(pmP ? { "Project Manager": +d0["Project Manager"] > 0 ? d0["Project Manager"] : "1" } : {}, Object.fromEntries(Object.entries(d0).filter(([k]) => k !== "Project Manager")));
   const acts = (site.acts && site.acts.some(r => r.act) ? site.acts : alloc.map((t, i) => { const idx = alloc.filter((a, j) => a.who === t.who && j < i).length; const r = ((secs[t.who] || {}).rows || [])[idx] || {}; return { area: project.area, act: t.act, unit: t.unit, loc: t.loc + (r.note ? ". " + r.note : ""), qty: r.done }; }).concat(people.flatMap(p => otherList(secs[p]).map(o => ({ area: project.area, act: o.act, unit: o.unit, loc: `${o.loc}${o.what ? ". " + o.what : ""}, not planned`, qty: o.qty }))))).filter(r => r.act);
@@ -2854,7 +2870,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793214060"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793214060"); await loadJs("./js/pdf.js?v=1793214060");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793215463"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793215463"); await loadJs("./js/pdf.js?v=1793215463");
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
     // Phones only open the share menu straight after a tap, so the last step is one tap on Share.
@@ -2960,7 +2976,7 @@ async function processMailQ1() {
   const go = q.filter(j => !j.unsure); if (!go.length) { if (["review", "menu", "today"].includes(S.view)) render(); return; }
   mqBusy = true;
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793214060"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793214060"); await loadJs("./js/pdf.js?v=1793214060");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793215463"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793215463"); await loadJs("./js/pdf.js?v=1793215463");
     for (const j of go) {
       const p = CFG.projects.find(x => x.id === j.pid); if (!p) { j.done = true; continue; }
       if (!j.flash) { const m0 = Store.get(`mail|${j.pid}|${j.ds}`); if (m0 && m0.jobAt && m0.jobAt >= j.at) { j.done = true; continue; } } // another phone already sent it
@@ -3066,7 +3082,7 @@ function sendBack(p, sec) {
 // Wanro 27 Oct: the office corrects a signed diary. Everything stays on record (the server keeps every version).
 function openCorrection(k) {
   const site = Store.get("site|" + k);
-  openCombined();
+  openCombined({ fresh: true });
   const f = S.form;
   if (site) { const keep = { type: f.type, project: f.project, date: f.date, user: f.user, photos: f.photos || [] }; Object.assign(f, JSON.parse(JSON.stringify(site)), keep); }
   if (!f.team || !f.team.some(r => r.name)) f.team = [{ name: "" }, {}, {}, {}];
@@ -3090,17 +3106,25 @@ function signCorrection(f) {
         }); } }, "Sign the correction"))));
   document.body.append(ov); why.focus();
 }
-function openCombined() {
+function openCombined(opts = {}) {
   // Opens the full Fibraco diary layout with the team and activities already filled from the crew sections.
   const k = dayKey(), alloc = S.alloc[k] || [], secs = S.sections[k] || {};
   startForm("diary");
   const f = S.form;
   const people = [...new Set(alloc.map(a => a.who))];
-  f.team = people.map(p => ({ name: p, hrs: (secs[p] || {}).hrs || "" }));
+  // Wanro 28 Oct: a normal site day is 9 hours
+  f.team = people.map(p => ({ name: p, hrs: (secs[p] || {}).hrs || "9" }));
   f.acts = alloc.map((t, i) => { const idx = alloc.filter((a, j) => a.who === t.who && j < i).length; const r = ((secs[t.who] || {}).rows || [])[idx] || {}; return { area: S.project.area || "", act: t.act, unit: t.unit, loc: `${t.loc}${r.note ? ". " + r.note : ""} (${t.who.split(" ")[0]})`, qty: r.done || "" }; }).concat(people.flatMap(p => otherList(secs[p]).map(o => ({ area: S.project.area || "", act: o.act, unit: o.unit, loc: `${o.loc}${o.what ? ". " + o.what : ""}, not planned (${p.split(" ")[0]})`, qty: o.qty }))));
   f.delays = alloc.map(t => t.who).filter((p, i, a) => a.indexOf(p) === i).flatMap(p => ((secs[p] || {}).delays || []).filter(d => d.cause).map(d => ({ c: `${d.cause}${d.what ? ". " + d.what : ""} (${p.split(" ")[0]})`, t: d.hrs, int: isInternal(d.cause) }))); if (!f.delays.length) f.delays = [{}];
   const pt = projectTotals(); if (pt) { f.sched = pt.done === pt.plan ? "On" : pt.done > pt.plan ? "Ahead" : "Behind"; f.schedWhy = `Project ${pt.done}% done against ${pt.plan}% planned for today.` + (f.sched === "Behind" ? " See delays below." : ""); }
   f.combined = true;
+  // Wanro 28 Oct: opening the diary again carries on where you stopped. Unsaved work on the phone comes first,
+  // otherwise the part you already saved. Nothing gets typed twice.
+  if (!opts.fresh) {
+    const saved = Store.get("site|" + k);
+    if (restoreDiaryDraft(f)) toast("Carried on where you stopped");
+    else if (saved) { Object.assign(f, JSON.parse(JSON.stringify(saved)), { type: f.type, project: f.project, date: f.date, user: f.user, combined: true, correcting: false }); if (!f.photos) f.photos = []; }
+  }
   render();
 }
 function vKpi() {
@@ -4090,7 +4114,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793214060"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793214060"); await loadJs("./js/pdf.js?v=1793214060");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793215463"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793215463"); await loadJs("./js/pdf.js?v=1793215463");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),

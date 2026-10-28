@@ -1,6 +1,6 @@
 // Fibraco Field: keeps the app on the phone so it opens with no signal.
-const CACHE = "fibraco-field-1793214060";
-const SHELL = ["./", "./index.html", "./app.css?v=1793214060", "./js/store.js?v=1793214060", "./js/app.js?v=1793214060", "./js/pdf.js?v=1793214060", "./js/lib/html2canvas.min.js?v=1793214060", "./js/lib/jspdf.umd.min.js?v=1793214060", "./manifest.webmanifest", "./setup.bin", "./icons/logo.png", "./icons/icon-192.png", "./icons/icon-512.png"];
+const CACHE = "fibraco-field-1793215463";
+const SHELL = ["./", "./index.html", "./app.css?v=1793215463", "./js/store.js?v=1793215463", "./js/app.js?v=1793215463", "./js/pdf.js?v=1793215463", "./js/lib/html2canvas.min.js?v=1793215463", "./js/lib/jspdf.umd.min.js?v=1793215463", "./manifest.webmanifest", "./setup.bin", "./icons/logo.png", "./icons/icon-192.png", "./icons/icon-512.png"];
 self.addEventListener("install", e => e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())));
 self.addEventListener("activate", e => e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k.startsWith("fibraco-field-") && k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())));
 self.addEventListener("fetch", e => {
