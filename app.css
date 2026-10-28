@@ -792,13 +792,36 @@ body.guard input,body.guard textarea,body.guard [contenteditable="true"]{-webkit
 body.guard img{-webkit-user-drag:none}
 body.guard.away>*:not(#wm){filter:blur(28px)}
 
-/* menu blocks (Wanro 28 Oct): the block is filled with its colour (check sheets orange, health and safety red, quality control blue, project grey).
+/* menu blocks (Wanro 29 Oct, muted): the block is filled with its colour (check sheets teal, health and safety plum, quality control blue, project slate). No yellow, green or red, those mean to do, done and emergency.
    The tiles inside stay white, mustard when still to do and green when done, so the status still reads at a glance */
 .tblks{display:flex;flex-direction:column;gap:12px}
-.tblk{--bc:#5b6573;border:3px solid var(--bc);border-radius:14px;padding:7px 7px 8px;background:var(--bc);box-shadow:0 2px 8px rgba(0,0,0,.12)}
-.tblk-h{color:#fff;font-weight:800;font-size:13px;letter-spacing:.07em;text-transform:uppercase;padding:1px 4px 7px}
-.tblk-chk{--bc:#e36c0a}
-.tblk-hs{--bc:#c8102e}
-.tblk-qc{--bc:#0069aa}
-.tblk-pj{--bc:#5b6573}
+.tblk{--bc:#838c95;border:3px solid var(--bc);border-radius:14px;padding:7px 7px 8px;background:var(--bf,var(--bc))}
+.tblk-h{color:var(--hc,#fff);font-weight:800;font-size:13px;letter-spacing:.07em;text-transform:uppercase;padding:1px 4px 7px}
+.tblk-chk{--bc:#6a9a9e}
+.tblk-hs{--bc:#957a8e}
+.tblk-qc{--bc:#6b8fae}
+.tblk-pj{--bc:#838c95}
 .tblk .tile{box-shadow:0 1px 3px rgba(0,0,0,.25)}
+
+/* compact menu (Wanro 28 Oct): less space at the top, smaller tiles, every tile on one screen */
+body.vmenu .bar{padding-block:5px;margin-bottom:6px;gap:8px}
+body.vmenu .bar .back{width:34px;height:34px;font-size:18px}
+body.vmenu .bar .t b{font-size:14px}
+body.vmenu .bar .t span{font-size:11.5px}
+body.vmenu .tw{gap:6px;padding-bottom:2px}
+body.vmenu .treg .mbtn{padding:6px 10px;font-size:13.5px}
+body.vmenu .treg .mbtn small{font-size:10.5px}
+body.vmenu .twork{padding:5px 9px}
+body.vmenu .twork .tn{font-size:22px}
+body.vmenu .tblks{gap:7px}
+body.vmenu .tblk{padding:4px 5px 6px;border-width:2px;border-radius:12px}
+body.vmenu .tblk-h{font-size:11px;padding:1px 3px 4px}
+body.vmenu .tblk .tgrid{gap:5px}
+body.vmenu .tblk .tgrid.g3{grid-template-columns:repeat(3,1fr)}
+body.vmenu .tblk .tile{min-height:58px;padding:4px 2px;gap:3px;border-radius:10px}
+body.vmenu .tblk .ti-ic svg{width:21px;height:21px}
+body.vmenu .tblk .tile .tl{font-size:9.6px;letter-spacing:.01em;line-height:1.12}
+body.vmenu .tblk .tbadge{transform:scale(.85);transform-origin:top right}
+body.vmenu .tsos.round{width:84px;height:84px;margin:6px auto 0;gap:3px;font-size:10px}
+body.vmenu .tsos.round .ti-ic svg{width:26px;height:26px}
+body.vmenu .fb-btn.fb-inline{margin-top:4px}
