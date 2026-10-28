@@ -784,3 +784,21 @@ body.qcro #app input,body.qcro #app select,body.qcro #app textarea,body.qcro #ap
 .bps-chip{font-size:10px;font-weight:900;padding:2px 6px;border-radius:999px;background:#fff;color:#3d2f00;border:1px solid #3d2f00}
 .bps-chip.ok{background:#1e8e3e;color:#fff;border-color:#1e8e3e}
 .bps-chip.back{background:#c8102e;color:#fff;border-color:#c8102e}
+
+/* screenshot guard (Wanro 28 Oct): name, cell and time over every screen for everyone except Wanro, blur when the app leaves the screen, no copying */
+#wm{position:fixed;inset:0;pointer-events:none;z-index:2147483000;background-repeat:repeat;background-position:0 0}
+body.guard{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+body.guard input,body.guard textarea,body.guard [contenteditable="true"]{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
+body.guard img{-webkit-user-drag:none}
+body.guard.away>*:not(#wm){filter:blur(28px)}
+
+/* menu blocks (Wanro 28 Oct): the block is filled with its colour (check sheets orange, health and safety red, quality control blue, project grey).
+   The tiles inside stay white, mustard when still to do and green when done, so the status still reads at a glance */
+.tblks{display:flex;flex-direction:column;gap:12px}
+.tblk{--bc:#5b6573;border:3px solid var(--bc);border-radius:14px;padding:7px 7px 8px;background:var(--bc);box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.tblk-h{color:#fff;font-weight:800;font-size:13px;letter-spacing:.07em;text-transform:uppercase;padding:1px 4px 7px}
+.tblk-chk{--bc:#e36c0a}
+.tblk-hs{--bc:#c8102e}
+.tblk-qc{--bc:#0069aa}
+.tblk-pj{--bc:#5b6573}
+.tblk .tile{box-shadow:0 1px 3px rgba(0,0,0,.25)}

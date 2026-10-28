@@ -373,7 +373,7 @@ function vProjects() {
         bioSetup(); } }, "Fingerprint")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1793220986";
+const APPV = "1793223670";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -447,7 +447,7 @@ async function sendRegister(p, d, days) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793220986"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793220986"); await loadJs("./js/pdf.js?v=1793220986");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793223670"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793223670"); await loadJs("./js/pdf.js?v=1793223670");
     const { html, title } = attDoc(p, d, days); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
@@ -551,7 +551,7 @@ async function timeZone() {
   try {
     try { Store.kick(); await refreshDevices(true); } catch (e) {}
     await new Promise(r => setTimeout(r, 1800));
-    await loadJs("./js/lib/html2canvas.min.js?v=1793220986"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793220986"); await loadJs("./js/pdf.js?v=1793220986");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793223670"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793223670"); await loadJs("./js/pdf.js?v=1793223670");
     const D = tzData(), stamp = `${dmy(new Date())} ${hhmm()}`, name = `FIBRACO - Time Zone (${stamp})`;
     const pdf = await window.FibPdf.diaryPdf(tzHtml(D), name);
     const json = new File([JSON.stringify(D, null, 1)], name.replace(/[\\/:*?"<>|]+/g, "-") + ".json", { type: "application/json" });
@@ -821,6 +821,16 @@ function vProjectsTiles() {
       h("div", { class: "tfoot", style: "justify-content:center" }, h("span", {}, `App version ${verLabel()}`)),
       h("button", { type: "button", class: "tsos round", "aria-label": "Emergency", onclick: () => { if (!S.project && PROJECTS.length === 1) S.project = PROJECTS[0]; openEmergency(); } }, ticon("sos"), "EMERGENCY"))];
 }
+// Wanro 28 Oct: daily work shows mustard until it is done and submitted, then bright green. Days still to come stay plain.
+const dayCls = (d, done) => ymd(d) > ymd(today()) ? "" : done ? "ok" : "must";
+const dstiCls = (p, ds) => { const c = APPT(p) ? myChecks(p, S.user, ds).find(x => x.k === "dsti") : null; if (c) return c.st === "done" ? "ok" : "must";
+  return dayCls(new Date(ds + "T12:00:00"), Store.list(`form|${p.id}|`).some(([, o]) => o && o.type === "dsti" && o.date === ds)); };
+const secDone = st => ["submitted", "approved"].includes(st || "draft");
+// Wanro 28 Oct: the menu tiles sit in coloured blocks, one colour per kind of work
+function tBlocks(cols, groups) {
+  return h("div", { class: "tblks" }, ...groups.map(([c, title, tiles]) => { const t = tiles.filter(Boolean); return t.length ? h("section", { class: "tblk tblk-" + c },
+    h("div", { class: "tblk-h" }, title), h("div", { class: "tgrid " + cols }, ...t)) : null; }).filter(Boolean));
+}
 function vMenuTiles() {
   const p = S.project, d = S.date, k = (ensureDay(), dayKey()), alloc = S.alloc[k] || [], mgr = isMgr(S.user), sm = isSM(S.user) || isAdmin(S.user);
   const idle = mgr ? idleMen(p, ymd(d)) : [], rp = myRepairs(S.user);
@@ -838,44 +848,43 @@ function vMenuTiles() {
     const ppl = attPeople(p), notIn = ymd(d) === ymd(today()) ? ppl.filter(x => !(attGet(p, d, x) || {}).in).length : 0;
     work = h("div", { class: "twork" }, h("span", { class: "tn" }, `${inn}/${men.length}`), h("span", { class: "tpt" }, h("b", {}, "TODAY'S WORK"), h("small", {}, alloc.length ? `${alloc.length} tasks for ${men.length} men | ${inn} diaries in${S.final[k] ? " | signed " + S.final[k] : ""}` : "No work given out yet")),
       isSM(S.user) && !S.final[k] ? h("button", { type: "button", class: "tst blue", onclick: () => go("allocate") }, alloc.length ? "CHANGE" : "GIVE OUT") : null);
-    const list = [tile("book", "Daily\ndiaries", () => go("review"), { cls: "hi", badge: waiting || "" }),
-      tile("users", "Register", () => { S.attDate = S.date; go("attendance"); }, { badge: notIn || "", bc: "o" }),
-      myTasks(S.user).length ? tile("list", "My\ntasks", () => go("mysection")) : null,
-      sm && p.qcSpots ? tile("check", "QC\nsheets", () => go("qc"), { cls: "qc" }) : null,
-      tests, ...(comm || []),
-      tile("shield", "DSTI", () => startForm("dsti"), { cls: dstiDue(p, ymd(d)) ? "must" : "" }),
-      APPT(p) ? tile("eye", "My\nchecks", () => go("mychecks"), { badge: checksOpen(p, S.user, ymd(d)) || "", cls: checksOpen(p, S.user, ymd(d)) ? "must" : myChecks(p, S.user, ymd(d)).some(x => x.st === "later") ? "" : "ok" }) : tile("eye", "Inspec-\ntions", () => go("inspections")),
-      tile("doc", "Site\ninstruction", () => startForm("si")),
-      tile("cart", "Material\norder", () => startForm("order")),
-      tile("warn", "Incident", () => startForm("incident")),
-      tile("near", "Near\nmiss", () => startForm("nearmiss"), { cls: "nm" }),
-      tile("obs", "Job\nobservation", () => startForm("jobobs")),
-      tile("map", "Drawings and\nschedule", () => go("drawings")),
-      tile("rams", "RAMS", () => go("rams")),
-      tile("clock", "Internal\ndelays", () => go("delays"), dl),
-      tile("list", "Records", () => { S.recProj = p.id; S.recF = null; go("records"); }),
-      contacts].filter(Boolean);
-    if (list.length < 16) list.splice(list.length - 1, 0, tile("search", "Site\ninspection", () => startForm("inspection")));
-    grid = h("div", { class: "tgrid g4" }, ...list);
+    // Wanro 28 Oct: tiles grouped in coloured blocks. Check sheets on top, then health and safety with the daily diaries, then quality control, then the rest of the project
+    const myChk = APPT(p) ? tile("eye", "My\nchecks", () => go("mychecks"), { badge: checksOpen(p, S.user, ymd(d)) || "", cls: checksOpen(p, S.user, ymd(d)) ? "must" : myChecks(p, S.user, ymd(d)).some(x => x.st === "later") ? "" : "ok" }) : tile("eye", "Inspec-\ntions", () => go("inspections"));
+    grid = tBlocks("g4", [
+      ["chk", "Check sheets", [myChk, tile("search", "Site\ninspection", () => startForm("inspection")), tile("obs", "Job\nobservation", () => startForm("jobobs"))]],
+      ["hs", "Health and safety, daily diaries", [tile("book", "Daily\ndiaries", () => go("review"), { cls: dayCls(d, !!S.final[k]), badge: waiting || "" }),
+        tile("users", "Register", () => { S.attDate = S.date; go("attendance"); }, { badge: notIn || "", bc: "o", cls: ymd(d) === ymd(today()) && ppl.length ? (notIn ? "must" : "ok") : "" }),
+        myTasks(S.user).length ? tile("list", "My\ntasks", () => go("mysection"), { cls: dayCls(d, secDone(sectionOf(S.user).status)) }) : null,
+        tile("shield", "DSTI", () => startForm("dsti"), { cls: dstiCls(p, ymd(d)) }),
+        tile("warn", "Incident", () => startForm("incident")),
+        tile("near", "Near\nmiss", () => startForm("nearmiss"), { cls: "nm" }),
+        tile("rams", "RAMS", () => go("rams"))]],
+      ["qc", "Quality control", [sm && p.qcSpots ? tile("check", "QC\nsheets", () => go("qc"), { cls: "qc" }) : null, tests, ...(comm || [])]],
+      ["pj", "Project", [tile("doc", "Site\ninstruction", () => startForm("si")),
+        tile("cart", "Material\norder", () => startForm("order")),
+        tile("map", "Drawings and\nschedule", () => go("drawings")),
+        tile("clock", "Internal\ndelays", () => go("delays"), dl),
+        tile("list", "Records", () => { S.recProj = p.id; S.recF = null; go("records"); }),
+        contacts]]]);
   } else {
     const t = myTasks(S.user), sec = sectionOf(S.user);
     const stc = { draft: ["NOT SUBMITTED", "grey"], submitted: ["SUBMITTED", "blue"], returned: ["SENT BACK", "red"], approved: ["APPROVED", "green"] }[sec.status || "draft"];
     work = h("button", { type: "button", class: "twork", onclick: () => go("mysection") }, h("span", { class: "tn" }, String(t.length)),
       h("span", { class: "tpt" }, h("b", {}, "MY WORK TODAY"), h("small", {}, t.length ? t.map(x => `${nice2(x.act)} ${x.target}`).join(" | ") : "Nothing given to you yet. Ask the site manager.")),
       h("span", { class: "tst " + stc[1] }, stc[0]));
-    grid = h("div", { class: "tgrid" },
-      tile("book", "Daily\ndiary", () => go("mysection"), { cls: "hi" }),
-      tile("shield", "DSTI", () => startForm("dsti"), { cls: dstiDue(p, ymd(d)) ? "must" : "" }),
-      APPT(p) ? tile("eye", "My\nchecks", () => go("mychecks"), { badge: checksOpen(p, S.user, ymd(d)) || "", cls: checksOpen(p, S.user, ymd(d)) ? "must" : myChecks(p, S.user, ymd(d)).some(x => x.st === "later") ? "" : "ok" }) : tile("eye", "Daily\ninspections", () => go("inspections")),
-      tests, ...(comm || []),
-      tile("cart", "Material\norder", () => startForm("order")),
-      tile("doc", "Site\ninstruction", () => startForm("si")),
-      tile("warn", "Incident\nreport", () => startForm("incident")),
-      tile("near", "Near\nmiss", () => startForm("nearmiss"), { cls: "nm" }),
-      tile("map", "Drawings and\nschedule", () => go("drawings")),
-      tile("rams", "RAMS", () => go("rams")),
-      tile("clock", "Internal\ndelays", () => go("delays"), dl),
-      contacts);
+    grid = tBlocks("", [
+      ["chk", "Check sheets", [APPT(p) ? tile("eye", "My\nchecks", () => go("mychecks"), { badge: checksOpen(p, S.user, ymd(d)) || "", cls: checksOpen(p, S.user, ymd(d)) ? "must" : myChecks(p, S.user, ymd(d)).some(x => x.st === "later") ? "" : "ok" }) : tile("eye", "Daily\ninspections", () => go("inspections"))]],
+      ["hs", "Health and safety, daily diary", [tile("book", "Daily\ndiary", () => go("mysection"), { cls: dayCls(d, secDone(sec.status)) }),
+        tile("shield", "DSTI", () => startForm("dsti"), { cls: dstiCls(p, ymd(d)) }),
+        tile("warn", "Incident\nreport", () => startForm("incident")),
+        tile("near", "Near\nmiss", () => startForm("nearmiss"), { cls: "nm" }),
+        tile("rams", "RAMS", () => go("rams"))]],
+      ["qc", "Quality control", [tests, ...(comm || [])]],
+      ["pj", "Project", [tile("cart", "Material\norder", () => startForm("order")),
+        tile("doc", "Site\ninstruction", () => startForm("si")),
+        tile("map", "Drawings and\nschedule", () => go("drawings")),
+        tile("clock", "Internal\ndelays", () => go("delays"), dl),
+        contacts]]]);
   }
   const isTodayD = ymd(d) === ymd(today());
   const tb = topbar(p.short, nice(d), true), dsp = tb.querySelector(".t span");
@@ -1518,7 +1527,7 @@ async function recordPdf() {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793220986"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793220986"); await loadJs("./js/pdf.js?v=1793220986");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793223670"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793223670"); await loadJs("./js/pdf.js?v=1793223670");
     const f = S.form, src = [...app.children].filter(k => !k.matches(".bar, .fb-btn, .ro-bar, .psub, .err, .pnav, .addrow"));
     const box = document.createElement("div");
     for (const k of src) {
@@ -1769,7 +1778,7 @@ async function sendOrder(f) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793220986"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793220986"); await loadJs("./js/pdf.js?v=1793220986");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793223670"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793223670"); await loadJs("./js/pdf.js?v=1793223670");
     const { html, title } = orderDoc(f);
     const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
@@ -2602,7 +2611,7 @@ async function bpsReport(email) {
   const ov = h("div", { class: "overlay", role: "dialog" }, h("div", { class: "modal" }, h("h2", {}, email ? "Approving and emailing" : "Making the report"), h("p", {}, "Fetching the photos and building the PDF. Keep the app open on this screen.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793220986"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793220986"); await loadJs("./js/pdf.js?v=1793220986");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793223670"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793223670"); await loadJs("./js/pdf.js?v=1793223670");
     const ws = ["SUBSTATION", ...bpsWtgs()], phs = ws.flatMap(w => Object.values(bpsOf(w).ph).flat());
     await Promise.all(phs.map(p => p.ph && !PHOTO_CACHE.has(p.ph) && !(p.url || "").startsWith("data:") ? Store.photo(p.ph).then(d => { if (d) PHOTO_CACHE.set(p.ph, d); }).catch(() => {}) : 0));
     const d = bpsDoc(S.project);
@@ -3191,7 +3200,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793220986"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793220986"); await loadJs("./js/pdf.js?v=1793220986");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793223670"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793223670"); await loadJs("./js/pdf.js?v=1793223670");
     await fetchDayPhotos(k);
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
@@ -3298,7 +3307,7 @@ async function processMailQ1() {
   const go = q.filter(j => !j.unsure); if (!go.length) { if (["review", "menu", "today"].includes(S.view)) render(); return; }
   mqBusy = true; if (["review", "done"].includes(S.view)) render();
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793220986"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793220986"); await loadJs("./js/pdf.js?v=1793220986");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793223670"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793223670"); await loadJs("./js/pdf.js?v=1793223670");
     for (const j of go) {
       const p = CFG.projects.find(x => x.id === j.pid); if (!p) { j.done = true; continue; }
       if (!j.flash) { const m0 = Store.get(`mail|${j.pid}|${j.ds}`); if (m0 && m0.jobAt && m0.jobAt >= j.at) { j.done = true; continue; } } // another phone already sent it
@@ -4442,7 +4451,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793220986"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793220986"); await loadJs("./js/pdf.js?v=1793220986");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793223670"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793223670"); await loadJs("./js/pdf.js?v=1793223670");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
@@ -4879,9 +4888,9 @@ render = function () {
   document.body.classList.toggle("ro", !!S.formRO);
   _render();
   if (S.formRO) { const bar = app.querySelector(":scope > .bar"); const rb = roBar(); if (bar) bar.after(rb); else app.prepend(rb); }
-  if (S.view !== "drawing" && document.fullscreenElement) dwgFull(false); if (S.view === "claude" || S.view === "drawing") return;
+  if (S.view !== "drawing" && document.fullscreenElement) dwgFull(false); if (S.view === "claude" || S.view === "drawing") { wmDraw(); return; }
   // on the tile screens the button sits under EMERGENCY instead of floating over it
-  const fb = feedbackButton(); fb.classList.add("fb-inline"); app.append(fb); };
+  const fb = feedbackButton(); fb.classList.add("fb-inline"); app.append(fb); wmDraw(); };
 const splash = document.getElementById("splash");
 const leave = () => { splash.hidden = true; };
 splash.addEventListener("click", leave);
@@ -4898,6 +4907,32 @@ function updateBar() {
   document.body.append(h("button", { id: "updbar", type: "button", class: "updbar", onclick: () => { try { tsFlush(); } catch (e) {} setTimeout(() => location.reload(), 400); } }, "New version of the app is ready. Tap here to update.", h("small", {}, "Finish what you are typing first. You type your PIN again after.")));
 }
 document.addEventListener("visibilitychange", applyUpdate);
+// ---------- screenshot guard (Wanro 28 Oct): a web app cannot block screenshots, so every screen carries the person's
+// name, cell number and the time, the app blurs the moment it leaves the screen, and text cannot be copied. Wanro (admin) is exempt.
+const wmEsc = t => String(t).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+function wmText() { const p = PEOPLE.find(x => x.name === S.user) || {}, n = new Date(); return `${S.user}   ${p.phone || ""}   ${dmy(n)} ${n.toLocaleTimeString("en-ZA", { hour: "2-digit", minute: "2-digit" }).replace(":", "h")}`; }
+function wmDraw() {
+  let w = document.getElementById("wm");
+  const on = !!(CFG && S.user && !isAdmin(S.user));
+  document.body.classList.toggle("guard", on);
+  if (!on) { if (w) w.remove(); document.body.classList.remove("away"); return; }
+  if (!w) { w = document.createElement("div"); w.id = "wm"; w.setAttribute("aria-hidden", "true"); document.body.append(w); }
+  const t = wmText(); if (w.dataset.t === t) return; w.dataset.t = t;
+  const tx = (dx, dy, fill) => `<text x='${40 + dx}' y='${190 + dy}' transform='rotate(-24 40 190)' font-family='Arial,sans-serif' font-size='15' font-weight='700' fill='${fill}'>${wmEsc(t)}</text>`;
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='440' height='210'>${tx(1, 1, "rgba(255,255,255,.16)")}${tx(0, 0, "rgba(0,0,0,.13)")}</svg>`;
+  w.style.backgroundImage = `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}")`;
+}
+setInterval(wmDraw, 20e3);
+function guardAway(on) { if (document.body.classList.contains("guard")) document.body.classList.toggle("away", !!on); }
+document.addEventListener("visibilitychange", () => guardAway(document.hidden));
+window.addEventListener("blur", () => guardAway(true));
+window.addEventListener("focus", () => guardAway(false));
+window.addEventListener("pagehide", () => guardAway(true));
+window.addEventListener("pageshow", () => guardAway(document.hidden));
+const wmTyping = el => !!(el && el.closest && el.closest("input, textarea, [contenteditable='true']"));
+["copy", "cut"].forEach(ev => document.addEventListener(ev, e => { if (document.body.classList.contains("guard") && !wmTyping(e.target)) e.preventDefault(); }));
+document.addEventListener("contextmenu", e => { if (document.body.classList.contains("guard") && !wmTyping(e.target)) e.preventDefault(); });
+document.addEventListener("dragstart", e => { if (document.body.classList.contains("guard")) e.preventDefault(); });
 
 // Pull down on a page to fetch the latest from the server. This never reloads the app, so nobody is sent back to the PIN screen.
 (() => {
