@@ -15,10 +15,12 @@
     });
     return [...pts].sort((a, b) => a - b);
   }
-  function pages(total, pts) {
+  function pages(total, pts, forced) {
     const out = []; let start = 0;
     while (start < total - 2) {
       const lim = start + CH;
+      const f = (forced || []).find(p => p > start + 40 && p <= lim); // a new page must start here
+      if (f) { out.push([start, f]); start = f; continue; }
       if (lim >= total) { out.push([start, total]); break; }
       const ok = pts.filter(p => p > start + 40 && p <= lim);
       const end = ok.length ? ok[ok.length - 1] : lim;
@@ -27,36 +29,53 @@
     return out;
   }
 
-  async function diaryPdf(html, title) {
+  // opts: scale and quality for a smaller file, maxBytes to split a long report into parts that fit in an email
+  async function diaryPdf(html, title, opts) {
+    opts = opts || {};
     let root = document.getElementById("pdf-root");
     if (!root) { root = document.createElement("div"); root.id = "pdf-root"; root.className = "pdoc"; document.body.append(root); }
     root.style.width = CW + "px";
-    root.innerHTML = html;
+    root.innerHTML = `<div class="pdf-in">${html}</div>`; root.style.height = ""; root.style.overflow = "";
     try {
       await Promise.all([...root.querySelectorAll("img")].map(i => i.complete ? 1 : new Promise(r => { i.onload = i.onerror = r; })));
       if (document.fonts && document.fonts.ready) await document.fonts.ready;
       const total = Math.ceil(root.scrollHeight);
-      const pts = cutPoints(root);
-      const scale = 2;
-      const canvas = await window.html2canvas(root, { scale, backgroundColor: "#ffffff", useCORS: true, logging: false, windowWidth: CW, width: CW, height: total });
-      const pdf = new window.jspdf.jsPDF({ unit: "mm", format: "a4", compress: true });
-      const list = pages(total, pts);
-      list.forEach(([a, b], n) => {
-        const slice = document.createElement("canvas");
-        slice.width = canvas.width; slice.height = Math.max(1, Math.round((b - a) * scale));
-        const g = slice.getContext("2d");
-        g.fillStyle = "#fff"; g.fillRect(0, 0, slice.width, slice.height);
-        g.drawImage(canvas, 0, Math.round(a * scale), canvas.width, slice.height, 0, 0, canvas.width, slice.height);
-        if (n) pdf.addPage("a4");
-        const wmm = PAGE.w - 2 * PAGE.mx, hmm = (b - a) / MM;
-        pdf.addImage(slice.toDataURL("image/jpeg", 0.86), "JPEG", PAGE.mx, PAGE.my, wmm, hmm, undefined, "FAST");
-        pdf.setFontSize(7.5); pdf.setTextColor(110);
-        pdf.text(`Page ${n + 1} of ${list.length}`, PAGE.w - PAGE.mx, PAGE.h - 7, { align: "right" });
-      });
-      pdf.setProperties({ title, author: "Fibraco (Pty) Ltd", creator: "Fibraco Field" });
+      const pts = cutPoints(root), top0 = root.getBoundingClientRect().top;
+      const forced = [...root.querySelectorAll(".pbreak")].map(el => Math.floor(el.getBoundingClientRect().top - top0));
+      const scale = opts.scale || 2;
+      const list = pages(total, pts, forced);
+      // long reports: draw a few pages at a time, a phone cannot hold one huge picture of 50 pages
+      const inner = root.firstElementChild, MAXH = Math.floor(9000 / scale);
+      const chunks = []; for (const pg of list) { const c = chunks[chunks.length - 1]; if (c && pg[1] - c.a <= MAXH) { c.b = pg[1]; c.pages.push(pg); } else chunks.push({ a: pg[0], b: pg[1], pages: [pg] }); }
+      const mk = () => new window.jspdf.jsPDF({ unit: "mm", format: "a4", compress: true });
+      const docs = [{ pdf: mk(), n: 0, bytes: 0 }]; let n = 0;
+      for (const ch of chunks) {
+        // show only this stretch of the document: move the content up and clip the rest
+        inner.style.marginTop = -ch.a + "px"; root.style.height = (ch.b - ch.a) + "px"; root.style.overflow = "hidden";
+        const canvas = await window.html2canvas(root, { scale, backgroundColor: "#ffffff", useCORS: true, logging: false, windowWidth: CW, width: CW, height: ch.b - ch.a });
+        for (const [a, b] of ch.pages) {
+          const slice = document.createElement("canvas");
+          slice.width = canvas.width; slice.height = Math.max(1, Math.round((b - a) * scale));
+          const g = slice.getContext("2d");
+          g.fillStyle = "#fff"; g.fillRect(0, 0, slice.width, slice.height);
+          g.drawImage(canvas, 0, Math.round((a - ch.a) * scale), canvas.width, slice.height, 0, 0, canvas.width, slice.height);
+          const jpg = slice.toDataURL("image/jpeg", opts.quality || 0.86), sz = jpg.length * 0.75;
+          let d = docs[docs.length - 1];
+          if (opts.maxBytes && d.n && d.bytes + sz > opts.maxBytes) { d = { pdf: mk(), n: 0, bytes: 0 }; docs.push(d); }
+          if (d.n) d.pdf.addPage("a4");
+          const wmm = PAGE.w - 2 * PAGE.mx, hmm = (b - a) / MM;
+          d.pdf.addImage(jpg, "JPEG", PAGE.mx, PAGE.my, wmm, hmm, undefined, "FAST");
+          d.pdf.setFontSize(7.5); d.pdf.setTextColor(110);
+          d.pdf.text(`Page ${n + 1} of ${list.length}`, PAGE.w - PAGE.mx, PAGE.h - 7, { align: "right" });
+          d.n++; d.bytes += sz; n++;
+        }
+        canvas.width = canvas.height = 0;
+      }
       const safe = title.replace(/[\\/:*?"<>|]+/g, "-");
-      return new File([pdf.output("blob")], safe + ".pdf", { type: "application/pdf" });
-    } finally { root.innerHTML = ""; }
+      const files = docs.map((d, i) => { d.pdf.setProperties({ title, author: "Fibraco (Pty) Ltd", creator: "Fibraco Field" });
+        return new File([d.pdf.output("blob")], safe + (docs.length > 1 ? ` (part ${i + 1} of ${docs.length})` : "") + ".pdf", { type: "application/pdf" }); });
+      return opts.maxBytes ? files : files[0];
+    } finally { root.innerHTML = ""; root.style.height = ""; root.style.overflow = ""; }
   }
 
   // Opens the phone's share menu (WhatsApp, Gmail, Outlook and so on) with the PDF attached.

@@ -373,7 +373,7 @@ function vProjects() {
         bioSetup(); } }, "Fingerprint")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1793217498";
+const APPV = "1793220986";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -447,7 +447,7 @@ async function sendRegister(p, d, days) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793217498"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793217498"); await loadJs("./js/pdf.js?v=1793217498");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793220986"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793220986"); await loadJs("./js/pdf.js?v=1793220986");
     const { html, title } = attDoc(p, d, days); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
@@ -551,7 +551,7 @@ async function timeZone() {
   try {
     try { Store.kick(); await refreshDevices(true); } catch (e) {}
     await new Promise(r => setTimeout(r, 1800));
-    await loadJs("./js/lib/html2canvas.min.js?v=1793217498"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793217498"); await loadJs("./js/pdf.js?v=1793217498");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793220986"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793220986"); await loadJs("./js/pdf.js?v=1793220986");
     const D = tzData(), stamp = `${dmy(new Date())} ${hhmm()}`, name = `FIBRACO - Time Zone (${stamp})`;
     const pdf = await window.FibPdf.diaryPdf(tzHtml(D), name);
     const json = new File([JSON.stringify(D, null, 1)], name.replace(/[\\/:*?"<>|]+/g, "-") + ".json", { type: "application/json" });
@@ -826,6 +826,8 @@ function vMenuTiles() {
   const idle = mgr ? idleMen(p, ymd(d)) : [], rp = myRepairs(S.user);
   const open = myDelays().filter(o => o.status !== "sorted" && o.pid === p.id), top = open.reduce((m, o) => Math.max(m, delayLevel(o)), -1);
   const dl = { badge: open.length || "", bc: top >= 3 ? "" : "o", cls: "dark" };
+  const comm = p.kind === "turbines" ? [tile("check", "Installation QC\nnew build", () => openQc("build"), { cls: qcLive(p, "build") ? "" : "grey" }),
+    tile("doc", "Installation QC\ncommissioning", () => openQc("commissioning"), { cls: qcLive(p, "commissioning") ? "" : "grey" })] : null;
   const tests = p.routes ? tile("wave", "Test\nsheets", () => go("tsheets")) : tile(p.kind === "turbines" ? "turb" : "wave", p.kind === "turbines" ? "Turbines" : p.kind === "opgw" ? "Joint and\ntests" : "Cable\ntests", () => go("tests"));
   const contacts = tile("phone", "Client\ncontacts", () => { const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Client contacts" }, h("div", { class: "modal" }, projCard(p), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close")))); document.body.append(ov); });
   const red = (t, sub, fn) => h("button", { class: "mbtn tred", type: "button", onclick: fn }, t, h("small", {}, sub));
@@ -840,7 +842,7 @@ function vMenuTiles() {
       tile("users", "Register", () => { S.attDate = S.date; go("attendance"); }, { badge: notIn || "", bc: "o" }),
       myTasks(S.user).length ? tile("list", "My\ntasks", () => go("mysection")) : null,
       sm && p.qcSpots ? tile("check", "QC\nsheets", () => go("qc"), { cls: "qc" }) : null,
-      tests,
+      tests, ...(comm || []),
       tile("shield", "DSTI", () => startForm("dsti"), { cls: dstiDue(p, ymd(d)) ? "must" : "" }),
       APPT(p) ? tile("eye", "My\nchecks", () => go("mychecks"), { badge: checksOpen(p, S.user, ymd(d)) || "", cls: checksOpen(p, S.user, ymd(d)) ? "must" : myChecks(p, S.user, ymd(d)).some(x => x.st === "later") ? "" : "ok" }) : tile("eye", "Inspec-\ntions", () => go("inspections")),
       tile("doc", "Site\ninstruction", () => startForm("si")),
@@ -865,7 +867,7 @@ function vMenuTiles() {
       tile("book", "Daily\ndiary", () => go("mysection"), { cls: "hi" }),
       tile("shield", "DSTI", () => startForm("dsti"), { cls: dstiDue(p, ymd(d)) ? "must" : "" }),
       APPT(p) ? tile("eye", "My\nchecks", () => go("mychecks"), { badge: checksOpen(p, S.user, ymd(d)) || "", cls: checksOpen(p, S.user, ymd(d)) ? "must" : myChecks(p, S.user, ymd(d)).some(x => x.st === "later") ? "" : "ok" }) : tile("eye", "Daily\ninspections", () => go("inspections")),
-      tests,
+      tests, ...(comm || []),
       tile("cart", "Material\norder", () => startForm("order")),
       tile("doc", "Site\ninstruction", () => startForm("si")),
       tile("warn", "Incident\nreport", () => startForm("incident")),
@@ -1516,7 +1518,7 @@ async function recordPdf() {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793217498"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793217498"); await loadJs("./js/pdf.js?v=1793217498");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793220986"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793220986"); await loadJs("./js/pdf.js?v=1793220986");
     const f = S.form, src = [...app.children].filter(k => !k.matches(".bar, .fb-btn, .ro-bar, .psub, .err, .pnav, .addrow"));
     const box = document.createElement("div");
     for (const k of src) {
@@ -1767,7 +1769,7 @@ async function sendOrder(f) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793217498"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793217498"); await loadJs("./js/pdf.js?v=1793217498");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793220986"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793220986"); await loadJs("./js/pdf.js?v=1793220986");
     const { html, title } = orderDoc(f);
     const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
@@ -2260,14 +2262,18 @@ function legend() {
   return sheet("", h("div", { style: "display:flex;flex-wrap:wrap;gap:10px;padding:10px 12px;font-size:11.5px;color:#5b6470" },
     ...[["ok", "Passed or done"], ["fail", "Failed, repair waiting"], ["retest", "Repaired, waiting for retest"], ["todo", "Not yet"]].map(([k, t]) => h("span", { style: "display:flex;align-items:center;gap:5px" }, h("i", { style: `display:inline-block;width:12px;height:12px;border-radius:3px;background:${CHIP[k][0]}` }), t))));
 }
-const BIO_TOTAL = () => BIO_CHECK.reduce((a, x) => a + x[1].length, 0);
-function bioCount(n) { const b = (S.bio[S.project.id] || {})[n]; const items = b ? Object.values(b.items) : []; return { done: items.filter(x => x.v).length, fail: items.filter(x => x.v === "Fail").length }; }
+const IC_TOTAL = () => BIO_CHECK.reduce((a, x) => a + x[1].length, 0);
+const BIO_TOTAL = () => S.project && qcLive(S.project, "commissioning") ? 2 : IC_TOTAL();
+function icCount(n) { const b = (S.bio[S.project.id] || {})[n]; const items = b ? Object.values(b.items || {}) : []; return { done: items.filter(x => x.v).length, fail: items.filter(x => x.v === "Fail").length }; }
+function bioCount(n) { if (qcLive(S.project, "commissioning")) { const st = bpsState(n); return { done: st === "done" ? 2 : st === "busy" ? 1 : 0, fail: 0 }; } const b = (S.bio[S.project.id] || {})[n]; const items = b ? Object.values(b.items) : []; return { done: items.filter(x => x.v).length, fail: items.filter(x => x.v === "Fail").length }; }
 function vTests() {
   seedLinks();
   const links = S.links[S.project.id], isBio = S.project.kind === "turbines";
   if (isBio) {
     return [topbar("Turbines", S.project.short, true),
       h("p", { class: "form-sub" }, `Every turbine with its ${SYS()} cores from the collector sheets. Tap a turbine for its splice box, patch panel, tests and the ${SYS()} checklist.`),
+      h("div", { class: "qc-two" }, h("button", { class: "mbtn" + (qcLive(S.project, "build") ? "" : " grey"), onclick: () => openQc("build") }, "INSTALLATION QC, NEW BUILD", h("small", {}, qcLive(S.project, "build") ? "Live. IC-BMSI 001 per turbine" : "Read only on this project")),
+        h("button", { class: "mbtn" + (qcLive(S.project, "commissioning") ? "" : " grey"), onclick: () => openQc("commissioning") }, "INSTALLATION QC, COMMISSIONING", h("small", {}, qcLive(S.project, "commissioning") ? "Live. Bioseco post-installation sheets" : "Read only until commissioning"))),
       legend(),
       ...DESIGN.collectors.map(c => sheet("", h("div", { class: "band" }, `Collector ${c.n} / ${c.f}`),
         ...links.filter(l => l.wtg.coll === c.n).map(l => { const bc = bioCount(l.wtg.name); return h("button", { type: "button", style: "display:block;width:100%;text-align:left;border:0;border-top:1px solid var(--line);background:var(--card);padding:8px 0 0;cursor:pointer", onclick: () => { S.link = l; go("link"); } },
@@ -2329,7 +2335,8 @@ function vLink() {
       h("table", {}, h("tbody", {}, ...[["Found at", stageLab(l, f.stage)], ["Core", f.core], ["Where", f.where], ["Fault", `${f.type}, ${f.reading}`], ["Found by", `${f.found}, ${dayLab(f.foundOn)}`], ["Repair by", f.resp], f.repairNote ? ["Repair done", f.repairNote] : null].filter(Boolean)
         .map(([a, b]) => h("tr", {}, h("td", { class: "lab" }, a), h("td", { class: "ro" }, b))))))),
     next && canSignWork(S.user) ? h("button", { class: "submit", type: "button", onclick: () => { S.testStage = next[0]; go("logtest"); } }, `${next[2] === "test" ? "Log" : "Sign off"} ${next[1].toLowerCase()}`) : null,
-    t ? h("button", { class: "mbtn", style: "margin-top:12px", onclick: () => go("biocheck") }, `${(S.project.checklist || {}).name || "Installation checklist"}`, h("small", {}, `${bc.done} of ${BIO_TOTAL()} checked${bc.fail ? `, ${bc.fail} failed` : ""}`)) : null,
+    t && qcLive(S.project, "commissioning") ? h("button", { class: "mbtn", style: "margin-top:12px", onclick: () => { S.qcRO = false; S.bpsW = t.name; go("bpswtg"); } }, "Commissioning sheet", h("small", {}, bpsState(t.name) === "done" ? "Both parts signed" : `${bpsMissing(t.name, "el").length + bpsMissing(t.name, "tc").length} still to do`)) :
+    t ? h("button", { class: "mbtn", style: "margin-top:12px", onclick: () => { S.qcRO = false; go("biocheck"); } }, `${(S.project.checklist || {}).name || "Installation checklist"}`, h("small", {}, `${bc.done} of ${BIO_TOTAL()} checked${bc.fail ? `, ${bc.fail} failed` : ""}`)) : null,
     t ? coreTable(t) : null,
     h("p", { class: "hint", style: "margin-top:14px" }, l.tpl === "opgw" ? "Every step is signed with a name, a photo and the time, in order. A fault found at the tests goes back to whoever re-spliced. A fault at acceptance after clean tests goes to the site manager to investigate." : l.tpl === "cores" ? "Who repairs: a control test fault at the turbine end goes back to whoever did the splice box. At the control room end it goes to whoever did the patch panel. A witness test fault after a clean control test goes to the site manager to investigate." : "Who repairs: drum test fault goes to the supplier. DIT fault goes to the duct installer. After install fault goes to whoever blew the cable in. Control test fault goes to whoever spliced it. Witness fault after a clean control test goes to the site manager to investigate.")];
 }
@@ -2415,14 +2422,312 @@ function vLogTest() {
         goBack(); } })];
 }
 // Installation checklist per turbine, content comes from the setup file
+// ---------- Bioseco commissioning report (Wanro 28 Oct) ----------
+// Bioseco's own "Post-installation documentation of Bird Protection System" template, filled in on the phone.
+// Works like the daily diary: every sheet has two parts. Marcel does the electrical and mechanical part, Marlon the
+// telecoms part (CAT, fibre, MOXAs, patch panels). Each signs his own part. When every part of every sheet is signed,
+// the report is ready for Wanro to review. He approves it with his PIN, then it is emailed to him and to Bioseco.
+// The IC-BMSI 001 installation checklist is the other portal, for new builds.
+// Wanro 28 Oct: every Bioseco project has two Installation QC portals. "New build" is the IC-BMSI 001 checklist (ours),
+// "Commissioning" is Bioseco's post-installation sheets. The project's phase decides which one is live. The other one
+// can still be opened, greyed out and read only, so the crew can read through it.
+const qcPhase = p => (p && p.phase) || "build";
+const qcLive = (p, which) => qcPhase(p) === which;
+function openQc(which) { S.qcRO = !qcLive(S.project, which); go(which === "build" ? "iqc" : "bps"); }
+const BPS_EX = k => `./icons/bps/ex-${k}.jpg`;
+const BPS_PARTS = { el: "Electrical and mechanical", tc: "Telecoms (CAT, fibre, MOXAs, patch panels)" };
+const bpsOwner = (part, p = S.project) => ((p && p.qcParts) || {})[part] || (part === "el" ? "Marcel Swart" : "Marlon Titus");
+const BPS_WTG = {
+  el: { ph: [["p6", "Bioseco power box inside the turbine", "Pic. 6"], ["p7", "Cables in the cable ducts inside the tower", "Pic. 7"], ["p8", "Connection to the power supply, the fuse in the control cabinet", "Pic. 8"],
+      ["p1", "Finished BPS on the tower", "Pic. 1"], ["p11", "Cable brackets on the outside of the tower", "Pic. 11"], ["p12", "Cables through the hole in the door, silicone or gland", "Pic. 12"]],
+    need: [["side", "Power box left or right"], ["place", "Where the power box is"], ["fuse", "Fuse number"], ["modules", "Number of modules"], ["height", "Height"], ["entry", "Silicone or glands"], ["north", "North at module no."]] },
+  tc: { ph: [["p15", "FO connection in the WTG (fibre box with the patch cord, label readable)", "Pic. 15"], ["pc", "TSW210 converter in the power box with its link light on", "Pic. 15b"]],
+    need: [["fibre", "Fibre used"], ["wtgPort", "Port in the turbine"], ["subPort", "Port in the substation"], ["server", "Server"], ["link", "Link status"], ["sees", "Server sees the turbine"]] } };
+const BPS_SUB = {
+  el: { ph: [["s1", "RACK cabinet location in the substation", "Pic. 1"], ["s2", "Servers, UPS, FO converters and power supply in the RACK", "Pic. 2"], ["s4", "Fuse the RACK cabinet is connected to", "Pic. 4"]],
+    need: [["fuse", "RACK fuse"], ["height", "Installed height"]] },
+  tc: { ph: [["s3", "VPN cable from the RACK to the client's switch and port", "Pic. 3"], ["s14", "FO connection in the substation (patch panel and MOXA converters)", "Pic. 14"]],
+    need: [["switchNo", "Client switch"], ["port", "Switch port"], ["iprange", "Module IP range"]] } };
+const BPS_EQUIP = [["RACK 19' 24U cabinet", "Metlak", "el"], ["Server DELL R7920", "", "el"], ["F/O Converter", "MOXA IMC-21GA", "tc"], ["Router Teltonika", "RUT200", "tc"], ["Switch EKI", "2728-CE", "tc"],
+  ["UPS Power Source Eaton 5SC", "2200i / 3000i", "el"], ["Power supply", "EDR-120-24", "el"], ["Router MikroTik", "HeX RB760iGS", "tc"]];
+const bpsWtgs = () => { try { return designTurbines().map(t => t.name); } catch (e) { return []; } };
+function bpsOf(w) {
+  const pid = S.project.id; S.bio[pid] = S.bio[pid] || {};
+  const B = S.bio[pid][w] || (S.bio[pid][w] = { items: {}, by: {}, ips: "", photos: [] });
+  if (!B.pc) B.pc = { f: {}, ph: {} };
+  const c = B.pc; c.parts = c.parts || {}; c.back = c.back || {};
+  if (c.done && !c.parts.el) { c.parts.el = c.done; c.parts.tc = c.done; delete c.done; } // older single sign-off
+  for (const k of ["p1", "p6", "p7", "p8", "p11", "p12", "p15", "pc", "p16", "s1", "s2", "s3", "s4", "s14", "s16"]) c.ph[k] = c.ph[k] || [];
+  return c;
+}
+function bpsSubDefaults(c) {
+  const f = c.f;
+  if (!f.version) Object.assign(f, { version: "Premium", customer: "Red Rocket South Africa", location: "Wolf Wind Farm, Wolwefontein, between Kirkwood and Jansenville, Eastern Cape, South Africa",
+    gps: "-33.256833, 24.922556", jbox: "2", modules: "8", height: "", rms: "0", ptz: "0", iprange: "" });
+  if (!c.eq) c.eq = BPS_EQUIP.map(([n, t, part]) => ({ n, q: "", s: t, part }));
+  c.eq.forEach(r => { if (!r.part) r.part = (BPS_EQUIP.find(x => x[0] === r.n) || [])[2] || "el"; });
+  return c;
+}
+// what is still missing in one part of a sheet
+function bpsMissing(w, part) {
+  const c = w === "SUBSTATION" ? bpsSubDefaults(bpsOf(w)) : bpsOf(w), f = c.f, def = (w === "SUBSTATION" ? BPS_SUB : BPS_WTG)[part], m = [];
+  for (const [k, lab] of def.ph) if (!c.ph[k].length) m.push(lab);
+  for (const [k, lab] of def.need) if (!String(f[k] || "").trim()) m.push(lab);
+  if (w === "SUBSTATION" && !c.eq.filter(r => r.part === part).some(r => String(r.q || "").trim())) m.push("Equipment quantities and serials");
+  if (w !== "SUBSTATION" && part === "el" && !f.gps) m.push("GPS of the turbine");
+  if (w !== "SUBSTATION" && part === "tc" && f.link === "Not connected") { if (!String(f.why || "").trim()) m.push("Why it is not connected"); if (!c.ph.p16.length) m.push("Photo of the patch cords left on site"); }
+  return m;
+}
+const bpsPartDone = (w, part) => !!bpsOf(w).parts[part];
+const bpsState = w => { const c = bpsOf(w); return c.parts.el && c.parts.tc ? "done" : Object.keys(c.f).some(k => !["fibre", "modules"].includes(k)) || Object.values(c.ph).some(x => x.length) || c.parts.el || c.parts.tc ? "busy" : "todo"; };
+const bpsAllDone = () => ["SUBSTATION", ...bpsWtgs()].every(w => bpsState(w) === "done");
+const bpsRep = () => { const pid = S.project.id; S.bio[pid] = S.bio[pid] || {}; const B = S.bio[pid].REPORT || (S.bio[pid].REPORT = { items: {}, by: {}, ips: "", photos: [] }); return B.rep || (B.rep = {}); };
+const bpsCanEdit = part => !S.qcRO && canSignWork(S.user) && (S.user === bpsOwner(part) || isSM(S.user));
+function bpsPhotoSlot(c, k, lab, pic, edit) {
+  return sheet("", h("div", { class: "band" }, `${pic}  ${lab}`),
+    h("div", { class: "bps-ex" }, h("img", { src: BPS_EX(k === "s16" ? "p16" : k), alt: "Example" }), h("small", {}, "Bioseco's example. Take yours the same way.")),
+    edit ? photoBlock(c.ph[k]) : h("div", { class: "photos" }, ...c.ph[k].map(p => h("figure", {}, photoImg(p, { alt: lab }), h("figcaption", {}, p.caption || "")))));
+}
+function bpsPartHead(w, part) {
+  const c = bpsOf(w), sg = c.parts[part], back = c.back[part], who = bpsOwner(part);
+  return h("div", { class: "bps-part " + (sg ? "done" : back ? "back" : "") },
+    h("div", {}, h("b", {}, `${who.split(" ")[0]}: ${BPS_PARTS[part]}`), h("small", {}, sg ? `Signed by ${sg.by} at ${sg.at} on ${sg.date || ""}` : back ? `Sent back by ${back.by}: ${back.why}` : S.user === who ? "Your part. Fill it in and sign it off." : `${who} fills this in.`)),
+    sg && (isSM(S.user) || isAdmin(S.user)) && !S.qcRO ? h("button", { type: "button", class: "btn-g", onclick: () => bpsSendBack(w, part) }, "Send back") : null);
+}
+function bpsSendBack(w, part) {
+  const why = h("textarea", { placeholder: "What must be fixed?", style: "width:100%;min-height:80px;border-radius:6px;border:1px solid #c9ced6;padding:8px;font:inherit" });
+  const ov = h("div", { class: "overlay", role: "dialog" }, h("div", { class: "modal" }, h("h2", {}, `Send back to ${bpsOwner(part).split(" ")[0]}`), why,
+    h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Cancel"),
+      h("button", { class: "btn-w", type: "button", onclick: () => { if (!why.value.trim()) return; const c = bpsOf(w); delete c.parts[part]; c.back[part] = { by: S.user, why: why.value.trim(), at: hhmm(new Date()) }; const r = bpsRep(); delete r.approved; persist(); ov.remove(); render(); } }, "Send back"))));
+  document.body.append(ov); why.focus();
+}
+function bpsSign(w, part) {
+  const miss = bpsMissing(w, part);
+  if (miss.length) { showInfo("Not finished yet", `Still missing: ${miss.join(", ")}.`); return; }
+  mySig(v => { if (!v) return; const c = bpsOf(w), now = new Date(); c.parts[part] = { by: S.user, at: hhmm(now), on: ymd(now), date: dmy(now), sig: v }; delete c.back[part]; persist(); render(); toast(`${BPS_PARTS[part].split(" (")[0]} part of ${w === "SUBSTATION" ? "the substation" : w} signed off`); });
+}
+function bpsSignBtn(w, part) {
+  if (!bpsCanEdit(part) || bpsPartDone(w, part) || (S.user !== bpsOwner(part))) return null;
+  return h("button", { class: "submit", type: "button", onclick: () => bpsSign(w, part) }, `SIGN OFF MY ${part === "el" ? "ELECTRICAL AND MECHANICAL" : "TELECOMS"} PART`);
+}
+function vBps() {
+  seedLinks(); const p = S.project, r = bpsRep();
+  const all = ["SUBSTATION", ...bpsWtgs()], done = all.filter(w => bpsState(w) === "done").length;
+  const chip = (w, part) => h("span", { class: "bps-chip " + (bpsPartDone(w, part) ? "ok" : bpsOf(w).back[part] ? "back" : "") }, part === "el" ? "E/M" : "TEL");
+  const tile = w => { const st = bpsState(w);
+    return h("button", { type: "button", class: "bps-tile " + st, onclick: () => { S.bpsW = w; go(w === "SUBSTATION" ? "bpssub" : "bpswtg"); } },
+      h("b", {}, w === "SUBSTATION" ? "Substation" : w), h("div", { class: "bps-chips" }, chip(w, "el"), chip(w, "tc"))); };
+  const ready = bpsAllDone();
+  return [topbar("Installation QC", `${p.short}  |  Commissioning`, true), qcBanner("commissioning"),
+    h("p", { class: "form-sub" }, `Bioseco's post-installation documentation. ${bpsOwner("el").split(" ")[0]} does the electrical and mechanical part (E/M), ${bpsOwner("tc").split(" ")[0]} the telecoms part (TEL). Green means signed.`),
+    h("div", { class: "bps-grid" }, ...all.map(tile)),
+    h("div", { class: "bps-sum" }, `${done} of ${all.length} sheets complete`),
+    r.sent ? h("div", { class: "rep-st ok" }, `Approved by ${r.approved.by} and emailed at ${r.sent.at} on ${r.sent.date}.`, h("small", {}, `To ${r.sent.to.join(", ")}`)) :
+    r.approved ? h("div", { class: "rep-st wait" }, `Approved by ${r.approved.by}. Not emailed yet.`, r.err ? h("small", {}, `Last try: ${r.err}`) : null) :
+    ready ? h("div", { class: "rep-st ok" }, isAdmin(S.user) ? "All sheets are signed. The report is ready for you to review and approve." : `All sheets are signed. The report is waiting for ${adminName()} to review and approve.`) : null,
+    h("button", { class: "mbtn", type: "button", onclick: () => bpsReport(false) }, ready ? "REVIEW THE REPORT (PDF)" : "SEE THE REPORT SO FAR (PDF)", h("small", {}, ready ? "The full report, as it will be emailed" : "Sheets that are not done show what is still missing")),
+    ready && isAdmin(S.user) && !S.qcRO && !r.sent ? h("button", { class: "submit", type: "button", onclick: () => bpsApprove() }, r.approved ? "SEND THE REPORT AGAIN" : "APPROVE AND EMAIL THE REPORT") : null,
+    ready && isAdmin(S.user) && !S.qcRO && !r.sent ? h("p", { class: "hint" }, `It goes to ${bpsTo().map(x => x.name).join(" and ")}${bpsTo().some(x => !x.email) ? ". No email address for Bioseco yet, so for now only to you." : "."}`) : null];
+}
+const bpsTo = () => { const pm = pmPerson() || {}; return [{ name: pm.name || "Wanro Hayes", email: pm.email || CFG.office || "" }, ...((S.project.reports || {}).qc || [])]; };
+function bpsApprove() {
+  mySig(async v => { if (!v) return; const r = bpsRep(), now = new Date(); r.approved = { by: S.user, at: hhmm(now), date: dmy(now), sig: v }; persist(); render(); await bpsReport(true); });
+}
+function vBpsWtg() {
+  const w = S.bpsW, c = bpsOf(w), f = c.f, eEl = bpsCanEdit("el") && !c.parts.el, eTc = bpsCanEdit("tc") && !c.parts.tc;
+  const t = (() => { try { return designTurbines().find(x => x.name === w); } catch (e) { return null; } })();
+  if (t && !f.fibre) f.fibre = `Cores ${t.bio[0]} and ${t.bio[1]}, Collector ${t.coll} panel`;
+  if (!f.modules) f.modules = (bpsSubDefaults(bpsOf("SUBSTATION")).f || {}).modules || "8";
+  const save = () => persistSoon();
+  const fld = (e, lab, k, ph, type) => h("tr", {}, h("td", { class: "lab" }, lab), h("td", {}, e ? inp(type || "text", f[k], v => { f[k] = v; save(); }, ph || "") : h("div", { class: "ro" }, f[k] || "-")));
+  const pick = (e, lab, k, opts) => h("tr", {}, h("td", { class: "lab" }, lab), h("td", {}, e ? seg(opts.map(o => [o, o]), f[k], v => { f[k] = v; save(); render(); }) : h("div", { class: "ro" }, f[k] || "-")));
+  const g = f.gps, slot = (k, e) => { const d = [...BPS_WTG.el.ph, ...BPS_WTG.tc.ph].find(x => x[0] === k); return bpsPhotoSlot(c, k, d[1], d[2], e); };
+  return [topbar(w, `Commissioning sheet  |  ${S.project.short}`, true), qcBanner("commissioning"),
+    h("p", { class: "form-sub" }, "Take every photo the same way as Bioseco's example next to it."),
+    bpsPartHead(w, "el"),
+    h("div", { class: "bps-sec" + (eEl ? "" : " ro") },
+      h("h3", { class: "bps-h" }, "3. Internal installation"),
+      sheet("", h("table", {}, h("tbody", {}, pick(eEl, "Power box on the", "side", ["Left", "Right"]), fld(eEl, "Hand side of", "place", "e.g. the tower door"), fld(eEl, "Powered from fuse", "fuse", "e.g. F12 in the control cabinet")))),
+      slot("p6", eEl), slot("p7", eEl), slot("p8", eEl),
+      h("h3", { class: "bps-h" }, "4. External installation"),
+      sheet("", h("table", {}, h("tbody", {}, fld(eEl, "Detection modules", "modules", "8", "number"), fld(eEl, "Height above ground (m)", "height", "e.g. 6", "number"), pick(eEl, "Door hole closed with", "entry", ["Silicone", "Cable glands"])))),
+      slot("p1", eEl), slot("p11", eEl), slot("p12", eEl),
+      h("h3", { class: "bps-h" }, "Scheme of the installed system"),
+      sheet("", h("table", {}, h("tbody", {},
+        h("tr", {}, h("td", { class: "lab" }, "GPS of the turbine"), h("td", {}, eEl ? gpsBlock(f, "gps") : h("div", { class: "ro" }, g ? `${g.lat.toFixed(6)}, ${g.lng.toFixed(6)}` : "-"))),
+        fld(eEl, "North at module no.", "north", "e.g. 3", "number")))),
+      bpsSignBtn(w, "el")),
+    bpsPartHead(w, "tc"),
+    h("div", { class: "bps-sec" + (eTc ? "" : " ro") },
+      h("h3", { class: "bps-h" }, "5. Fibre optic and network"),
+      sheet("", h("table", {}, h("tbody", {}, fld(eTc, "Fibre used", "fibre", ""), fld(eTc, "Port in the turbine fibre box", "wtgPort", "e.g. mid-coupler 7"), fld(eTc, "Port in the substation", "subPort", "e.g. Collector 1 panel port 7"),
+        fld(eTc, "Server", "server", "e.g. Server A"), fld(eTc, "Module IP addresses", "ips", "e.g. 192.168.10.21 to 28"), pick(eTc, "Link", "link", ["Connected", "Not connected"]), pick(eTc, "Server sees the turbine", "sees", ["Yes", "No"]),
+        f.link === "Not connected" ? fld(eTc, "Why not connected", "why", "e.g. no light from the substation on this fibre") : null,
+        f.link === "Not connected" ? fld(eTc, "Raised with the client on", "raised", "date and who") : null))),
+      slot("p15", eTc), slot("pc", eTc),
+      f.link === "Not connected" ? bpsPhotoSlot(c, "p16", "Patch cords left on site for later", "Pic. 16", eTc) : null,
+      bpsSignBtn(w, "tc")),
+    sheet("", h("table", {}, h("tbody", {}, fld(eEl || eTc, "Notes", "notes", "Anything Bioseco must know"))))];
+}
+function vBpsSub() {
+  const c = bpsSubDefaults(bpsOf("SUBSTATION")), f = c.f, eEl = bpsCanEdit("el") && !c.parts.el, eTc = bpsCanEdit("tc") && !c.parts.tc;
+  const save = () => persistSoon();
+  const fld = (e, lab, k, ph, type) => h("tr", {}, h("td", { class: "lab" }, lab), h("td", {}, e ? inp(type || "text", f[k], v => { f[k] = v; save(); }, ph || "") : h("div", { class: "ro" }, f[k] || "-")));
+  const eq = part => { const e = part === "el" ? eEl : eTc;
+    return sheet("", h("div", { class: "band" }, part === "el" ? "Equipment: RACK, servers, UPS, power" : "Equipment: converters, routers, switch"), h("table", {}, h("thead", {}, h("tr", {}, h("th", { class: "l" }, "Product"), h("th", {}, "Qty"), h("th", { class: "l" }, "Serial number / type"))),
+      h("tbody", {}, ...c.eq.filter(r => r.part === part).map(r => h("tr", {}, h("td", { style: "padding:8px;font-weight:600;font-size:12.5px" }, r.n),
+        h("td", { style: "width:64px" }, e ? inp("number", r.q, v => { r.q = v; save(); }, "0") : h("div", { class: "ro" }, r.q)),
+        h("td", {}, e ? growTxt(r.s, v => { r.s = v; save(); }, "Serials, one per line", 44) : h("div", { class: "ro" }, r.s))))))); };
+  const slot = (k, e) => { const d = [...BPS_SUB.el.ph, ...BPS_SUB.tc.ph].find(x => x[0] === k); return bpsPhotoSlot(c, k, d[1], d[2], e); };
+  return [topbar("Substation", `Commissioning sheet  |  ${S.project.short}`, true), qcBanner("commissioning"),
+    bpsPartHead("SUBSTATION", "el"),
+    h("div", { class: "bps-sec" + (eEl ? "" : " ro") },
+      h("h3", { class: "bps-h" }, "Report details (cover page)"),
+      sheet("", h("table", {}, h("tbody", {}, fld(eEl, "BPS version", "version", "e.g. Premium"), fld(eEl, "Customer", "customer", ""), fld(eEl, "Location", "location", ""), fld(eEl, "Substation GPS", "gps", ""),
+        fld(eEl, "Junction boxes per system", "jbox", "2", "number"), fld(eEl, "Detection modules per system", "modules", "8", "number"), fld(eEl, "Installed height (m)", "height", "e.g. 6", "number"),
+        fld(eEl, "RMS modules per tower", "rms", "0", "number"), fld(eEl, "PTZ cameras per tower", "ptz", "0", "number"), fld(eEl, "Receiving person (client)", "receiver", "Name and company")))),
+      h("h3", { class: "bps-h" }, "2. Substation installation"),
+      sheet("", h("table", {}, h("tbody", {}, fld(eEl, "RACK on fuse", "fuse", "e.g. F7")))),
+      slot("s1", eEl), slot("s2", eEl), slot("s4", eEl), eq("el"), bpsSignBtn("SUBSTATION", "el")),
+    bpsPartHead("SUBSTATION", "tc"),
+    h("div", { class: "bps-sec" + (eTc ? "" : " ro") },
+      h("h3", { class: "bps-h" }, "Network and fibre in the substation"),
+      sheet("", h("table", {}, h("tbody", {}, fld(eTc, "Client switch", "switchNo", "e.g. Switch 2"), fld(eTc, "Port", "port", "e.g. 12"), fld(eTc, "Module IP range", "iprange", "e.g. 192.168.10.21 to 52")))),
+      slot("s3", eTc), slot("s14", eTc),
+      bpsPhotoSlot(c, "s16", "Patch cords left in the substation for turbines not yet connected (if any)", "Pic. 16", eTc), eq("tc"), bpsSignBtn("SUBSTATION", "tc"))];
+}
+// ---------- the report, in Bioseco's layout ----------
+async function bpsReport(email) {
+  if (sending) return; sending = true;
+  const ov = h("div", { class: "overlay", role: "dialog" }, h("div", { class: "modal" }, h("h2", {}, email ? "Approving and emailing" : "Making the report"), h("p", {}, "Fetching the photos and building the PDF. Keep the app open on this screen.")));
+  document.body.append(ov);
+  try {
+    await loadJs("./js/lib/html2canvas.min.js?v=1793220986"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793220986"); await loadJs("./js/pdf.js?v=1793220986");
+    const ws = ["SUBSTATION", ...bpsWtgs()], phs = ws.flatMap(w => Object.values(bpsOf(w).ph).flat());
+    await Promise.all(phs.map(p => p.ph && !PHOTO_CACHE.has(p.ph) && !(p.url || "").startsWith("data:") ? Store.photo(p.ph).then(d => { if (d) PHOTO_CACHE.set(p.ph, d); }).catch(() => {}) : 0));
+    const d = bpsDoc(S.project);
+    // a smaller picture per page and split into parts of at most 5 MB, so every email gets through
+    const files = await window.FibPdf.diaryPdf(d.html, d.title, { scale: 1.6, quality: 0.72, maxBytes: 5e6 });
+    const list = Array.isArray(files) ? files : [files];
+    const m = ov.querySelector(".modal");
+    if (!email) {
+      m.innerHTML = ""; m.append(h("h2", {}, "Report ready"), h("p", {}, list.map(f => f.name).join(", ")), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
+        h("button", { class: "btn-w", type: "button", onclick: async () => { ov.remove(); for (const f of list) { const r = await window.FibPdf.shareFile(f, d.title); if (r === "cancelled") break; } } }, list.length > 1 ? `Open (${list.length} parts)` : "Open")));
+      return;
+    }
+    const to = bpsTo().filter(x => x.email), r = bpsRep();
+    const results = [];
+    for (let i = 0; i < list.length; i++) {
+      const f = list[i], part = list.length > 1 ? ` (part ${i + 1} of ${list.length})` : "";
+      const res = await Store.sendReport({ project: S.project.id, day: ymd(new Date()), mails: [{ kind: "bps", to: to.map(x => x.email), bcc: [], replyTo: (pmPerson() || {}).email,
+        subject: `Bioseco post-installation documentation, ${S.project.name}${part}`,
+        text: `Good day ${to.map(x => x.name.split(" ")[0]).join(" and ")},\n\nAttached is the Bioseco post-installation documentation for ${S.project.name}${part}, prepared by ${bpsOwner("el")} with ${bpsOwner("tc")} and approved by ${r.approved ? r.approved.by : S.user}.\n\nRegards\nFibraco site team`,
+        files: [{ name: f.name, b64: await fileB64(f) }] }] });
+      results.push(...((res && res.results) || []));
+    }
+    if (results.length && results.every(x => x.ok)) { const now = new Date(); r.sent = { at: hhmm(now), date: dmy(now), to: to.map(x => x.name), parts: list.length }; delete r.err; persist(); ov.remove(); render(); showInfo("Report emailed", `Sent to ${to.map(x => x.name).join(" and ")}${list.length > 1 ? ` in ${list.length} parts` : ""}.`); }
+    else { r.err = (results.find(x => !x.ok) || {}).error || "not sent"; persist(); ov.remove(); render(); showInfo("Not sent", `${r.err}. Tap Send the report again when you have signal.`); }
+  } catch (e) { const r = bpsRep(); if (email) { r.err = e.message || String(e); persist(); } ov.remove(); render(); showInfo(email ? "Not sent" : "Could not make the report", `${e.message || e}.`); }
+  finally { sending = false; }
+}
+function bpsDoc(p) {
+  const esc = x => String(x == null ? "" : x).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+  const ws = bpsWtgs(), sub = bpsSubDefaults(bpsOf("SUBSTATION")), sf = sub.f, X = v => v ? esc(v) : "XXX";
+  const src = q => (q.url || "").startsWith("data:") ? q.url : PHOTO_CACHE.get(q.ph);
+  // all photos of one part of a turbine in one grid, three across, so the report stays short
+  const picsMany = groups => { const l = groups.flatMap(([list, cap]) => (list || []).map(q => ({ q, s: src(q), cap }))).filter(x => x.s), miss = groups.filter(([list]) => !(list || []).some(q => src(q)));
+    return (l.length ? `<div class="pgrid pgrid3">${l.map(({ q, s, cap }) => `<figure><img src="${s}"><figcaption>${esc(cap)}${q.caption ? ", " + esc(q.caption) : ""}</figcaption></figure>`).join("")}</div>` : "") + (miss.length ? `<p class="bps-miss">Photo still to be taken: ${esc(miss.map(g => g[1]).join("; "))}.</p>` : ""); };
+  const pics = (list, cap) => { const l = (list || []).map(q => ({ q, s: src(q) })).filter(x => x.s);
+    return l.length ? `<div class="pgrid">${l.map(({ q, s }) => `<figure><img src="${s}"><figcaption>${esc(cap)}${q.caption ? ", " + esc(q.caption) : ""}</figcaption></figure>`).join("")}</div>` : `<p class="bps-miss">${esc(cap)}: photo still to be taken.</p>`; };
+  const started = ws.filter(w => bpsState(w) !== "todo"), notYet = ws.filter(w => !started.includes(w));
+  const notYetP = notYet.length ? `<p class="bps-miss">Not documented yet: ${esc(notYet.join(", "))}.</p>` : "";
+  const done = ws.filter(w => bpsState(w) === "done"), conn = ws.filter(w => bpsOf(w).f.link === "Connected"), notConn = ws.filter(w => bpsOf(w).f.link === "Not connected");
+  const lastDone = [sub, ...ws.map(bpsOf)].flatMap(c => [c.parts.el, c.parts.tc]).map(x => x && x.on).filter(Boolean).sort().pop();
+  const dTxt = lastDone ? nice(new Date(lastDone + "T12:00:00")) : nice(new Date());
+  const prep = bpsOwner("el"), elSig = sub.parts.el;
+  const hdr = `<div class="bps-hdr"><img src="./icons/bps/logo.jpg" alt="Bioseco"><span>Post-installation documentation  |  ${esc(p.name)}</span></div>`;
+  const firstP1 = ws.map(w => bpsOf(w).ph.p1[0]).find(Boolean);
+  const eqRows = sub.eq.map((r, i) => `<tr><td>${i + 1}.</td><td>${esc(r.n)}</td><td style="text-align:center">${esc(r.q) || "X"}</td><td>${esc(r.s).replace(/\n/g, "<br>")}</td></tr>`).join("");
+  const srv = {}; ws.forEach(w => { const s = (bpsOf(w).f.server || "").trim() || "Not given"; (srv[s] = srv[s] || []).push(w); });
+  const wtgSec = (w, part) => { const c = bpsOf(w), f = c.f;
+    if (part === "int") return `<h3>${esc(w)}</h3><p>In ${esc(w)} the Bioseco power box is located on the ${esc((f.side || "left/right").toLowerCase())} hand side of the ${X(f.place)} in a way to not cover any of the information stickers (Pic. 6). The power box was attached with magnetic holders. The cabling inside the tower was installed in the existing cable ducts and/or in the special cable ducts fixed to the tower structure (Pic. 7). The BPS system is powered up from the fuse ${X(f.fuse)} located in the control cabinet (Pic. 8).</p>
+      ${picsMany([[c.ph.p6, `Pic. 6. Bioseco power box inside ${w}`], [c.ph.p7, "Pic. 7. Cables in the special cable ducts"], [c.ph.p8, `Pic. 8. Connection to the power supply (fuse ${f.fuse || "XXX"})`]])}`;
+    if (part === "ext") return `<h3>${esc(w)}</h3><p>${X(f.modules)} detection modules were installed at a height of approximately ${X(f.height)} m on ${esc(w)}. The connection between the top junction box and the internal junction box was made through the pre-prepared hole in the door, secured with ${esc((f.entry || "silicone/cable glands").toLowerCase())} (Pic. 12).</p>
+      ${picsMany([[c.ph.p1, `Pic. 1. Finished installed BPS on ${w}`], [c.ph.p11, "Pic. 11. Cables fitting system on the wind turbine"], [c.ph.p12, `Pic. 12. Cables through the hole, ${(f.entry || "silicone").toLowerCase()}`]])}`;
+    if (part === "fo") return `<h3>${esc(w)}</h3><p>Fibre: ${X(f.fibre)}. Turbine fibre box port ${X(f.wtgPort)}, substation port ${X(f.subPort)}. Link: ${X(f.link)}. Server sees the turbine: ${X(f.sees)}.${c.parts.tc ? ` Telecoms signed by ${esc(c.parts.tc.by)}.` : ""}${f.ips ? ` Module IP addresses: ${esc(f.ips)}.` : ""}</p>${picsMany([[c.ph.p15, `Pic. 15. FO connection in ${w}`], [c.ph.pc, `TSW210 converter in ${w}, link light`]])}`;
+  };
+  const g = w => bpsOf(w).f.gps;
+  // fibre network drawn from the table: substation on the left, a line to every turbine, green connected, red not
+  const rowH = 26, H = Math.max(120, ws.length * rowH + 40);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="680" height="${H}" viewBox="0 0 680 ${H}"><rect x="10" y="${H / 2 - 40}" width="150" height="80" rx="6" fill="#0069aa"/><text x="85" y="${H / 2 - 6}" fill="#fff" font-size="14" font-family="Arial" text-anchor="middle" font-weight="700">SUBSTATION</text><text x="85" y="${H / 2 + 14}" fill="#fff" font-size="11" font-family="Arial" text-anchor="middle">BPS RACK, servers</text>${ws.map((w, i) => { const y = 30 + i * rowH, f = bpsOf(w).f, col = f.link === "Connected" ? "#1e8e3e" : f.link === "Not connected" ? "#c8102e" : "#9aa5b1";
+    return `<line x1="160" y1="${H / 2}" x2="470" y2="${y}" stroke="${col}" stroke-width="2"/><rect x="470" y="${y - 10}" width="90" height="20" rx="4" fill="${col}"/><text x="515" y="${y + 4}" fill="#fff" font-size="11" font-family="Arial" text-anchor="middle" font-weight="700">${esc(w)}</text><text x="570" y="${y + 4}" font-size="9.5" font-family="Arial" fill="#333">${esc((f.fibre || "").slice(0, 24))}</text>`; }).join("")}</svg>`;
+  const html = `
+  <div class="bps-cover"><img class="bps-logo" src="./icons/bps/logo.jpg" alt="Bioseco"><h1>POST-INSTALLATION DOCUMENTATION</h1><h2 style="margin-top:0">of Bird Protection System (BPS)</h2><img class="bps-cimg" src="./icons/bps/cover.jpg" alt="">
+  <table class="kv"><tr><th>BPS Version:</th><td>${X(sf.version)}</td></tr><tr><th>Customer:</th><td>${X(sf.customer)}</td></tr><tr><th>Location:</th><td>${X(sf.location)}</td></tr><tr><th>Substation GPS coordinates:</th><td>${X(sf.gps)}</td></tr><tr><th>Documentation prepared by:</th><td>${esc(prep)}</td></tr><tr><th>Date:</th><td>${esc(dmy(lastDone ? new Date(lastDone + "T12:00:00") : new Date()))}</td></tr></table></div>
+  <div class="pbreak"></div>${hdr}<h2>Table of contents</h2><p>1. Introduction<br>2. Substation installation<br>3. Internal installation<br>4. External installation<br>Schemes of installed systems<br>5. Fiber optic installation<br>Diagram of a fiber optic network<br>6. Appendix: Protocol of delivery and acceptance</p>
+  <div class="pbreak"></div><h2>1. Introduction</h2><p>On ${esc(dTxt)} Bioseco S.A. finished the installation of the ${ws.length} ${X(sf.version)} Bird Protection Systems in ${X(sf.customer)} wind farm: ${esc(p.name.replace(/^Bioseco - /, ""))} in ${X(sf.location)}. Each system consists of ${X(sf.modules)} detection modules, ${X(sf.jbox)} junction boxes (internal and external) and the wiring. All the systems were installed approx. ${X(sf.height)} m above the ground (Pic. 1). Modules, junction boxes and the cable assembly system are fixed with specialised magnetic holders.</p>
+  ${firstP1 ? pics([firstP1], "Pic. 1. Finished installed BPS") : ""}
+  <h2>2. Substation installation</h2><p>In a substation, a RACK cabinet was located according to the given instructions (Pic. 1). All necessary equipment like: servers, UPS, fibre-optic converters and power supply were fitted in the RACK cabinet (Pic. 2).</p>
+  ${pics(sub.ph.s1, "Pic 1. RACK cabinet location in the substation")}${pics(sub.ph.s2, "Pic 2. BPS servers, UPS, FO converters and power supply in the RACK cabinet")}
+  <p>A server was connected to the investor's switch ${X(sf.switchNo)} using a LAN cable plugged into port no. ${X(sf.port)} (Pic. 3). A cable was routed under the floor and attached to the existing cable routes. The Bioseco RACK cabinet is connected to fuse ${X(sf.fuse)} (Pic. 4).</p>
+  ${pics(sub.ph.s3, `Pic. 3. VPN connection from the RACK cabinet to Client's switch ${sf.switchNo || "X"}, port ${sf.port || "XXX"}`)}${pics(sub.ph.s4, `Pic. 4. Fuse to which RACK cabinet is installed (${sf.fuse || "XXX"})`)}
+  <h3>A list of installed equipment in the substation:</h3><table class="g"><thead><tr><th>No.</th><th>Product name</th><th>Quantity</th><th>Serial number/type</th></tr></thead><tbody>${eqRows}</tbody></table>
+  <h3>A list of connected BPSs to adequate servers:</h3><table class="g"><thead><tr><th>No.</th><th>Server no.</th><th>BPS installed on WTG</th></tr></thead><tbody>${Object.entries(srv).map(([s, l], i) => `<tr><td>${i + 1}</td><td>${esc(s)}</td><td>${esc(l.join(", "))}</td></tr>`).join("")}</tbody></table>
+  <h2>3. Internal installation</h2><p>The tower is equipped with a power supply box for the BPS's analytical and computational module. In all towers, the configuration of the box is the same and is as follows:</p>
+  <table class="g"><thead><tr><th>No.</th><th>Product name</th><th>Quantity</th><th>Note</th></tr></thead><tbody><tr><td>1.</td><td>BPS power distribution box:<br>- Power supply DELTA LYTE II<br>- Power supply MDR-10-12<br>- BPR ARM<br>- Overcurrent braker 10A1P<br>- 1 x power socket<br>- F/O converter TELTONIKA TSW210</td><td style="text-align:center">${ws.length}</td><td>Inside WTG</td></tr></tbody></table>
+  <h3>Electric wiring diagram for the power box:</h3><img class="bps-wide" src="./icons/bps/wiring.jpg" alt="">
+  ${started.map(w => wtgSec(w, "int")).join("")}${notYetP}
+  <p>A fibre optic converter is located inside the Bioseco power box. The fibre optic cable from the fibre optic distribution box, to the FO converter has been laid in a protective conduit.</p>
+  <h2>4. External installation</h2><p>By external installation, we mean the installation of the detection modules, a junction box, and the wiring (signal and power cables) on the external surface of the wind turbine. They are mounted to the tower with the magnets. The top junction box is always fixed above the door of the wind turbine by the magnets. The cables routed outside the tower were fixed with the special cable brackets fixed to the tower structure by magnets (Pic. 11).</p>
+  ${started.map(w => wtgSec(w, "ext")).join("")}${notYetP}
+  <h2>Schemes of installed systems</h2><img class="bps-half" src="./icons/bps/drawA.jpg" alt=""><img class="bps-half" src="./icons/bps/drawB.jpg" alt="">
+  <table class="g"><thead><tr><th>WTG no.</th><th>Latitude</th><th>Longitude</th><th>North at module no.</th></tr></thead><tbody>${ws.map(w => `<tr><td>${esc(w)}</td><td>${g(w) ? g(w).lat.toFixed(6) : "X"}</td><td>${g(w) ? g(w).lng.toFixed(6) : "X"}</td><td>${X(bpsOf(w).f.north)}</td></tr>`).join("")}</tbody></table>
+  <h2>5. Fiber optic installation</h2><p>To connect the analytical and computational modules with the BPS system servers located in the substation, optical fibre connections were made in the substation (Pic. 14) and the wind turbines (Pic. 15). For the purpose of saving FO connections, WDM technology was used, in which only one fibre is used for the purpose of communication.</p>
+  ${pics(sub.ph.s14, "Pic. 14. FO connection in the substation")}
+  <p>Fibre optic connections were made according to the diagram provided by the Client. The installation team connected ${conn.length ? esc(conn.join(", ")) : "no turbines yet"}${conn.length === ws.length ? ", which is all the systems" : ""}.</p>
+  ${notConn.length ? `<p>During the installation an issue with the connection between the substation and wind turbines ${esc(notConn.join(", "))} was raised with the Client (${esc(notConn.map(w => `${w}: ${bpsOf(w).f.why || "reason not given"}${bpsOf(w).f.raised ? ", raised " + bpsOf(w).f.raised : ""}`).join("; "))}). The problem was not resolved during the installation and the Bioseco team left these systems not fully connected. The installation team left all necessary equipment to connect the systems on site (Pic. 16). When the Client confirms the fibre network is working correctly, an email will be sent with the instructions how to connect all the systems.</p>${pics(sub.ph.s16, "Pic. 16. Left FO patchcords in the substation")}${notConn.map(w => pics(bpsOf(w).ph.p16, `Pic. 16. Left FO patchcords in ${w}`)).join("")}` : ""}
+  ${started.map(w => wtgSec(w, "fo")).join("")}${notYetP}
+  <h3>Fibre connections</h3><table class="g"><thead><tr><th>WTG</th><th>Fibre</th><th>Substation port</th><th>WTG port</th><th>Link</th><th>Server sees it</th></tr></thead><tbody>${ws.map(w => { const f = bpsOf(w).f; return `<tr><td>${esc(w)}</td><td>${esc(f.fibre)}</td><td>${esc(f.subPort)}</td><td>${esc(f.wtgPort)}</td><td style="font-weight:700;color:${f.link === "Connected" ? "#1e6e34" : f.link ? "#a50e0e" : "#555"}">${esc(f.link || "-")}</td><td>${esc(f.sees || "-")}</td></tr>`; }).join("")}</tbody></table>
+  <h2>Diagram of a fiber optic network</h2><img class="bps-wide" src="data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svg)))}" alt=""><p style="font-size:9pt">Green: connected. Red: not connected. Grey: not checked yet.</p>
+  <div class="pbreak"></div><div class="bps-proto"><img class="bps-logo" src="./icons/bps/logo.jpg" alt="Bioseco"><p style="text-align:right">${esc(p.name.replace(/^Bioseco - /, ""))}, ${esc(dmy(new Date()))}</p>
+  <h2 style="text-align:center">6. Appendix: PROTOCOL OF DELIVERY</h2><p style="text-align:center">Bioseco Bird Protection System</p>
+  <p>On ${esc(dTxt)} the Bioseco S.A. has completed the installation and handed over the equipment for ${X(sf.customer)} in ${esc(p.name.replace(/^Bioseco - /, ""))}, according to the specification below:</p>
+  <table class="g"><thead><tr><th>No.</th><th>Product name</th><th>Quantity</th><th>Serial number / type</th></tr></thead><tbody><tr><td colspan="4" style="text-align:center;font-weight:700">SUBSTATION</td></tr>${eqRows}
+  <tr><td colspan="4" style="text-align:center;font-weight:700">WTG Towers</td></tr>
+  <tr><td>${sub.eq.length + 1}.</td><td>BPS power distribution box (DELTA LYTE II, MDR-10-12, BPR ARM, overcurrent braker 10A1P, 1 x power socket, F/O converter TELTONIKA TSW210)</td><td style="text-align:center">${ws.length}</td><td>Inside WTG</td></tr>
+  <tr><td>${sub.eq.length + 2}.</td><td>Data and power distribution box</td><td style="text-align:center">${ws.length}</td><td>Outside WTG</td></tr>
+  <tr><td>${sub.eq.length + 3}.</td><td>BPS outside modules</td><td style="text-align:center">${ws.length}x${X(sf.modules)} (${ws.length * (+sf.modules || 0)})</td><td>${sf.iprange ? "IP range: " + esc(sf.iprange) : "IP range: XXX"}</td></tr>
+  ${+sf.rms ? `<tr><td>${sub.eq.length + 4}.</td><td>BPS RMS modules</td><td style="text-align:center">${ws.length}x${esc(sf.rms)} (${ws.length * +sf.rms})</td><td></td></tr>` : ""}
+  ${+sf.ptz ? `<tr><td>${sub.eq.length + 5}.</td><td>BPS PTZ camera</td><td style="text-align:center">${ws.length}x${esc(sf.ptz)} (${ws.length * +sf.ptz})</td><td>N/A</td></tr>` : ""}
+  <tr><td>${sub.eq.length + 6}.</td><td>Power and signal cables</td><td style="text-align:center">${ws.length} sets</td><td>N/A</td></tr></tbody></table>
+  <div class="sigs"><div><h3>Bioseco S.A.</h3><div class="sigline">${elSig && elSig.sig ? `<img src="${elSig.sig}" alt="">` : ""}</div><div>${esc(prep)}${elSig ? ", " + esc(elSig.date || "") : ""}</div><small>Date, name and surname</small></div>
+  <div><h3>RECEIVING PERSON</h3><div class="sigline"></div><div>${esc(sf.receiver || "")}</div><small>Date, name and surname</small></div></div>
+  <p class="foot">Bioseco S.A., ul. Budowlanych 68, 80-298 Gdańsk, Polska  |  www.bioseco.com  |  info@bioseco.com</p></div>
+  <p class="foot">Prepared on site by ${esc(prep)} with the Fibraco Field app. ${done.length} of ${ws.length} turbines and ${bpsState("SUBSTATION") === "done" ? "the substation" : "not yet the substation"} signed off. Electrical and mechanical by ${esc(bpsOwner("el"))}, telecoms by ${esc(bpsOwner("tc"))}.${bpsRep().approved ? ` Approved by ${esc(bpsRep().approved.by)} on ${esc(bpsRep().approved.date)}.` : ""}</p>`;
+  return { html, title: `BIOSECO - Post-Installation Documentation - ${p.short} (${dmy(new Date())})` };
+}
+function qcBanner(which) {
+  if (!S.qcRO) return null;
+  return h("div", { class: "qc-ro-banner" }, h("b", {}, "READ ONLY"), which === "build" ? "This project is in commissioning. The new build checklist is here to read through, not to fill in." : "This project is still a new build. The commissioning sheets open once the project moves to commissioning. You can read through them now.");
+}
+function vIqc() {
+  seedLinks(); const p = S.project, ws = bpsWtgs(), tot = IC_TOTAL();
+  const st = w => { const c = icCount(w); return c.fail ? "fail" : tot && c.done === tot ? "done" : c.done ? "busy" : "todo"; };
+  return [topbar("Installation QC", `${p.short}  |  New build`, true), qcBanner("build"),
+    h("p", { class: "form-sub" }, `${(p.checklist || {}).doc || "IC-BMSI 001"}. One checklist per turbine. Pass, Fail or N/A on every point, a fail needs a note and a photo.`),
+    h("div", { class: "bps-grid" }, ...ws.map(w => { const c = icCount(w), s0 = st(w);
+      return h("button", { type: "button", class: "bps-tile " + (s0 === "fail" ? "fail" : s0), onclick: () => { S.link = (S.links[p.id] || []).find(l => l.wtg && l.wtg.name === w); if (S.link) go("biocheck"); } },
+        h("b", {}, w), h("small", {}, s0 === "done" ? "Passed" : s0 === "fail" ? `${c.fail} failed` : `${c.done} of ${tot}`)); })),
+    h("div", { class: "bps-sum" }, `${ws.filter(w => st(w) === "done").length} of ${ws.length} turbines passed`)];
+}
 let BIO_CHECK = [];
 function vBioCheck() {
   const l = S.link, n = l.wtg.name, pid = S.project.id;
   const B = S.bio[pid][n] || (S.bio[pid][n] = { items: {}, by: {}, ips: "", photos: [] });
-  const viewOnly = !canSignWork(S.user);
+  const viewOnly = !canSignWork(S.user) || !!S.qcRO;
   const openIssue = id => (S.issues[pid] || []).find(x => x.wtg === n && x.item === id && x.status !== "closed");
   const CK = S.project.checklist || {};
-  return [topbar(CK.short || "Checklist", `${n}  |  ${CK.doc || ""}`, true),
+  return [topbar(CK.short || "Checklist", `${n}  |  ${CK.doc || ""}`, true), qcBanner("build"),
     h("p", { class: "form-sub" }, "Pass, Fail or N/A on every point. A fail needs a note and a photo, and goes back to whoever did that section."),
     ...BIO_CHECK.map(([title, items], si) => sheet("", h("div", { class: "band" }, title),
       h("table", {}, h("tbody", {},
@@ -2886,7 +3191,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793217498"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793217498"); await loadJs("./js/pdf.js?v=1793217498");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793220986"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793220986"); await loadJs("./js/pdf.js?v=1793220986");
     await fetchDayPhotos(k);
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
@@ -2993,7 +3298,7 @@ async function processMailQ1() {
   const go = q.filter(j => !j.unsure); if (!go.length) { if (["review", "menu", "today"].includes(S.view)) render(); return; }
   mqBusy = true; if (["review", "done"].includes(S.view)) render();
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793217498"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793217498"); await loadJs("./js/pdf.js?v=1793217498");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793220986"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793220986"); await loadJs("./js/pdf.js?v=1793220986");
     for (const j of go) {
       const p = CFG.projects.find(x => x.id === j.pid); if (!p) { j.done = true; continue; }
       if (!j.flash) { const m0 = Store.get(`mail|${j.pid}|${j.ds}`); if (m0 && m0.jobAt && m0.jobAt >= j.at) { j.done = true; continue; } } // another phone already sent it
@@ -3352,7 +3657,8 @@ function vDelays() {
 // ---------- render ----------
 let render = function () {
   const v = S.view;
-  const views = { users: vUsers, projects: vProjects, calendar: vCalendar, menu: vMenu, inspections: vInspections, client: vClient, tests: vTests, link: vLink, logtest: vLogTest, biocheck: vBioCheck, allocate: vAllocate, mysection: vMySection, review: vReview, kpi: vKpi, rams: vRams, ramsdoc: vRamsDoc, drawings: vDrawings, drawing: vDrawing, diary: vDiary, dsti: vDsti, dstilist: vDstiList, dstiopen: vDstiOpen, inspection: vInspection, check: vCheck, toolbox: vToolbox, incident: vIncident, si: vSI, order: vOrder, done: vDone, feedback: vFeedback, devices: vDevices, dash: vDash, qc: vQc, qcspot: vQcSpot, tsheets: vTsheets, tsheet: vTsheet, treport: vTreport, attendance: vAttendance, claude: vClaude, delays: vDelays, nearmiss: vNearMiss, jobobs: vJobObs, adhoc: vAdhoc, adhocjob: vAdhocJob, mychecks: vMyChecks, invest: vInvest, today: vToday, records: vRecords };
+  const views = { users: vUsers, projects: vProjects, calendar: vCalendar, menu: vMenu, inspections: vInspections, client: vClient, tests: vTests, link: vLink, logtest: vLogTest, biocheck: vBioCheck, allocate: vAllocate, mysection: vMySection, review: vReview, kpi: vKpi, rams: vRams, ramsdoc: vRamsDoc, drawings: vDrawings, drawing: vDrawing, diary: vDiary, dsti: vDsti, dstilist: vDstiList, dstiopen: vDstiOpen, bps: vBps, bpswtg: vBpsWtg, bpssub: vBpsSub, iqc: vIqc, inspection: vInspection, check: vCheck, toolbox: vToolbox, incident: vIncident, si: vSI, order: vOrder, done: vDone, feedback: vFeedback, devices: vDevices, dash: vDash, qc: vQc, qcspot: vQcSpot, tsheets: vTsheets, tsheet: vTsheet, treport: vTreport, attendance: vAttendance, claude: vClaude, delays: vDelays, nearmiss: vNearMiss, jobobs: vJobObs, adhoc: vAdhoc, adhocjob: vAdhocJob, mychecks: vMyChecks, invest: vInvest, today: vToday, records: vRecords };
+  document.body.classList.toggle("qcro", !!S.qcRO && ["iqc", "biocheck", "bps", "bpswtg", "bpssub"].includes(v));
   app.replaceChildren(...[].concat((views[v] || vProjects)()).filter(Boolean));
   pageForm();
 }
@@ -4136,7 +4442,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793217498"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793217498"); await loadJs("./js/pdf.js?v=1793217498");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793220986"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793220986"); await loadJs("./js/pdf.js?v=1793220986");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
