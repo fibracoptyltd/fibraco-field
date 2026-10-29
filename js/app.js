@@ -373,7 +373,7 @@ function vProjects() {
         bioSetup(); } }, "Fingerprint")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1793226611";
+const APPV = "1793254044";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -447,7 +447,7 @@ async function sendRegister(p, d, days) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793226611"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793226611"); await loadJs("./js/pdf.js?v=1793226611");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793254044"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793254044"); await loadJs("./js/pdf.js?v=1793254044");
     const { html, title } = attDoc(p, d, days); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
@@ -544,19 +544,21 @@ function tzHtml(D) {
   if (D.feedback.length) h += `<h2>FEEDBACK FROM THE TEAM</h2>` + tbl(["Who", "Screen", "Text"], D.feedback.map(f => [f.who, f.screen, f.text]));
   return h;
 }
+// Wanro 29 Oct: the button did nothing when another send was still busy. Time zone now has its own flag and always answers.
+let tzBusy = false;
 async function timeZone() {
-  if (sending) return; sending = true;
+  if (tzBusy) { showInfo("Time zone is busy", "The snapshot is still being made. Give it a few seconds."); return; } tzBusy = true;
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Time zone" }, h("div", { class: "modal" }, h("h2", {}, "Taking the snapshot"), h("p", {}, "Getting the latest from the server first. One moment.")));
   document.body.append(ov);
   try {
     try { Store.kick(); await refreshDevices(true); } catch (e) {}
     await new Promise(r => setTimeout(r, 1800));
-    await loadJs("./js/lib/html2canvas.min.js?v=1793226611"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793226611"); await loadJs("./js/pdf.js?v=1793226611");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793254044"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793254044"); await loadJs("./js/pdf.js?v=1793254044");
     const D = tzData(), stamp = `${dmy(new Date())} ${hhmm()}`, name = `FIBRACO - Time Zone (${stamp})`;
     const pdf = await window.FibPdf.diaryPdf(tzHtml(D), name);
     const json = new File([JSON.stringify(D, null, 1)], name.replace(/[\\/:*?"<>|]+/g, "-") + ".json", { type: "application/json" });
     const m = ov.querySelector(".modal"); m.innerHTML = "";
-    m.append(h("h2", {}, "Time zone ready"), h("p", {}, "Tap Share, choose OneDrive and save both files in the Time Zone folder. Then tell Claude \"Time zone\"."),
+    m.append(h("h2", {}, "Time zone ready"), h("p", {}, "Tap Share, then tap Drive (Google Drive) and Save. Then tell Claude \"Time zone\"."),
       h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
         h("button", { class: "btn-w", type: "button", onclick: async () => { ov.remove();
           const files = [pdf, json];
@@ -564,7 +566,7 @@ async function timeZone() {
           for (const f of files) { const a = document.createElement("a"); a.href = URL.createObjectURL(f); a.download = f.name; document.body.append(a); a.click(); a.remove(); }
           showInfo("Saved", "Both files are in your Downloads."); } }, "Share")));
   } catch (e) { ov.remove(); showInfo("Could not make the snapshot", String(e && e.message || e)); }
-  finally { sending = false; }
+  finally { tzBusy = false; }
 }
 
 // ---------- CLAUDE, on Wanro's phone only ----------
@@ -1528,7 +1530,7 @@ async function recordPdf() {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793226611"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793226611"); await loadJs("./js/pdf.js?v=1793226611");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793254044"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793254044"); await loadJs("./js/pdf.js?v=1793254044");
     const f = S.form, src = [...app.children].filter(k => !k.matches(".bar, .fb-btn, .ro-bar, .psub, .err, .pnav, .addrow"));
     const box = document.createElement("div");
     for (const k of src) {
@@ -1779,7 +1781,7 @@ async function sendOrder(f) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793226611"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793226611"); await loadJs("./js/pdf.js?v=1793226611");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793254044"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793254044"); await loadJs("./js/pdf.js?v=1793254044");
     const { html, title } = orderDoc(f);
     const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
@@ -2612,7 +2614,7 @@ async function bpsReport(email) {
   const ov = h("div", { class: "overlay", role: "dialog" }, h("div", { class: "modal" }, h("h2", {}, email ? "Approving and emailing" : "Making the report"), h("p", {}, "Fetching the photos and building the PDF. Keep the app open on this screen.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793226611"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793226611"); await loadJs("./js/pdf.js?v=1793226611");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793254044"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793254044"); await loadJs("./js/pdf.js?v=1793254044");
     const ws = ["SUBSTATION", ...bpsWtgs()], phs = ws.flatMap(w => Object.values(bpsOf(w).ph).flat());
     await Promise.all(phs.map(p => p.ph && !PHOTO_CACHE.has(p.ph) && !(p.url || "").startsWith("data:") ? Store.photo(p.ph).then(d => { if (d) PHOTO_CACHE.set(p.ph, d); }).catch(() => {}) : 0));
     const d = bpsDoc(S.project);
@@ -3201,7 +3203,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793226611"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793226611"); await loadJs("./js/pdf.js?v=1793226611");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793254044"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793254044"); await loadJs("./js/pdf.js?v=1793254044");
     await fetchDayPhotos(k);
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
@@ -3308,7 +3310,7 @@ async function processMailQ1() {
   const go = q.filter(j => !j.unsure); if (!go.length) { if (["review", "menu", "today"].includes(S.view)) render(); return; }
   mqBusy = true; if (["review", "done"].includes(S.view)) render();
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793226611"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793226611"); await loadJs("./js/pdf.js?v=1793226611");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793254044"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793254044"); await loadJs("./js/pdf.js?v=1793254044");
     for (const j of go) {
       const p = CFG.projects.find(x => x.id === j.pid); if (!p) { j.done = true; continue; }
       if (!j.flash) { const m0 = Store.get(`mail|${j.pid}|${j.ds}`); if (m0 && m0.jobAt && m0.jobAt >= j.at) { j.done = true; continue; } } // another phone already sent it
@@ -4454,7 +4456,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793226611"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793226611"); await loadJs("./js/pdf.js?v=1793226611");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793254044"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793254044"); await loadJs("./js/pdf.js?v=1793254044");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
