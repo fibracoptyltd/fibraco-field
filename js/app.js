@@ -380,7 +380,7 @@ function vProjects() {
         bioSetup(); } }, "Fingerprint")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1793305849";
+const APPV = "1793310344";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -463,7 +463,7 @@ async function sendRegister(p, d, days) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793305849"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793305849"); await loadJs("./js/pdf.js?v=1793305849");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793310344"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793310344"); await loadJs("./js/pdf.js?v=1793310344");
     const { html, title } = attDoc(p, d, days); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
@@ -573,7 +573,7 @@ async function timeZone() {
   try {
     try { Store.kick(); await refreshDevices(true); } catch (e) {}
     await new Promise(r => setTimeout(r, 1800));
-    await loadJs("./js/lib/html2canvas.min.js?v=1793305849"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793305849"); await loadJs("./js/pdf.js?v=1793305849");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793310344"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793310344"); await loadJs("./js/pdf.js?v=1793310344");
     const D = tzData(), stamp = `${dmy(new Date())} ${hhmm()}`, name = `FIBRACO - Time Zone (${stamp})`;
     const pdf = await window.FibPdf.diaryPdf(tzHtml(D), name);
     const json = new File([JSON.stringify(D, null, 1)], name.replace(/[\\/:*?"<>|]+/g, "-") + ".json", { type: "application/json" });
@@ -826,9 +826,12 @@ function vProjectsTiles() {
         tile("cam", "Time\nzone", timeZone, { cls: "dark" }),
         tile("chat", "Claude", () => go("claude"), { cls: "dark" })) : null,
       // Wanro: projects as tiles, three to a row. The crew keep the project cards.
-      admin ? h("div", { class: "tgrid" }, ...PROJECTS.filter(p => !p.hideFrontAdmin).map(p => { const [line] = projStatus(p), [col, bg] = PJ_COL[projPhase(p)];
+      admin ? h("div", { class: "tgrid g4 tprojs" }, ...PROJECTS.filter(p => !p.hideFrontAdmin).map(p => { const [line] = projStatus(p), [col, bg] = PJ_COL[projPhase(p)];
         return h("button", { type: "button", class: "tile tpj", style: `border-top:7px solid ${col};background:${bg};border-color:${col}${projPhase(p) === "live" ? ";box-shadow:0 0 12px rgba(57,255,20,.65)" : ""}`, "aria-label": `${p.name}. ${line}`, onclick: () => { S.project = p; S.date = today(); S.month = today(); go("menu"); } },
-          h("span", { class: "tpj-n" }, p.short.toUpperCase()), h("span", { class: "tpj-c" }, (p.client || "").split(" (")[0]), h("span", { class: "tpj-s" }, line)); }))
+          h("span", { class: "tpj-n" }, p.short.toUpperCase()), h("span", { class: "tpj-c" }, (p.client || "").split(" (")[0]), h("span", { class: "tpj-s" }, line)); }),
+        // Wanro 29 Oct: the last block in the projects row, red, everything still owed per person
+        (() => { const n = outstanding().length; return h("button", { type: "button", class: "tile tpj outred", "aria-label": `Outstanding documents, ${n}`, onclick: () => { S.outTab = "now"; go("outst"); } },
+          h("span", { class: "tpj-n" }, "OUTSTAND\u00ADING DOCUMENTS"), h("span", { class: "tpj-s" }, n ? `${n} item${n === 1 ? "" : "s"} owed` : "All up to date")); })())
       : h("div", { class: "tw", style: "padding:0" }, ...PROJECTS.map(p => { const [line] = projStatus(p), [col] = PJ_COL[projPhase(p)];
         return h("button", { type: "button", class: "tproj", onclick: () => { S.project = p; S.date = today(); S.month = today(); go("menu"); } },
           h("span", { class: "tdot", style: `background:${col}` }), h("span", { class: "tpt" }, h("b", {}, p.name.toUpperCase()), h("small", {}, line)), h("span", { class: "tgo", "aria-hidden": "true" }, "›")); })),
@@ -1552,7 +1555,7 @@ async function recordPdf() {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793305849"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793305849"); await loadJs("./js/pdf.js?v=1793305849");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793310344"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793310344"); await loadJs("./js/pdf.js?v=1793310344");
     const f = S.form, src = [...app.children].filter(k => !k.matches(".bar, .fb-btn, .ro-bar, .psub, .err, .pnav, .addrow"));
     const box = document.createElement("div");
     for (const k of src) {
@@ -1803,7 +1806,7 @@ async function sendOrder(f) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793305849"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793305849"); await loadJs("./js/pdf.js?v=1793305849");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793310344"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793310344"); await loadJs("./js/pdf.js?v=1793310344");
     const { html, title } = orderDoc(f);
     const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
@@ -2516,6 +2519,45 @@ const bpsPartDone = (w, part) => !!bpsOf(w).parts[part];
 const bpsState = w => { const c = bpsOf(w); return c.parts.el && c.parts.tc ? "done" : Object.keys(c.f).some(k => !["fibre", "modules"].includes(k)) || Object.values(c.ph).some(x => x.length) || c.parts.el || c.parts.tc ? "busy" : "todo"; };
 const bpsAllDone = () => ["SUBSTATION", ...bpsWtgs()].every(w => bpsState(w) === "done");
 const bpsRep = () => { const pid = S.project.id; S.bio[pid] = S.bio[pid] || {}; const B = S.bio[pid].REPORT || (S.bio[pid].REPORT = { items: {}, by: {}, ips: "", photos: [] }); return B.rep || (B.rep = {}); };
+// Wanro 29 Oct: Bioseco want this report every day, not only once all the sheets are signed. Every evening Wanro
+// approves the day and it goes out as the full report so far, with a first page for that day: which sheets were
+// worked on, who signed what, the day's photos with their times, what was done and why, and what is still missing.
+const BPS_DAILY_FROM = "2026-10-29";
+function bpsTouch(c) { const d = ymd(today()); c.act = c.act || {}; const l = c.act[d] || (c.act[d] = []); if (!l.includes(S.user)) l.push(S.user); }
+function bpsSlotLab(slot) { for (const d of [BPS_WTG.el, BPS_WTG.tc, BPS_SUB.el, BPS_SUB.tc]) { const x = d.ph.find(r => r[0] === slot); if (x) return `${x[2]} ${x[1]}`; } return slot === "p16" || slot === "s16" ? "Pic. 16 Patch cords left on site" : "Photo"; }
+const bpsNotes = (c, day) => Object.entries(((c && c.log) || {})[day] || {}).filter(([, v]) => v && String(v.txt || "").trim());
+// raw check on the stored sheets (no side effects), used by the outstanding list
+const bpsDayActive = (c, day) => !!c && (Object.values(c.ph || {}).some(a => (a || []).some(q => q && phDay(q.ph) === day)) || ["el", "tc"].some(pt => c.parts && c.parts[pt] && c.parts[pt].on === day) || ((c.act || {})[day] || []).length > 0 || bpsNotes(c, day).length > 0);
+function bpsDayLog(day) {
+  const out = [];
+  for (const w of ["SUBSTATION", ...bpsWtgs()]) {
+    const c = w === "SUBSTATION" ? bpsSubDefaults(bpsOf(w)) : bpsOf(w);
+    if (!bpsDayActive(c, day)) continue;
+    const phs = Object.entries(c.ph).flatMap(([slot, arr]) => (arr || []).filter(q => q && phDay(q.ph) === day).map(q => ({ q, slot })));
+    const signed = ["el", "tc"].filter(pt => c.parts[pt] && c.parts[pt].on === day), notes = bpsNotes(c, day);
+    out.push({ w, c, phs, signed, notes, who: [...new Set([...phs.map(x => x.q.by), ...signed.map(pt => c.parts[pt].by), ...((c.act || {})[day] || []), ...notes.map(([n]) => n)].filter(Boolean))] });
+  }
+  return out;
+}
+const bpsDaily = () => { const r = bpsRep(); return r.daily || (r.daily = {}); };
+// the last 14 days with work on the sheets, newest first, today always there
+function bpsDays() {
+  const out = [], t0 = today();
+  for (let i = 0; i < 14; i++) { const d = new Date(t0); d.setHours(12, 0, 0, 0); d.setDate(d.getDate() - i); const ds = ymd(d); if (S.project.start && ds < S.project.start) break; if (i === 0 || bpsDaily()[ds] || bpsDayLog(ds).length) out.push(ds); }
+  return out;
+}
+const bpsDayLab = ds => new Date(ds + "T12:00:00").toLocaleDateString("en-ZA", { weekday: "short", day: "numeric", month: "short" });
+// what was done on this sheet today, per man, for Bioseco's daily page
+function bpsLogBox(w) {
+  const c = bpsOf(w), d = ymd(today()), mayWrite = !S.qcRO && canSignWork(S.user) && ([bpsOwner("el"), bpsOwner("tc")].includes(S.user) || isSM(S.user));
+  c.log = c.log || {};
+  const todays = bpsNotes(c, d).filter(([n]) => n !== S.user), past = Object.keys(c.log).filter(k => k !== d).sort().reverse().flatMap(k => bpsNotes(c, k).map(([n, v]) => [k, n, v])).slice(0, 6);
+  return sheet("", h("div", { class: "band" }, "Today's work on this sheet (goes on Bioseco's daily report)"),
+    mayWrite ? growTxt(((c.log[d] || {})[S.user] || {}).txt, v => { const l = c.log[d] || (c.log[d] = {}); l[S.user] = { txt: v, at: hhmm(new Date()) }; bpsTouch(c); persistSoon(); }, "What did you do on this sheet today, and why? If something could not be finished, say what and why.", 64) : null,
+    ...todays.map(([n, v]) => h("p", { class: "hint" }, `${n}, ${v.at || ""}: ${v.txt}`)),
+    !mayWrite && !todays.length ? h("div", { class: "ro" }, "Nothing written today.") : null,
+    ...past.map(([k, n, v]) => h("p", { class: "hint", style: "opacity:.75" }, `${dmy(new Date(k + "T12:00:00"))}, ${n}: ${v.txt}`)));
+}
 const bpsCanEdit = part => !S.qcRO && canSignWork(S.user) && (S.user === bpsOwner(part) || isSM(S.user));
 function bpsPhotoSlot(c, k, lab, pic, edit) {
   return sheet("", h("div", { class: "band" }, `${pic}  ${lab}`),
@@ -2525,20 +2567,20 @@ function bpsPhotoSlot(c, k, lab, pic, edit) {
 function bpsPartHead(w, part) {
   const c = bpsOf(w), sg = c.parts[part], back = c.back[part], who = bpsOwner(part);
   return h("div", { class: "bps-part " + (sg ? "done" : back ? "back" : "") },
-    h("div", {}, h("b", {}, `${who.split(" ")[0]}: ${BPS_PARTS[part]}`), h("small", {}, sg ? `Signed by ${sg.by} at ${sg.at} on ${sg.date || ""}` : back ? `Sent back by ${back.by}: ${back.why}` : S.user === who ? "Your part. Fill it in and sign it off." : isSM(S.user) && !S.qcRO ? `${who} fills this in. As site manager you can also fill it in and sign it off.` : `${who} fills this in.`)),
+    h("div", {}, h("b", {}, `${who.split(" ")[0]}: ${BPS_PARTS[part]}`), h("small", {}, sg ? `Submitted by ${sg.by} at ${sg.at} on ${sg.date || ""}${isSM(S.user) && !S.qcRO ? ". You can still add or correct." : ""}` : back ? `Sent back by ${back.by}: ${back.why}` : S.user === who ? "Your part. Fill it in and sign it off." : isSM(S.user) && !S.qcRO ? `${who} fills this in. As site manager you can also fill it in and sign it off.` : `${who} fills this in.`)),
     sg && (isSM(S.user) || isAdmin(S.user)) && !S.qcRO ? h("button", { type: "button", class: "btn-g", onclick: () => bpsSendBack(w, part) }, "Send back") : null);
 }
 function bpsSendBack(w, part) {
   const why = h("textarea", { placeholder: "What must be fixed?", style: "width:100%;min-height:80px;border-radius:6px;border:1px solid #c9ced6;padding:8px;font:inherit" });
   const ov = h("div", { class: "overlay", role: "dialog" }, h("div", { class: "modal" }, h("h2", {}, `Send back to ${bpsOwner(part).split(" ")[0]}`), why,
     h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Cancel"),
-      h("button", { class: "btn-w", type: "button", onclick: () => { if (!why.value.trim()) return; const c = bpsOf(w); delete c.parts[part]; c.back[part] = { by: S.user, why: why.value.trim(), at: hhmm(new Date()) }; const r = bpsRep(); delete r.approved; persist(); ov.remove(); render(); } }, "Send back"))));
+      h("button", { class: "btn-w", type: "button", onclick: () => { if (!why.value.trim()) return; const c = bpsOf(w); delete c.parts[part]; c.back[part] = { by: S.user, why: why.value.trim(), at: hhmm(new Date()) }; bpsTouch(c); const dd = bpsDaily()[ymd(today())]; if (dd && !dd.sent) { delete dd.approved; delete dd.sm; } persist(); ov.remove(); render(); } }, "Send back"))));
   document.body.append(ov); why.focus();
 }
 function bpsSign(w, part) {
   const miss = bpsMissing(w, part);
   if (miss.length) { showInfo("Not finished yet", `Still missing: ${miss.join(", ")}.`); return; }
-  mySig(v => { if (!v) return; const c = bpsOf(w), now = new Date(); c.parts[part] = { by: S.user, at: hhmm(now), on: ymd(now), date: dmy(now), sig: v }; delete c.back[part]; persist(); render(); toast(`${BPS_PARTS[part].split(" (")[0]} part of ${w === "SUBSTATION" ? "the substation" : w} signed off`); });
+  mySig(v => { if (!v) return; const c = bpsOf(w), now = new Date(); c.parts[part] = { by: S.user, at: hhmm(now), on: ymd(now), date: dmy(now), sig: v }; delete c.back[part]; bpsTouch(c); persist(); render(); toast(`${BPS_PARTS[part].split(" (")[0]} part of ${w === "SUBSTATION" ? "the substation" : w} ${isSM(S.user) ? "signed off" : "submitted to " + smName().split(" ")[0]}`); });
 }
 function bpsSignBtn(w, part) {
   // Wanro 29 Oct: the site manager can also sign off either part, so the work keeps moving when the owner is
@@ -2546,7 +2588,8 @@ function bpsSignBtn(w, part) {
   const mine = S.user === bpsOwner(part);
   if (!bpsCanEdit(part) || bpsPartDone(w, part) || !(mine || isSM(S.user))) return null;
   const lab = part === "el" ? "ELECTRICAL AND MECHANICAL" : "TELECOMS";
-  return h("button", { class: "submit", type: "button", onclick: () => bpsSign(w, part) }, mine ? `SIGN OFF MY ${lab} PART` : `SIGN OFF THE ${lab} PART (SITE MANAGER)`);
+  // Wanro 29 Oct: Marcel and Marlon submit their parts to Hendrik only. He adds or corrects, then submits the day to Wanro.
+  return h("button", { class: "submit", type: "button", onclick: () => bpsSign(w, part) }, mine && !isSM(S.user) ? `SUBMIT MY ${lab} PART TO ${smName().split(" ")[0].toUpperCase()}` : `SIGN OFF THE ${lab} PART (SITE MANAGER)`);
 }
 function vBps() {
   seedLinks(); const p = S.project, r = bpsRep();
@@ -2560,23 +2603,42 @@ function vBps() {
     h("p", { class: "form-sub" }, `Bioseco's post-installation documentation. ${bpsOwner("el").split(" ")[0]} does the electrical and mechanical part (E/M), ${bpsOwner("tc").split(" ")[0]} the telecoms part (TEL). Green means signed.`),
     h("div", { class: "bps-grid" }, ...all.map(tile)),
     h("div", { class: "bps-sum" }, `${done} of ${all.length} sheets complete`),
-    r.sent ? h("div", { class: "rep-st ok" }, `Approved by ${r.approved.by} and emailed at ${r.sent.at} on ${r.sent.date}.`, h("small", {}, `To ${r.sent.to.join(", ")}`)) :
-    r.approved ? h("div", { class: "rep-st wait" }, `Approved by ${r.approved.by}. Not emailed yet.`, r.err ? h("small", {}, `Last try: ${r.err}`) : null) :
-    ready ? h("div", { class: "rep-st ok" }, isAdmin(S.user) ? "All sheets are signed. The report is ready for you to review and approve." : `All sheets are signed. The report is waiting for ${adminName()} to review and approve.`) : null,
-    h("button", { class: "mbtn", type: "button", onclick: () => bpsReport(false) }, ready ? "REVIEW THE REPORT (PDF)" : "SEE THE REPORT SO FAR (PDF)", h("small", {}, ready ? "The full report, as it will be emailed" : "Sheets that are not done show what is still missing")),
-    ready && isAdmin(S.user) && !S.qcRO && !r.sent ? h("button", { class: "submit", type: "button", onclick: () => bpsApprove() }, r.approved ? "SEND THE REPORT AGAIN" : "APPROVE AND EMAIL THE REPORT") : null,
-    ready && isAdmin(S.user) && !S.qcRO && !r.sent ? h("p", { class: "hint" }, `It goes to ${bpsTo().map(x => x.name).join(" and ")}${bpsTo().some(x => !x.email) ? ". No email address for Bioseco yet, so for now only to you." : "."}`) : null];
+    ...bpsDailyBox(ready)];
+}
+function bpsDailyBox(ready) {
+  const days = bpsDays(), D = bpsDaily();
+  if (!days.includes(S.bpsDay)) S.bpsDay = days.find(x => x >= BPS_DAILY_FROM && bpsDayLog(x).length && !(D[x] || {}).sent) || days[0];
+  const ds = S.bpsDay, dr = D[ds] || {}, log = bpsDayLog(ds), lab = bpsDayLab(ds), admin = isAdmin(S.user) && !S.qcRO;
+  const n = log.length, sheets = `${n} ${n === 1 ? "sheet" : "sheets"} worked on`, sm = isSM(S.user) && !isAdmin(S.user) && !S.qcRO;
+  const open = log.flatMap(x => ["el", "tc"].filter(pt => !x.c.parts[pt]).map(pt => `${x.w === "SUBSTATION" ? "substation" : x.w} ${pt === "el" ? "electrical" : "telecoms"} (${bpsOwner(pt).split(" ")[0]})`));
+  return [h("h3", { class: "bps-h" }, "Daily report to Bioseco"),
+    days.length > 1 ? h("div", { class: "bps-days" }, ...days.slice(0, 7).map(x => { const st = D[x] || {}; return h("button", { type: "button", class: "bps-day" + (x === ds ? " on" : "") + (st.sent ? " sent" : bpsDayLog(x).length ? " due" : ""), onclick: () => { S.bpsDay = x; render(); } }, bpsDayLab(x)); })) : null,
+    dr.sent ? h("div", { class: "rep-st ok" }, `${lab}: approved by ${dr.approved.by} and emailed at ${dr.sent.at} on ${dr.sent.date}.`, h("small", {}, `To ${dr.sent.to.join(", ")}`)) :
+    dr.approved ? h("div", { class: "rep-st wait" }, `${lab}: approved by ${dr.approved.by}. Not emailed yet.`, dr.err ? h("small", {}, `Last try: ${dr.err}`) : null) :
+    dr.sm ? h("div", { class: "rep-st wait" }, `${lab}: submitted by ${dr.sm.by} at ${dr.sm.at}.`, h("small", {}, isAdmin(S.user) ? "Ready for your final review." : `Waiting for ${adminName()}'s final review.`)) :
+    n ? h("div", { class: "rep-st wait" }, `${lab}: ${sheets}.`, h("small", {}, isSM(S.user) ? "Check it, add or correct, then submit it to " + adminName().split(" ")[0] + "." : `Waiting for ${smName().split(" ")[0]} to check it and submit it to ${adminName().split(" ")[0]}.`)) :
+    h("div", { class: "rep-st" }, `${lab}: nothing done on the sheets yet.`),
+    sm && n && !dr.sm && open.length ? h("p", { class: "hint", style: "color:#8a4b00" }, `Not submitted yet: ${open.join(", ")}.`) : null,
+    ready ? h("p", { class: "hint" }, "All sheets are signed. This report is also the final report.") : null,
+    h("button", { class: "mbtn", type: "button", onclick: () => bpsReport(false, ds) }, `SEE THE REPORT FOR ${lab.toUpperCase()} (PDF)`, h("small", {}, "That day's work on the first page, then the full report so far")),
+    sm && n && !dr.sm ? h("button", { class: "submit", type: "button", onclick: () => bpsSmSubmit(ds) }, `SUBMIT THE REPORT FOR ${lab.toUpperCase()} TO ${adminName().split(" ")[0].toUpperCase()}`) : null,
+    admin && dr.sm && !dr.sent ? h("button", { class: "submit", type: "button", onclick: () => bpsApprove(ds) }, dr.approved ? "SEND THE REPORT AGAIN" : `FINAL REVIEW DONE: APPROVE AND EMAIL`) : null,
+    admin && dr.sent ? h("button", { class: "btn-g", type: "button", style: "width:100%;margin-top:8px", onclick: () => bpsApprove(ds) }, "Send this day again") : null,
+    admin && dr.sm ? h("p", { class: "hint" }, `It goes to ${bpsTo().map(x => x.name).join(" and ")}${bpsTo().some(x => !x.email) ? ". No email address for Bioseco yet, so for now only to you." : "."}`) : null];
 }
 const bpsTo = () => { const pm = pmPerson() || {}; return [{ name: pm.name || "Wanro Hayes", email: pm.email || CFG.office || "" }, ...((S.project.reports || {}).qc || [])]; };
-function bpsApprove() {
-  mySig(async v => { if (!v) return; const r = bpsRep(), now = new Date(); r.approved = { by: S.user, at: hhmm(now), date: dmy(now), sig: v }; persist(); render(); await bpsReport(true); });
+function bpsSmSubmit(ds) {
+  mySig(v => { if (!v) return; const D = bpsDaily(), dr = D[ds] || (D[ds] = {}), now = new Date(); dr.sm = { by: S.user, at: hhmm(now), date: dmy(now), sig: v }; persist(); render(); toast(`Report for ${bpsDayLab(ds)} sent to ${adminName().split(" ")[0]} for final review`); });
+}
+function bpsApprove(ds) {
+  mySig(async v => { if (!v) return; const D = bpsDaily(), dr = D[ds] || (D[ds] = {}), now = new Date(); dr.approved = { by: S.user, at: hhmm(now), date: dmy(now), sig: v }; persist(); render(); await bpsReport(true, ds); });
 }
 function vBpsWtg() {
-  const w = S.bpsW, c = bpsOf(w), f = c.f, eEl = bpsCanEdit("el") && !c.parts.el, eTc = bpsCanEdit("tc") && !c.parts.tc;
+  const w = S.bpsW, c = bpsOf(w), f = c.f, eEl = bpsCanEdit("el") && (!c.parts.el || isSM(S.user)), eTc = bpsCanEdit("tc") && (!c.parts.tc || isSM(S.user));
   const t = (() => { try { return designTurbines().find(x => x.name === w); } catch (e) { return null; } })();
   if (t && !f.fibre) f.fibre = `Cores ${t.bio[0]} and ${t.bio[1]}, Collector ${t.coll} panel`;
   if (!f.modules) f.modules = (bpsSubDefaults(bpsOf("SUBSTATION")).f || {}).modules || "8";
-  const save = () => persistSoon();
+  const save = () => { bpsTouch(c); persistSoon(); };
   const fld = (e, lab, k, ph, type) => h("tr", {}, h("td", { class: "lab" }, lab), h("td", {}, e ? inp(type || "text", f[k], v => { f[k] = v; save(); }, ph || "") : h("div", { class: "ro" }, f[k] || "-")));
   const pick = (e, lab, k, opts) => h("tr", {}, h("td", { class: "lab" }, lab), h("td", {}, e ? seg(opts.map(o => [o, o]), f[k], v => { f[k] = v; save(); render(); }) : h("div", { class: "ro" }, f[k] || "-")));
   const g = f.gps, slot = (k, e) => { const d = [...BPS_WTG.el.ph, ...BPS_WTG.tc.ph].find(x => x[0] === k); return bpsPhotoSlot(c, k, d[1], d[2], e); };
@@ -2605,11 +2667,12 @@ function vBpsWtg() {
       slot("p15", eTc), slot("pc", eTc),
       f.link === "Not connected" ? bpsPhotoSlot(c, "p16", "Patch cords left on site for later", "Pic. 16", eTc) : null,
       bpsSignBtn(w, "tc")),
+    bpsLogBox(w),
     sheet("", h("table", {}, h("tbody", {}, fld(eEl || eTc, "Notes", "notes", "Anything Bioseco must know"))))];
 }
 function vBpsSub() {
-  const c = bpsSubDefaults(bpsOf("SUBSTATION")), f = c.f, eEl = bpsCanEdit("el") && !c.parts.el, eTc = bpsCanEdit("tc") && !c.parts.tc;
-  const save = () => persistSoon();
+  const c = bpsSubDefaults(bpsOf("SUBSTATION")), f = c.f, eEl = bpsCanEdit("el") && (!c.parts.el || isSM(S.user)), eTc = bpsCanEdit("tc") && (!c.parts.tc || isSM(S.user));
+  const save = () => { bpsTouch(c); persistSoon(); };
   const fld = (e, lab, k, ph, type) => h("tr", {}, h("td", { class: "lab" }, lab), h("td", {}, e ? inp(type || "text", f[k], v => { f[k] = v; save(); }, ph || "") : h("div", { class: "ro" }, f[k] || "-")));
   const eq = part => { const e = part === "el" ? eEl : eTc;
     return sheet("", h("div", { class: "band" }, part === "el" ? "Equipment: RACK, servers, UPS, power" : "Equipment: converters, routers, switch"), h("table", {}, h("thead", {}, h("tr", {}, h("th", { class: "l" }, "Product"), h("th", {}, "Qty"), h("th", { class: "l" }, "Serial number / type"))),
@@ -2632,18 +2695,19 @@ function vBpsSub() {
       h("h3", { class: "bps-h" }, "Network and fibre in the substation"),
       sheet("", h("table", {}, h("tbody", {}, fld(eTc, "Client switch", "switchNo", "e.g. Switch 2"), fld(eTc, "Port", "port", "e.g. 12"), fld(eTc, "Module IP range", "iprange", "e.g. 192.168.10.21 to 52")))),
       slot("s3", eTc), slot("s14", eTc),
-      bpsPhotoSlot(c, "s16", "Patch cords left in the substation for turbines not yet connected (if any)", "Pic. 16", eTc), eq("tc"), bpsSignBtn("SUBSTATION", "tc"))];
+      bpsPhotoSlot(c, "s16", "Patch cords left in the substation for turbines not yet connected (if any)", "Pic. 16", eTc), eq("tc"), bpsSignBtn("SUBSTATION", "tc")),
+    bpsLogBox("SUBSTATION")];
 }
 // ---------- the report, in Bioseco's layout ----------
-async function bpsReport(email) {
+async function bpsReport(email, day = ymd(today())) {
   if (sending) return; sending = true;
   const ov = h("div", { class: "overlay", role: "dialog" }, h("div", { class: "modal" }, h("h2", {}, email ? "Approving and emailing" : "Making the report"), h("p", {}, "Fetching the photos and building the PDF. Keep the app open on this screen.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793305849"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793305849"); await loadJs("./js/pdf.js?v=1793305849");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793310344"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793310344"); await loadJs("./js/pdf.js?v=1793310344");
     const ws = ["SUBSTATION", ...bpsWtgs()], phs = ws.flatMap(w => Object.values(bpsOf(w).ph).flat());
     await Promise.all(phs.map(p => p.ph && !PHOTO_CACHE.has(p.ph) && !(p.url || "").startsWith("data:") ? Store.photo(p.ph).then(d => { if (d) PHOTO_CACHE.set(p.ph, d); }).catch(() => {}) : 0));
-    const d = bpsDoc(S.project);
+    const d = bpsDoc(S.project, day);
     // a smaller picture per page and split into parts of at most 5 MB, so every email gets through
     const files = await window.FibPdf.diaryPdf(d.html, d.title, { scale: 1.6, quality: 0.72, maxBytes: 5e6 });
     const list = Array.isArray(files) ? files : [files];
@@ -2653,22 +2717,22 @@ async function bpsReport(email) {
         h("button", { class: "btn-w", type: "button", onclick: async () => { ov.remove(); for (const f of list) { const r = await window.FibPdf.shareFile(f, d.title); if (r === "cancelled") break; } } }, list.length > 1 ? `Open (${list.length} parts)` : "Open")));
       return;
     }
-    const to = bpsTo().filter(x => x.email), r = bpsRep();
+    const to = bpsTo().filter(x => x.email), D = bpsDaily(), r = D[day] || (D[day] = {}), dTxt = nice(new Date(day + "T12:00:00")), log = bpsDayLog(day);
     const results = [];
     for (let i = 0; i < list.length; i++) {
       const f = list[i], part = list.length > 1 ? ` (part ${i + 1} of ${list.length})` : "";
-      const res = await Store.sendReport({ project: S.project.id, day: ymd(new Date()), mails: [{ kind: "bps", to: to.map(x => x.email), bcc: [], replyTo: (pmPerson() || {}).email,
-        subject: `Bioseco post-installation documentation, ${S.project.name}${part}`,
-        text: `Good day ${to.map(x => x.name.split(" ")[0]).join(" and ")},\n\nAttached is the Bioseco post-installation documentation for ${S.project.name}${part}, prepared by ${bpsOwner("el")} with ${bpsOwner("tc")} and approved by ${r.approved ? r.approved.by : S.user}.\n\nRegards\nFibraco site team`,
+      const res = await Store.sendReport({ project: S.project.id, day, mails: [{ kind: "bps", to: to.map(x => x.email), bcc: [], replyTo: (pmPerson() || {}).email,
+        subject: `Bioseco daily report, ${S.project.name}, ${dTxt}${part}`,
+        text: `Good day ${to.map(x => x.name.split(" ")[0]).join(" and ")},\n\nAttached is the Bioseco daily report for ${S.project.name}, ${dTxt}${part}. The first page shows the work done that day (${log.length} ${log.length === 1 ? "sheet" : "sheets"}: ${log.map(x => x.w === "SUBSTATION" ? "substation" : x.w).join(", ") || "none"}). The full documentation so far follows after it.${bpsAllDone() ? " All sheets are now signed, so this is also the final report." : ""}\n\nPrepared by ${bpsOwner("el")} with ${bpsOwner("tc")} and approved by ${r.approved ? r.approved.by : S.user}.\n\nRegards\nFibraco site team`,
         files: [{ name: f.name, b64: await fileB64(f) }] }] });
       results.push(...((res && res.results) || []));
     }
     if (results.length && results.every(x => x.ok)) { const now = new Date(); r.sent = { at: hhmm(now), date: dmy(now), to: to.map(x => x.name), parts: list.length }; delete r.err; persist(); ov.remove(); render(); showInfo("Report emailed", `Sent to ${to.map(x => x.name).join(" and ")}${list.length > 1 ? ` in ${list.length} parts` : ""}.`); }
     else { r.err = (results.find(x => !x.ok) || {}).error || "not sent"; persist(); ov.remove(); render(); showInfo("Not sent", `${r.err}. Tap Send the report again when you have signal.`); }
-  } catch (e) { const r = bpsRep(); if (email) { r.err = e.message || String(e); persist(); } ov.remove(); render(); showInfo(email ? "Not sent" : "Could not make the report", `${e.message || e}.`); }
+  } catch (e) { if (email) { const D = bpsDaily(), r = D[day] || (D[day] = {}); r.err = e.message || String(e); persist(); } ov.remove(); render(); showInfo(email ? "Not sent" : "Could not make the report", `${e.message || e}.`); }
   finally { sending = false; }
 }
-function bpsDoc(p) {
+function bpsDoc(p, day) {
   const esc = x => String(x == null ? "" : x).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
   const ws = bpsWtgs(), sub = bpsSubDefaults(bpsOf("SUBSTATION")), sf = sub.f, X = v => v ? esc(v) : "XXX";
   const src = q => (q.url || "").startsWith("data:") ? q.url : PHOTO_CACHE.get(q.ph);
@@ -2680,10 +2744,20 @@ function bpsDoc(p) {
   const started = ws.filter(w => bpsState(w) !== "todo"), notYet = ws.filter(w => !started.includes(w));
   const notYetP = notYet.length ? `<p class="bps-miss">Not documented yet: ${esc(notYet.join(", "))}.</p>` : "";
   const done = ws.filter(w => bpsState(w) === "done"), conn = ws.filter(w => bpsOf(w).f.link === "Connected"), notConn = ws.filter(w => bpsOf(w).f.link === "Not connected");
+  const hdr = `<div class="bps-hdr"><img src="./icons/bps/logo.jpg" alt="Bioseco"><span>Post-installation documentation  |  ${esc(p.name)}</span></div>`;
+  // the day's page, first in the report (Wanro 29 Oct: Bioseco want it daily)
+  const nm = w => w === "SUBSTATION" ? "Substation" : w, dayLog = day ? bpsDayLog(day) : [];
+  const ptStarted = (w, c, pt) => { const def = (w === "SUBSTATION" ? BPS_SUB : BPS_WTG)[pt]; return def.ph.some(([k]) => (c.ph[k] || []).length) || def.need.some(([k]) => String(c.f[k] || "").trim() && !(k === "fibre" || k === "modules")); };
+  const stTxt = (w, c, pt) => { const s = c.parts[pt], b = c.back[pt]; if (s) return s.on === day ? `Signed this day by ${esc(s.by)} at ${esc(s.at)}` : `Signed ${esc(s.date || "")} by ${esc(s.by)}`; if (b) return `<span style="color:#a50e0e">Sent back: ${esc(b.why)}</span>`; if (!ptStarted(w, c, pt)) return "Not started"; const m = bpsMissing(w, pt).length; return m ? `In progress, ${m} ${m === 1 ? "item" : "items"} to do` : "Filled in, not signed yet"; };
+  const dayPage = !day ? "" : `<div class="pbreak"></div>${hdr}<h2>Daily report, ${esc(nice(new Date(day + "T12:00:00")))}</h2>
+  <p>${dayLog.length ? `Work was done on ${dayLog.length} ${dayLog.length === 1 ? "sheet" : "sheets"} on this day: ${esc(dayLog.map(x => nm(x.w)).join(", "))}. Team: ${esc([...new Set(dayLog.flatMap(x => x.who))].join(", "))}.` : "No work was recorded on the Bioseco sheets on this day."} So far ${done.length} of ${ws.length} turbines${bpsState("SUBSTATION") === "done" ? " and the substation are" : " are"} fully signed off. The full documentation so far follows after this section.</p>
+  ${dayLog.length ? `<table class="g"><thead><tr><th>Sheet</th><th>Electrical and mechanical</th><th>Telecoms</th><th>Photos</th><th>Still to do</th></tr></thead><tbody>${dayLog.map(x => { const miss = ["el", "tc"].filter(pt => !x.c.parts[pt]).flatMap(pt => ptStarted(x.w, x.c, pt) ? bpsMissing(x.w, pt) : [`${pt === "el" ? "Electrical and mechanical" : "Telecoms"} part not started`]);
+    return `<tr><td><b>${esc(nm(x.w))}</b></td><td>${stTxt(x.w, x.c, "el")}</td><td>${stTxt(x.w, x.c, "tc")}</td><td style="text-align:center">${x.phs.length}</td><td style="font-size:8pt">${miss.length ? esc(miss.join(", ")) : "Nothing, both parts signed"}</td></tr>`; }).join("")}</tbody></table>` : ""}
+  ${dayLog.map(x => { const f = x.c.f, ph = x.phs.map(({ q, slot }) => ({ q, s: src(q), cap: `${bpsSlotLab(slot)}${q.time ? ", " + String(q.time).replace(":", "h") : ""}${q.by ? ", " + q.by : ""}` })).filter(y => y.s);
+    return `<h3>${esc(nm(x.w))}</h3>${x.notes.length ? x.notes.map(([n, v]) => `<p><b>${esc(n)}${v.at ? ", " + esc(String(v.at).replace(":", "h")) : ""}:</b> ${esc(v.txt)}</p>`).join("") : `<p class="bps-miss">No description of the work was written for this sheet on this day.</p>`}${f.link === "Not connected" && x.w !== "SUBSTATION" ? `<p><b>Not connected:</b> ${esc(f.why || "reason not given")}${f.raised ? ", raised " + esc(f.raised) : ""}.</p>` : ""}${ph.length ? `<div class="pgrid pgrid3">${ph.map(({ q, s, cap }) => `<figure><img src="${s}"><figcaption>${esc(cap)}${q.caption ? ", " + esc(q.caption) : ""}</figcaption></figure>`).join("")}</div>` : ""}`; }).join("")}`;
   const lastDone = [sub, ...ws.map(bpsOf)].flatMap(c => [c.parts.el, c.parts.tc]).map(x => x && x.on).filter(Boolean).sort().pop();
   const dTxt = lastDone ? nice(new Date(lastDone + "T12:00:00")) : nice(new Date());
   const prep = bpsOwner("el"), elSig = sub.parts.el;
-  const hdr = `<div class="bps-hdr"><img src="./icons/bps/logo.jpg" alt="Bioseco"><span>Post-installation documentation  |  ${esc(p.name)}</span></div>`;
   const firstP1 = ws.map(w => bpsOf(w).ph.p1[0]).find(Boolean);
   const eqRows = sub.eq.map((r, i) => `<tr><td>${i + 1}.</td><td>${esc(r.n)}</td><td style="text-align:center">${esc(r.q) || "X"}</td><td>${esc(r.s).replace(/\n/g, "<br>")}</td></tr>`).join("");
   const srv = {}; ws.forEach(w => { const s = (bpsOf(w).f.server || "").trim() || "Not given"; (srv[s] = srv[s] || []).push(w); });
@@ -2701,7 +2775,8 @@ function bpsDoc(p) {
     return `<line x1="160" y1="${H / 2}" x2="470" y2="${y}" stroke="${col}" stroke-width="2"/><rect x="470" y="${y - 10}" width="90" height="20" rx="4" fill="${col}"/><text x="515" y="${y + 4}" fill="#fff" font-size="11" font-family="Arial" text-anchor="middle" font-weight="700">${esc(w)}</text><text x="570" y="${y + 4}" font-size="9.5" font-family="Arial" fill="#333">${esc((f.fibre || "").slice(0, 24))}</text>`; }).join("")}</svg>`;
   const html = `
   <div class="bps-cover"><img class="bps-logo" src="./icons/bps/logo.jpg" alt="Bioseco"><h1>POST-INSTALLATION DOCUMENTATION</h1><h2 style="margin-top:0">of Bird Protection System (BPS)</h2><img class="bps-cimg" src="./icons/bps/cover.jpg" alt="">
-  <table class="kv"><tr><th>BPS Version:</th><td>${X(sf.version)}</td></tr><tr><th>Customer:</th><td>${X(sf.customer)}</td></tr><tr><th>Location:</th><td>${X(sf.location)}</td></tr><tr><th>Substation GPS coordinates:</th><td>${X(sf.gps)}</td></tr><tr><th>Documentation prepared by:</th><td>${esc(prep)}</td></tr><tr><th>Date:</th><td>${esc(dmy(lastDone ? new Date(lastDone + "T12:00:00") : new Date()))}</td></tr></table></div>
+  <table class="kv"><tr><th>BPS Version:</th><td>${X(sf.version)}</td></tr><tr><th>Customer:</th><td>${X(sf.customer)}</td></tr><tr><th>Location:</th><td>${X(sf.location)}</td></tr><tr><th>Substation GPS coordinates:</th><td>${X(sf.gps)}</td></tr><tr><th>Documentation prepared by:</th><td>${esc(prep)}</td></tr><tr><th>Date:</th><td>${esc(dmy(day ? new Date(day + "T12:00:00") : lastDone ? new Date(lastDone + "T12:00:00") : new Date()))}</td></tr></table></div>
+  ${dayPage}
   <div class="pbreak"></div>${hdr}<h2>Table of contents</h2><p>1. Introduction<br>2. Substation installation<br>3. Internal installation<br>4. External installation<br>Schemes of installed systems<br>5. Fiber optic installation<br>Diagram of a fiber optic network<br>6. Appendix: Protocol of delivery and acceptance</p>
   <div class="pbreak"></div><h2>1. Introduction</h2><p>On ${esc(dTxt)} Bioseco S.A. finished the installation of the ${ws.length} ${X(sf.version)} Bird Protection Systems in ${X(sf.customer)} wind farm: ${esc(p.name.replace(/^Bioseco - /, ""))} in ${X(sf.location)}. Each system consists of ${X(sf.modules)} detection modules, ${X(sf.jbox)} junction boxes (internal and external) and the wiring. All the systems were installed approx. ${X(sf.height)} m above the ground (Pic. 1). Modules, junction boxes and the cable assembly system are fixed with specialised magnetic holders.</p>
   ${firstP1 ? pics([firstP1], "Pic. 1. Finished installed BPS") : ""}
@@ -2742,7 +2817,7 @@ function bpsDoc(p) {
   <div><h3>RECEIVING PERSON</h3><div class="sigline"></div><div>${esc(sf.receiver || "")}</div><small>Date, name and surname</small></div></div>
   <p class="foot">Bioseco S.A., ul. Budowlanych 68, 80-298 Gdańsk, Polska  |  www.bioseco.com  |  info@bioseco.com</p></div>
   <p class="foot">Prepared on site by ${esc(prep)} with the Fibraco Field app. ${done.length} of ${ws.length} turbines and ${bpsState("SUBSTATION") === "done" ? "the substation" : "not yet the substation"} signed off. Electrical and mechanical by ${esc(bpsOwner("el"))}, telecoms by ${esc(bpsOwner("tc"))}.${bpsRep().approved ? ` Approved by ${esc(bpsRep().approved.by)} on ${esc(bpsRep().approved.date)}.` : ""}</p>`;
-  return { html, title: `BIOSECO - Post-Installation Documentation - ${p.short} (${dmy(new Date())})` };
+  return { html, title: `BIOSECO - ${day ? "Daily Report" : "Post-Installation Documentation"} - ${p.short} (${dmy(day ? new Date(day + "T12:00:00") : new Date())})` };
 }
 function qcBanner(which) {
   if (!S.qcRO) return null;
@@ -3259,6 +3334,93 @@ function vImgDiary() {
         isAdmin(S.user) ? h("button", { type: "button", class: "btn-g", style: "padding:4px 10px;font-size:12px", onclick: () => imgDownload(list, `${p.short} ${S.imgWho}`) }, "Download") : null),
         h("div", { class: "img-grid" }, ...list.map(x => h("button", { type: "button", class: "img-t", onclick: () => imgView(x, list) }, lazyImg(x), h("small", {}, `${x.p.time || ""} ${x.where.replace(" commissioning sheet", "")}`.trim()))))); })];
 }
+// ---------- outstanding documents (Wanro 29 Oct) ----------
+// What each man still owes, per project and day: the register, his diary section, the site manager's approvals and
+// signature, the DSTI, his daily checks, unsigned Bioseco commissioning parts and unsigned QC sheets.
+// Every item also goes into a register (who, what, since when, done when), kept for the office only.
+const OUT_DAYS = 21;
+let OUT_CACHE = null;
+function outstanding(force) {
+  if (!force && OUT_CACHE && Date.now() - OUT_CACHE.at < 60e3) return OUT_CACHE.items;
+  const items = [], now = today(), pm = (pmPerson() || {}).name || "the office", keep = [S.project, S.date];
+  const add = (who, p, ds, item) => { if (who) items.push({ who, pid: p.id, proj: p.short, ds, item, key: `${p.id}|${ds}|${who}|${item}` }); };
+  try {
+    for (const p of PROJECTS) {
+      S.project = p; const sm = smName(p);
+      for (let i = OUT_DAYS; i >= 1; i--) {
+        const d = new Date(now); d.setHours(12, 0, 0, 0); d.setDate(d.getDate() - i); const ds = ymd(d); S.date = d;
+        if (p.start && ds < p.start) continue;
+        // a man counts as on site that day if he signed the register, has a diary section, or the site manager gave him work.
+        // Work that only came from the programme, with nobody on the register, is not counted (the crew may have been elsewhere).
+        const k = p.id + "|" + ds, given = Store.get("alloc|" + k), planned = [...new Set((allocOf(k) || []).map(a => a.who).filter(Boolean))];
+        const secOf = n => Store.get(`sec|${k}|${n}`) || ((S.sections[k] || {})[n]) || {};
+        const att = n => attGet(p, d, n) || {}, onReg = attPeople(p).filter(n => att(n).in);
+        const withSec = Store.list(`sec|${k}|`).map(([id]) => id.split("|").slice(3).join("|"));
+        const there = [...new Set([...onReg, ...withSec, ...(given ? given.map(a => a.who).filter(Boolean) : [])])];
+        if (!there.length) continue; // nobody worked that day
+        const tasked = there.filter(n => planned.includes(n));
+        for (const n of there) { const a = att(n); if (!a.in) add(n, p, ds, "Register: not signed in"); else if (!a.out) add(n, p, ds, "Register: not signed out"); }
+        for (const n of tasked) { const st = secOf(n).status; if (!["submitted", "approved"].includes(st)) add(n, p, ds, "Daily diary: own section not submitted"); else if (st === "submitted") add(sm, p, ds, `Daily diary: ${n.split(" ")[0]}'s section not approved`); }
+        const fin = Store.get("final|" + k);
+        if (!fin) add(sm, p, ds, "Daily diary: not signed by the site manager");
+        else if (fin.needPM && !fin.pmOk) add(pm, p, ds, "Daily diary: waiting for the Project Manager's approval");
+        const dsti = Store.list(`form|${p.id}|`).some(([, o]) => o && o.type === "dsti" && o.date === ds);
+        if (!dsti) add(there.find(n => APPT(p, n) && APPT(p, n).checks.some(([c]) => c === "dsti")) || sm, p, ds, "DSTI: none done");
+        for (const n of there) for (const c of myChecks(p, n, ds)) if (c.often === "daily" && c.k !== "dsti" && !c.watch && !c.ref && !["done", "later"].includes(c.st)) add(n, p, ds, `Check not done: ${c.title}`);
+      }
+      // Bioseco commissioning: a sheet that was started, with a part nobody signed
+      if (p.kind === "turbines" && qcPhase(p) === "commissioning") {
+        const bio = Object.assign({}, Object.fromEntries(Store.list("bio|" + p.id + "|").map(([id, o]) => [id.split("|").slice(2).join("|"), o])), (S.bio || {})[p.id] || {});
+        for (const [w, B] of Object.entries(bio)) { const c = B && B.pc; if (!c) continue; const pt = c.parts || {};
+          const started = Object.keys(c.f || {}).some(x => !["fibre", "modules"].includes(x)) || Object.values(c.ph || {}).some(x => x && x.length) || pt.el || pt.tc;
+          if (started) for (const part of ["el", "tc"]) if (!pt[part]) add(bpsOwner(part, p), p, "", `Commissioning sheet ${w === "SUBSTATION" ? "substation" : w}: ${part === "el" ? "electrical and mechanical" : "telecoms"} part not signed`); }
+      }
+      // Bioseco daily report: a day with work on the sheets that Wanro has not approved and sent
+      if (p.kind === "turbines" && qcPhase(p) === "commissioning") {
+        const bio = Object.assign({}, Object.fromEntries(Store.list("bio|" + p.id + "|").map(([id, o]) => [id.split("|").slice(2).join("|"), o])), (S.bio || {})[p.id] || {});
+        const daily = ((bio.REPORT || {}).rep || {}).daily || {};
+        for (let i = OUT_DAYS; i >= 1; i--) { const d = new Date(now); d.setHours(12, 0, 0, 0); d.setDate(d.getDate() - i); const ds = ymd(d);
+          if (ds < BPS_DAILY_FROM || (daily[ds] || {}).sent) continue;
+          if (!Object.entries(bio).some(([w, B]) => w !== "REPORT" && bpsDayActive(B && B.pc, ds))) continue;
+          if (!(daily[ds] || {}).sm) add(sm, p, ds, "Bioseco daily report: not checked and submitted to the Project Manager"); else add(pm, p, ds, "Bioseco daily report: waiting for the Project Manager's final review"); }
+      }
+      // QC sheets that were worked on but not signed
+      if (p.qcSpots) for (const sh of Object.keys(QC_SHEETS)) for (const sp of qcSpots(sh)) { const c = qcCount(sh, sp); if (c.done && !c.signed) add(sm, p, "", `QC sheet ${QC_SHEETS[sh].title} ${sp}: ${c.done} of ${c.total} checked, not signed`); }
+    }
+  } catch (e) { window.__outErr = String(e && e.message || e); }
+  finally { [S.project, S.date] = keep; }
+  OUT_CACHE = { at: Date.now(), items };
+  return items;
+}
+// the register: every outstanding item with the day it was first seen and the day it was done (office only)
+function outRegister(items) {
+  if (!isAdmin(S.user)) return;
+  const now = new Date().toISOString(), cur = new Set(items.map(x => x.key)), d0 = new Date(today()); d0.setDate(d0.getDate() - OUT_DAYS); const from = ymd(d0);
+  for (const x of items) { const id = "outr|" + x.key, o = Store.get(id);
+    if (!o) Store.put(id, { who: x.who, pid: x.pid, proj: x.proj, ds: x.ds, item: x.item, seen: now });
+    else if (o.done) Store.put(id, Object.assign({}, o, { done: null, again: now })); }
+  for (const [id, o] of Store.list("outr|")) if (o && !o.done && !cur.has(id.slice(5)) && (!o.ds || o.ds >= from)) Store.put(id, Object.assign({}, o, { done: now }));
+}
+function vOutst() {
+  const items = outstanding(true); outRegister(items);
+  const fd = ds => ds ? dmy(new Date(ds + "T12:00:00")) : "Now";
+  const tab = (t, on) => h("button", { type: "button", class: "btn-g" + (on ? " on" : ""), style: `flex:1;${on ? "background:#c8102e;color:#fff;border-color:#c8102e" : ""}`, onclick: () => { S.outTab = t; render(); } }, t === "now" ? `Outstanding now (${items.length})` : "Register");
+  const head = [topbar("Outstanding documents", "Office only", true), h("div", { style: "display:flex;gap:8px;margin:0 0 10px" }, tab("now", S.outTab !== "reg"), tab("reg", S.outTab === "reg"))];
+  if (S.outTab === "reg") {
+    const reg = Store.list("outr|").map(([, o]) => o).filter(Boolean), people = [...new Set(reg.map(o => o.who))];
+    const days = o => o.done ? Math.max(0, Math.round((new Date(o.done) - new Date(o.seen)) / 864e5)) : Math.max(0, Math.round((Date.now() - new Date(o.seen)) / 864e5));
+    return [...head, h("p", { class: "form-sub" }, "Every item that was outstanding, when it was first seen and when it was done. Kept for good."),
+      ...people.sort((a, b) => reg.filter(o => o.who === b).length - reg.filter(o => o.who === a).length).map(n => { const mine = reg.filter(o => o.who === n).sort((a, b) => (b.seen || "").localeCompare(a.seen || "")), open = mine.filter(o => !o.done).length;
+        return h("div", { class: "sheet" }, h("div", { class: "band" }, `${n}  |  ${mine.length} recorded  |  ${open} still open`),
+          h("table", { class: "out-t" }, h("tbody", {}, ...mine.map(o => h("tr", { class: o.done ? "done" : "" }, h("td", {}, o.proj), h("td", {}, fd(o.ds)), h("td", {}, o.item),
+            h("td", {}, o.done ? `Done ${dmy(new Date(o.done))}, ${days(o)} day${days(o) === 1 ? "" : "s"}` : `Open ${days(o)} day${days(o) === 1 ? "" : "s"}`)))))); })];
+  }
+  const people = [...new Set(items.map(x => x.who))].sort((a, b) => items.filter(x => x.who === b).length - items.filter(x => x.who === a).length);
+  return [...head, items.length ? h("p", { class: "form-sub" }, `Everything still owed from the last ${OUT_DAYS} days, per person. Today's work only shows from tomorrow.`) : h("p", { class: "note" }, "Nothing outstanding. Everyone is up to date."),
+    ...people.map(n => { const mine = items.filter(x => x.who === n);
+      return h("div", { class: "sheet" }, h("div", { class: "band out-b" }, `${n}  |  ${mine.length}`),
+        h("table", { class: "out-t" }, h("tbody", {}, ...mine.map(x => h("tr", {}, h("td", {}, x.proj), h("td", {}, fd(x.ds)), h("td", {}, x.item)))))); })];
+}
 // Wanro 29 Oct: before the diary goes to the client he sees the day's photos and taps any he wants left out. Repeats are left out by themselves.
 function photoPicker(k) {
   const band = () => h("div", { class: "band" }, "Photos for the client");
@@ -3348,7 +3510,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793305849"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793305849"); await loadJs("./js/pdf.js?v=1793305849");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793310344"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793310344"); await loadJs("./js/pdf.js?v=1793310344");
     await fetchDayPhotos(k);
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
@@ -3463,7 +3625,7 @@ async function processMailQ1() {
   let wl = null;
   try {
     wl = await wakeOn();
-    await loadJs("./js/lib/html2canvas.min.js?v=1793305849"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793305849"); await loadJs("./js/pdf.js?v=1793305849");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793310344"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793310344"); await loadJs("./js/pdf.js?v=1793310344");
     for (const j of go) {
       const p = CFG.projects.find(x => x.id === j.pid); if (!p) { j.done = true; continue; }
       if (!j.flash) { const m0 = Store.get(`mail|${j.pid}|${j.ds}`); if (m0 && m0.jobAt && m0.jobAt >= j.at) { j.done = true; continue; } } // another phone already sent it
@@ -3837,10 +3999,14 @@ function vDelays() {
 // ---------- render ----------
 let render = function () {
   const v = S.view;
-  const views = { users: vUsers, projects: vProjects, calendar: vCalendar, menu: vMenu, inspections: vInspections, client: vClient, tests: vTests, link: vLink, logtest: vLogTest, biocheck: vBioCheck, allocate: vAllocate, mysection: vMySection, review: vReview, kpi: vKpi, rams: vRams, ramsdoc: vRamsDoc, drawings: vDrawings, drawing: vDrawing, diary: vDiary, dsti: vDsti, dstilist: vDstiList, dstiopen: vDstiOpen, bps: vBps, bpswtg: vBpsWtg, bpssub: vBpsSub, iqc: vIqc, inspection: vInspection, check: vCheck, toolbox: vToolbox, incident: vIncident, si: vSI, order: vOrder, done: vDone, feedback: vFeedback, devices: vDevices, dash: vDash, qc: vQc, qcspot: vQcSpot, tsheets: vTsheets, tsheet: vTsheet, treport: vTreport, attendance: vAttendance, claude: vClaude, delays: vDelays, nearmiss: vNearMiss, jobobs: vJobObs, adhoc: vAdhoc, adhocjob: vAdhocJob, mychecks: vMyChecks, invest: vInvest, today: vToday, records: vRecords, imgdiary: vImgDiary };
+  const views = { users: vUsers, projects: vProjects, calendar: vCalendar, menu: vMenu, inspections: vInspections, client: vClient, tests: vTests, link: vLink, logtest: vLogTest, biocheck: vBioCheck, allocate: vAllocate, mysection: vMySection, review: vReview, kpi: vKpi, rams: vRams, ramsdoc: vRamsDoc, drawings: vDrawings, drawing: vDrawing, diary: vDiary, dsti: vDsti, dstilist: vDstiList, dstiopen: vDstiOpen, bps: vBps, bpswtg: vBpsWtg, bpssub: vBpsSub, iqc: vIqc, inspection: vInspection, check: vCheck, toolbox: vToolbox, incident: vIncident, si: vSI, order: vOrder, done: vDone, feedback: vFeedback, devices: vDevices, dash: vDash, qc: vQc, qcspot: vQcSpot, tsheets: vTsheets, tsheet: vTsheet, treport: vTreport, attendance: vAttendance, claude: vClaude, delays: vDelays, nearmiss: vNearMiss, jobobs: vJobObs, adhoc: vAdhoc, adhocjob: vAdhocJob, mychecks: vMyChecks, invest: vInvest, today: vToday, records: vRecords, imgdiary: vImgDiary, outst: vOutst };
   document.body.classList.toggle("qcro", !!S.qcRO && ["iqc", "biocheck", "bps", "bpswtg", "bpssub"].includes(v));
   document.body.classList.toggle("vmenu", v === "menu" && TILES());
   document.body.classList.toggle("vgrid", v === "bps" || v === "iqc");
+  // Wanro 29 Oct: the front page fits the screen, no scrolling up, down or sideways
+  document.body.classList.toggle("vhome", (v === "projects" || !views[v]) && TILES() && isAdmin(S.user));
+  document.body.classList.remove("nomove");
+  if (document.body.classList.contains("vhome")) requestAnimationFrame(() => { if (document.documentElement.scrollHeight <= innerHeight + 1) document.body.classList.add("nomove"); });
   app.replaceChildren(...[].concat((views[v] || vProjects)()).filter(Boolean));
   pageForm();
 }
@@ -4653,7 +4819,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793305849"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793305849"); await loadJs("./js/pdf.js?v=1793305849");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793310344"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793310344"); await loadJs("./js/pdf.js?v=1793310344");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),

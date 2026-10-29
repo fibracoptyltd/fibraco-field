@@ -856,3 +856,48 @@ body.vgrid .bps-chip{font-size:8.5px;padding:1px 4px}
 .img-t img{width:100%;aspect-ratio:1;object-fit:cover;display:block}
 .img-t small{font-size:10px;color:#5b6470;padding:2px 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .imgv .modal img{width:100%;max-height:65vh;object-fit:contain;border-radius:8px;display:block}
+
+/* outstanding documents (Wanro 29 Oct) */
+.tile.tpj.outred{background:#c8102e;border-color:#a50d26;border-top:7px solid #7a0a1c;color:#fff}
+.tile.tpj.outred .tpj-n,.tile.tpj.outred .tpj-s{color:#fff}
+.out-b{background:#c8102e!important}
+.out-t{width:100%;border-collapse:collapse;font-size:12.5px}
+.out-t td{padding:6px 8px;border-top:1px solid var(--line);vertical-align:top}
+.out-t td:first-child{font-weight:700;white-space:nowrap}
+.out-t td:nth-child(2){white-space:nowrap;color:#5b6470}
+.out-t tr.done td{color:#8a8f98}
+
+/* front page fits one screen (Wanro 29 Oct): smaller tiles, nothing wider than the screen */
+html:has(body.vhome),body.vhome{overflow-x:hidden}
+body.vhome .tgrid>*{min-width:0}
+body.vhome .bar{padding-block:5px;margin-bottom:4px}
+body.vhome .bar .t b{font-size:14px}
+body.vhome .tw{gap:6px}
+body.vhome .who{font-size:12px}
+body.vhome .tgrid{gap:6px}
+body.vhome .tile{min-height:56px;padding:4px 3px;gap:3px;border-radius:10px}
+body.vhome .tile .tl{font-size:9.8px;letter-spacing:.01em;line-height:1.12;overflow-wrap:anywhere}
+body.vhome .ti-ic svg{width:21px;height:21px}
+body.vhome .tile.slim{min-height:40px;gap:5px;padding:4px 6px}
+body.vhome .tile.slim .tl{font-size:9.4px}
+body.vhome .tile.slim .ti-ic svg{width:18px;height:18px}
+body.vhome .tile.tpj{min-height:74px;padding:5px 6px;gap:2px}
+body.vhome .tpj-n{font-size:10.5px;line-height:1.1}
+body.vhome .tpj-c,body.vhome .tpj-s{font-size:8.8px;line-height:1.15}
+body.vhome .tsos.round{width:80px;height:80px;margin:4px auto 0;gap:2px;font-size:9.5px}
+body.vhome .tsos.round .ti-ic svg{width:24px;height:24px}
+body.vhome .tfoot{font-size:10px;margin:0}
+body.vhome .fb-btn.fb-inline{margin-top:2px;padding:6px 14px;font-size:12px}
+body.vhome .tbadge{transform:scale(.85);transform-origin:top right}
+body.vhome{margin:0}
+body.vhome .app{min-height:0;padding-block:0 6px}
+html:has(body.vhome.nomove),body.vhome.nomove{overflow:hidden;overscroll-behavior:none}
+body.vhome .tile.tpj.outred .tpj-n{font-size:9px;letter-spacing:0}
+.tile.tpj.outred .tpj-n{hyphens:manual;-webkit-hyphens:manual}
+/* Bioseco daily report day picker (Wanro 29 Oct) */
+.bps-days{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 8px}
+.bps-day{flex:1 1 auto;min-width:64px;padding:7px 6px;border-radius:8px;border:1px solid #c9ced6;background:#fff;font:inherit;font-size:12.5px;font-weight:700;color:#333}
+.bps-day.due{background:#f6e7b4;border-color:#d4a72c}
+.bps-day.sent{background:#e8f6ec;border-color:#1e8e3e;color:#1e6b34}
+.bps-day.on{outline:3px solid #0069aa;outline-offset:1px}
+.rep-st:not(.ok):not(.wait){background:#f1f3f5;color:#444;border:1px solid #c9ced6}
