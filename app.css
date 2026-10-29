@@ -849,3 +849,10 @@ body.vgrid .bps-chip{font-size:8.5px;padding:1px 4px}
 /* sending bar (Wanro 29 Oct) */
 .sendbar{position:fixed;left:0;right:0;top:0;z-index:2147482000;background:#0069aa;color:#fff;text-align:center;padding:calc(10px + env(safe-area-inset-top,0px)) 14px 10px;display:flex;flex-direction:column;gap:2px;box-shadow:0 3px 12px rgba(0,0,0,.25)}
 .sendbar b{font-size:15px;letter-spacing:.05em}.sendbar small{font-size:12px;opacity:.95}
+
+/* image diary (Wanro 29 Oct) */
+.img-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;padding:8px}
+.img-t{border:1px solid var(--line);border-radius:8px;padding:0;background:#fff;overflow:hidden;display:flex;flex-direction:column;font:inherit;color:#15191e}
+.img-t img{width:100%;aspect-ratio:1;object-fit:cover;display:block}
+.img-t small{font-size:10px;color:#5b6470;padding:2px 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.imgv .modal img{width:100%;max-height:65vh;object-fit:contain;border-radius:8px;display:block}
