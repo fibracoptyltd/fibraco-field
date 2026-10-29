@@ -380,7 +380,7 @@ function vProjects() {
         bioSetup(); } }, "Fingerprint")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1793310344";
+const APPV = "1793311604";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -463,7 +463,7 @@ async function sendRegister(p, d, days) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793310344"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793310344"); await loadJs("./js/pdf.js?v=1793310344");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793311604"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793311604"); await loadJs("./js/pdf.js?v=1793311604");
     const { html, title } = attDoc(p, d, days); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
@@ -573,7 +573,7 @@ async function timeZone() {
   try {
     try { Store.kick(); await refreshDevices(true); } catch (e) {}
     await new Promise(r => setTimeout(r, 1800));
-    await loadJs("./js/lib/html2canvas.min.js?v=1793310344"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793310344"); await loadJs("./js/pdf.js?v=1793310344");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793311604"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793311604"); await loadJs("./js/pdf.js?v=1793311604");
     const D = tzData(), stamp = `${dmy(new Date())} ${hhmm()}`, name = `FIBRACO - Time Zone (${stamp})`;
     const pdf = await window.FibPdf.diaryPdf(tzHtml(D), name);
     const json = new File([JSON.stringify(D, null, 1)], name.replace(/[\\/:*?"<>|]+/g, "-") + ".json", { type: "application/json" });
@@ -1555,7 +1555,7 @@ async function recordPdf() {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793310344"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793310344"); await loadJs("./js/pdf.js?v=1793310344");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793311604"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793311604"); await loadJs("./js/pdf.js?v=1793311604");
     const f = S.form, src = [...app.children].filter(k => !k.matches(".bar, .fb-btn, .ro-bar, .psub, .err, .pnav, .addrow"));
     const box = document.createElement("div");
     for (const k of src) {
@@ -1806,7 +1806,7 @@ async function sendOrder(f) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793310344"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793310344"); await loadJs("./js/pdf.js?v=1793310344");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793311604"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793311604"); await loadJs("./js/pdf.js?v=1793311604");
     const { html, title } = orderDoc(f);
     const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
@@ -2494,7 +2494,7 @@ function bpsOf(w) {
   if (!B.pc) B.pc = { f: {}, ph: {} };
   const c = B.pc; c.parts = c.parts || {}; c.back = c.back || {};
   if (c.done && !c.parts.el) { c.parts.el = c.done; c.parts.tc = c.done; delete c.done; } // older single sign-off
-  for (const k of ["p1", "p6", "p7", "p8", "p11", "p12", "p15", "pc", "p16", "s1", "s2", "s3", "s4", "s14", "s16"]) c.ph[k] = c.ph[k] || [];
+  for (const k of ["p1", "p6", "p7", "p8", "p11", "p12", "p15", "pc", "p16", "s1", "s2", "s3", "s4", "s14", "s16", ...PM_PH_KEYS]) c.ph[k] = c.ph[k] || [];
   return c;
 }
 function bpsSubDefaults(c) {
@@ -2516,7 +2516,7 @@ function bpsMissing(w, part) {
   return m;
 }
 const bpsPartDone = (w, part) => !!bpsOf(w).parts[part];
-const bpsState = w => { const c = bpsOf(w); return c.parts.el && c.parts.tc ? "done" : Object.keys(c.f).some(k => !["fibre", "modules"].includes(k)) || Object.values(c.ph).some(x => x.length) || c.parts.el || c.parts.tc ? "busy" : "todo"; };
+const bpsState = w => { const c = bpsOf(w), pm = c.pm || {}; return c.parts.el && c.parts.tc ? "done" : Object.keys(c.f).some(k => !["fibre", "modules"].includes(k)) || Object.values(c.ph).some(x => x.length) || c.parts.el || c.parts.tc || Object.values(pm.k || {}).some(Boolean) || Object.keys(pm.mod || {}).length || c.wait ? "busy" : "todo"; };
 const bpsAllDone = () => ["SUBSTATION", ...bpsWtgs()].every(w => bpsState(w) === "done");
 const bpsRep = () => { const pid = S.project.id; S.bio[pid] = S.bio[pid] || {}; const B = S.bio[pid].REPORT || (S.bio[pid].REPORT = { items: {}, by: {}, ips: "", photos: [] }); return B.rep || (B.rep = {}); };
 // Wanro 29 Oct: Bioseco want this report every day, not only once all the sheets are signed. Every evening Wanro
@@ -2524,7 +2524,10 @@ const bpsRep = () => { const pid = S.project.id; S.bio[pid] = S.bio[pid] || {}; 
 // worked on, who signed what, the day's photos with their times, what was done and why, and what is still missing.
 const BPS_DAILY_FROM = "2026-10-29";
 function bpsTouch(c) { const d = ymd(today()); c.act = c.act || {}; const l = c.act[d] || (c.act[d] = []); if (!l.includes(S.user)) l.push(S.user); }
-function bpsSlotLab(slot) { for (const d of [BPS_WTG.el, BPS_WTG.tc, BPS_SUB.el, BPS_SUB.tc]) { const x = d.ph.find(r => r[0] === slot); if (x) return `${x[2]} ${x[1]}`; } return slot === "p16" || slot === "s16" ? "Pic. 16 Patch cords left on site" : "Photo"; }
+function bpsSlotLab(slot) { for (const d of [BPS_WTG.el, BPS_WTG.tc, BPS_SUB.el, BPS_SUB.tc]) { const x = d.ph.find(r => r[0] === slot); if (x) return `${x[2]} ${x[1]}`; }
+  for (const d of [PM_WTG.el, PM_WTG.tc, PM_SUB.el, PM_SUB.tc]) { const x = d.ph.find(r => r[0] === slot); if (x) return `PRC-SRV-03 ${x[2]}, ${x[1]}`; }
+  if (/^n\d+$/.test(slot)) return `PRC-SRV-03 module ${slot.slice(1)} finding`; if (slot === "lv") return "Bioseco's written OK to leave site";
+  return slot === "p16" || slot === "s16" ? "Pic. 16 Patch cords left on site" : "Photo"; }
 const bpsNotes = (c, day) => Object.entries(((c && c.log) || {})[day] || {}).filter(([, v]) => v && String(v.txt || "").trim());
 // raw check on the stored sheets (no side effects), used by the outstanding list
 const bpsDayActive = (c, day) => !!c && (Object.values(c.ph || {}).some(a => (a || []).some(q => q && phDay(q.ph) === day)) || ["el", "tc"].some(pt => c.parts && c.parts[pt] && c.parts[pt].on === day) || ((c.act || {})[day] || []).length > 0 || bpsNotes(c, day).length > 0);
@@ -2559,6 +2562,12 @@ function bpsLogBox(w) {
     ...past.map(([k, n, v]) => h("p", { class: "hint", style: "opacity:.75" }, `${dmy(new Date(k + "T12:00:00"))}, ${n}: ${v.txt}`)));
 }
 const bpsCanEdit = part => !S.qcRO && canSignWork(S.user) && (S.user === bpsOwner(part) || isSM(S.user));
+// the two sheets of a turbine, as tabs, each with what is still to do
+function bpsTabs(w) {
+  const a = ["el", "tc"].filter(pt => !bpsOf(w).parts[pt]).reduce((n, pt) => n + bpsMissing(w, pt).length, 0), b = ["el", "tc"].filter(pt => !bpsOf(w).parts[pt]).reduce((n, pt) => n + pmMissing(w, pt).length, 0);
+  const tab = (t, lab, n) => h("button", { type: "button", class: "bps-tab" + ((S.bpsTab || "pi") === t ? " on" : ""), onclick: () => { S.bpsTab = t; render(); window.scrollTo(0, 0); } }, lab, h("small", {}, n ? `${n} to do` : "Complete"));
+  return h("div", { class: "bps-tabs" }, tab("pi", "Post-installation", a), tab("pm", "PRC-SRV-03 maintenance", b));
+}
 function bpsPhotoSlot(c, k, lab, pic, edit) {
   return sheet("", h("div", { class: "band" }, `${pic}  ${lab}`),
     h("div", { class: "bps-ex" }, h("img", { src: BPS_EX(k === "s16" ? "p16" : k), alt: "Example" }), h("small", {}, "Bioseco's example. Take yours the same way.")),
@@ -2567,7 +2576,7 @@ function bpsPhotoSlot(c, k, lab, pic, edit) {
 function bpsPartHead(w, part) {
   const c = bpsOf(w), sg = c.parts[part], back = c.back[part], who = bpsOwner(part);
   return h("div", { class: "bps-part " + (sg ? "done" : back ? "back" : "") },
-    h("div", {}, h("b", {}, `${who.split(" ")[0]}: ${BPS_PARTS[part]}`), h("small", {}, sg ? `Submitted by ${sg.by} at ${sg.at} on ${sg.date || ""}${isSM(S.user) && !S.qcRO ? ". You can still add or correct." : ""}` : back ? `Sent back by ${back.by}: ${back.why}` : S.user === who ? "Your part. Fill it in and sign it off." : isSM(S.user) && !S.qcRO ? `${who} fills this in. As site manager you can also fill it in and sign it off.` : `${who} fills this in.`)),
+    h("div", {}, h("b", {}, `${who.split(" ")[0]}: ${BPS_PARTS[part]}`), h("small", {}, sg ? `Submitted by ${sg.by} at ${sg.at} on ${sg.date || ""}${isSM(S.user) && !S.qcRO ? ". You can still add or correct." : ""}` : back ? `Sent back by ${back.by}: ${back.why}` : S.user === who ? `Your part. Fill it in and submit it to ${smName().split(" ")[0]}.` : isSM(S.user) && !S.qcRO ? `${who} fills this in. As site manager you can also fill it in and sign it off.` : `${who} fills this in.`)),
     sg && (isSM(S.user) || isAdmin(S.user)) && !S.qcRO ? h("button", { type: "button", class: "btn-g", onclick: () => bpsSendBack(w, part) }, "Send back") : null);
 }
 function bpsSendBack(w, part) {
@@ -2578,8 +2587,8 @@ function bpsSendBack(w, part) {
   document.body.append(ov); why.focus();
 }
 function bpsSign(w, part) {
-  const miss = bpsMissing(w, part);
-  if (miss.length) { showInfo("Not finished yet", `Still missing: ${miss.join(", ")}.`); return; }
+  const a = bpsMissing(w, part), b = pmMissing(w, part);
+  if (a.length || b.length) { showInfo("Not finished yet", [a.length ? `Post-installation sheet: ${a.join(", ")}.` : "", b.length ? `PRC-SRV-03 sheet: ${b.join(", ")}.` : ""].filter(Boolean).join(" ")); return; }
   mySig(v => { if (!v) return; const c = bpsOf(w), now = new Date(); c.parts[part] = { by: S.user, at: hhmm(now), on: ymd(now), date: dmy(now), sig: v }; delete c.back[part]; bpsTouch(c); persist(); render(); toast(`${BPS_PARTS[part].split(" (")[0]} part of ${w === "SUBSTATION" ? "the substation" : w} ${isSM(S.user) ? "signed off" : "submitted to " + smName().split(" ")[0]}`); });
 }
 function bpsSignBtn(w, part) {
@@ -2597,10 +2606,10 @@ function vBps() {
   const chip = (w, part) => h("span", { class: "bps-chip " + (bpsPartDone(w, part) ? "ok" : bpsOf(w).back[part] ? "back" : "") }, part === "el" ? "E/M" : "TEL");
   const tile = w => { const st = bpsState(w);
     return h("button", { type: "button", class: "bps-tile " + st, onclick: () => { S.bpsW = w; go(w === "SUBSTATION" ? "bpssub" : "bpswtg"); } },
-      h("b", {}, w === "SUBSTATION" ? "Substation" : w), h("div", { class: "bps-chips" }, chip(w, "el"), chip(w, "tc"))); };
+      h("b", {}, w === "SUBSTATION" ? "Substation" : w), h("div", { class: "bps-chips" }, chip(w, "el"), chip(w, "tc"), bpsOf(w).wait ? h("span", { class: "bps-chip wait" }, "WAIT") : null)); };
   const ready = bpsAllDone();
   return [topbar("Installation QC", `${p.short}  |  Commissioning`, true), qcBanner("commissioning"),
-    h("p", { class: "form-sub" }, `Bioseco's post-installation documentation. ${bpsOwner("el").split(" ")[0]} does the electrical and mechanical part (E/M), ${bpsOwner("tc").split(" ")[0]} the telecoms part (TEL). Green means signed.`),
+    h("p", { class: "form-sub" }, `Two sheets per turbine: Bioseco's post-installation documentation and the PRC-SRV-03 maintenance sheet. ${bpsOwner("el").split(" ")[0]} does the electrical and mechanical part (E/M) of both, ${bpsOwner("tc").split(" ")[0]} the telecoms part (TEL). Green means submitted. WAIT means waiting on others.`),
     h("div", { class: "bps-grid" }, ...all.map(tile)),
     h("div", { class: "bps-sum" }, `${done} of ${all.length} sheets complete`),
     ...bpsDailyBox(ready)];
@@ -2642,7 +2651,8 @@ function vBpsWtg() {
   const fld = (e, lab, k, ph, type) => h("tr", {}, h("td", { class: "lab" }, lab), h("td", {}, e ? inp(type || "text", f[k], v => { f[k] = v; save(); }, ph || "") : h("div", { class: "ro" }, f[k] || "-")));
   const pick = (e, lab, k, opts) => h("tr", {}, h("td", { class: "lab" }, lab), h("td", {}, e ? seg(opts.map(o => [o, o]), f[k], v => { f[k] = v; save(); render(); }) : h("div", { class: "ro" }, f[k] || "-")));
   const g = f.gps, slot = (k, e) => { const d = [...BPS_WTG.el.ph, ...BPS_WTG.tc.ph].find(x => x[0] === k); return bpsPhotoSlot(c, k, d[1], d[2], e); };
-  return [topbar(w, `Commissioning sheet  |  ${S.project.short}`, true), qcBanner("commissioning"),
+  if (S.bpsTab === "pm") return [topbar(w, `PRC-SRV-03 sheet  |  ${S.project.short}`, true), qcBanner("commissioning"), bpsTabs(w), bpsWaitBox(w), ...pmView(w, eEl, eTc), bpsLogBox(w)];
+  return [topbar(w, `Commissioning sheet  |  ${S.project.short}`, true), qcBanner("commissioning"), bpsTabs(w), bpsWaitBox(w),
     h("p", { class: "form-sub" }, "Take every photo the same way as Bioseco's example next to it."),
     bpsPartHead(w, "el"),
     h("div", { class: "bps-sec" + (eEl ? "" : " ro") },
@@ -2680,7 +2690,8 @@ function vBpsSub() {
         h("td", { style: "width:64px" }, e ? inp("number", r.q, v => { r.q = v; save(); }, "0") : h("div", { class: "ro" }, r.q)),
         h("td", {}, e ? growTxt(r.s, v => { r.s = v; save(); }, "Serials, one per line", 44) : h("div", { class: "ro" }, r.s))))))); };
   const slot = (k, e) => { const d = [...BPS_SUB.el.ph, ...BPS_SUB.tc.ph].find(x => x[0] === k); return bpsPhotoSlot(c, k, d[1], d[2], e); };
-  return [topbar("Substation", `Commissioning sheet  |  ${S.project.short}`, true), qcBanner("commissioning"),
+  if (S.bpsTab === "pm") return [topbar("Substation", `PRC-SRV-03 sheet  |  ${S.project.short}`, true), qcBanner("commissioning"), bpsTabs("SUBSTATION"), ...pmView("SUBSTATION", eEl, eTc), bpsLogBox("SUBSTATION")];
+  return [topbar("Substation", `Commissioning sheet  |  ${S.project.short}`, true), qcBanner("commissioning"), bpsTabs("SUBSTATION"),
     bpsPartHead("SUBSTATION", "el"),
     h("div", { class: "bps-sec" + (eEl ? "" : " ro") },
       h("h3", { class: "bps-h" }, "Report details (cover page)"),
@@ -2698,13 +2709,181 @@ function vBpsSub() {
       bpsPhotoSlot(c, "s16", "Patch cords left in the substation for turbines not yet connected (if any)", "Pic. 16", eTc), eq("tc"), bpsSignBtn("SUBSTATION", "tc")),
     bpsLogBox("SUBSTATION")];
 }
+// ---------- PRC-SRV-03 maintenance sheet and Bioseco's scope of work (Wanro 29 Oct) ----------
+// Bioseco's scope for Wolf (SOW v1.0, 16 Oct 2026): the PRC-SRV-03 inspection on every turbine, the fibre from the PowerBox to the
+// SpliceBox, the four substation connections, Bioseco's remote check of the full chain before the team moves on, and the report
+// per PRC-SRV-03 section 6. It is the second sheet of every turbine and of the substation. Marcel's and Marlon's parts cover both
+// sheets, so a part is only submitted when both sheets are complete for it.
+const PM_MOD = [
+  ["clean", "3.1.1", "Module housing cleaned", ["OK"]],
+  ["glass", "3.1.2", "Camera glass cleaned, no dirt, scratches or condensation", ["OK", "NOK"]],
+  ["dmg", "3.1.3", "No damage, cracks, corrosion or water ingress", ["OK", "NOK"]],
+  ["water", "3.1.4", "Connector and socket checked for water, reconnected hand-tight, restart confirmed", ["No water", "Water"]],
+  ["hang", "3.1.5", "Hangs vertical, screws, brackets and rivets tight", ["OK", "Corrected"]],
+  ["tape", "3.1.6", "Metal clamping tapes (only where used)", ["OK", "Corrected", "N/A"]],
+  ["corr", "3.1.7", "Metal parts free of corrosion", ["OK", "Corrected"]],
+  ["cable", "3.1.8", "Cables and connectors tight, insulation not worn", ["OK", "Corrected"]],
+  ["img", "3.1.9", "Camera image confirmed: sharp, full view, nothing in the way", ["OK", "NOK"]],
+  ["det", "3.1.10", "Siren and strobe tested (only where installed)", ["OK", "NOK", "N/A"]],
+  ["hum", "3.1.11", "Humidity normal (if high: opened, dried, seals and glands checked)", ["OK", "High"]]];
+const PM_BAD = v => ["NOK", "Water", "High", "Not done", "Failed", "Not all online", "Not confirmed"].includes(v);
+const PM_SHORT = { "OK": "OK", "NOK": "NOK", "No water": "OK", "Water": "WET", "Corrected": "FIX", "N/A": "N/A", "High": "HUM" };
+const PM_WTG = {
+  el: { ph: [["mb1", "Modules before cleaning", "3.1.1 before"], ["ma1", "Modules after cleaning", "3.1.1 after"], ["mb2", "Camera glass before cleaning", "3.1.2 before"], ["ma2", "Camera glass after cleaning", "3.1.2 after"]],
+    chk: [["psIns", "3.3.1", "Power module and junction box: connections, fuses, breakers, no overheating or moisture", ["OK", "Corrected", "NOK"]], ["psEarth", "3.3.3", "Earthing cable and connections", ["OK", "Corrected", "NOK"]]],
+    num: [["psV", "3.3.2", "Voltage at the power supply output (V)", "e.g. 24.1"]] },
+  tc: { ph: [["cs", "Bioseco's confirmation of the full chain (screenshot)", "Chain OK"]],
+    chk: [["psSw", "3.3.4", "Switch or media converter in the junction box: link lights and connectors", ["OK", "Corrected", "NOK"]], ["sowFo", "SOW 2.1.2", "Fibre connected from the PowerBox to the SpliceBox, as per the client's drawing", ["Done", "Not done"]], ["diag", "5.2", "Self-diagnosis in the Bioseco app passed", ["Passed", "Failed"]]],
+    num: [] } };
+const PM_SUB = {
+  el: { ph: [["sb1", "Rack and servers before cleaning", "4.2 before"], ["sa1", "Rack and servers after cleaning", "4.2 after"], ["p230", "230 V supply on the 16 A type B breaker", "SOW 2.2.1"], ["pearth", "Earthing cable on the rack", "SOW 2.2.2"]],
+    chk: [["s230", "SOW 2.2.1", "230 V AC supply connected to the rack, on a 16 A type B breaker", ["Done", "Not done"]], ["sEarth", "SOW 2.2.2", "Earthing cable connected to the rack", ["Done", "Not done"]], ["sIns", "4.1", "All equipment in the rack inspected, connectors not damaged or loose", ["OK", "Corrected", "NOK"]]],
+    num: [["sV", "4.3", "Supply voltage (V)", "e.g. 231"], ["sUps", "4.3", "UPS reading, or none installed", "e.g. 100% battery, on mains"], ["sDisk", "4.4", "Disks replaced and their serial numbers, or none flagged", "None flagged by Bioseco IT"]] },
+  tc: { ph: [["cs", "Bioseco Operations' remote check (screenshot)", "5.1"]],
+    chk: [["sFo", "SOW 2.2.3", "Fibre connected from the rack to the SpliceBox, as per the client's drawing", ["Done", "Not done"]], ["sVpn", "SOW 2.2.4", "VPN and SCADA Ethernet cables connected as the client requires", ["Done", "Not done"]], ["sOnline", "4.5", "Fibre and network to every turbine checked (media converters, patch panel)", ["All online", "Not all online"]], ["sRemote", "5.1", "Bioseco Operations' remote check: modules online, images, detection and deterrence", ["Confirmed", "Not confirmed"]]],
+    num: [] } };
+const PM_PH_KEYS = ["mb1", "ma1", "mb2", "ma2", "cs", "sb1", "sa1", "p230", "pearth", "lv"];
+function pmOf(c) { const pm = c.pm || (c.pm = {}); for (const k of ["mod", "mf", "k", "why", "conf"]) pm[k] = pm[k] || {}; pm.rep = pm.rep || []; return pm; }
+const pmMods = w => Math.max(1, Math.min(16, +(bpsOf(w).f.modules) || +((bpsOf("SUBSTATION").f || {}).modules) || 8));
+const pmDef = w => w === "SUBSTATION" ? PM_SUB : PM_WTG;
+function pmMissing(w, part) {
+  const c = bpsOf(w), pm = pmOf(c), sub = w === "SUBSTATION", def = pmDef(w)[part], m = [];
+  if (!sub && part === "el") {
+    const n = pmMods(w);
+    for (const [k, no, lab] of PM_MOD) { const gap = []; for (let i = 1; i <= n; i++) if (!(pm.mod[i] || {})[k]) gap.push(i); if (gap.length) m.push(`${no} ${lab.split(":")[0].split(",")[0]}${gap.length < n ? ` (module ${gap.join(", ")})` : ""}`); }
+    for (let i = 1; i <= n; i++) if (PM_MOD.some(([k]) => PM_BAD((pm.mod[i] || {})[k]))) { const f = pm.mf[i] || {};
+      if (!String(f.sn || "").trim()) m.push(`Serial number of module ${i}`); if (!String(f.txt || "").trim()) m.push(`What was found on module ${i}`); if (!(c.ph["n" + i] || []).length) m.push(`Photo of module ${i}`); }
+  }
+  for (const [k, lab] of def.ph) if (!(c.ph[k] || []).length) m.push(lab);
+  for (const [k, no, lab] of def.chk) { const v = pm.k[k]; if (!v) m.push(`${no} ${lab.split(":")[0].split(",")[0]}`); else if (PM_BAD(v) && !String(pm.why[k] || "").trim()) m.push(`Why ${no} is ${v.toLowerCase()}`); }
+  for (const [k, no, lab] of def.num) if (!String(pm.k[k] || "").trim()) m.push(`${no} ${lab.split(",")[0]}`);
+  if (part === "tc" && (!String(pm.conf.who || "").trim() || !String(pm.conf.at || "").trim())) m.push("Who at Bioseco confirmed, and the time");
+  return m;
+}
+function pmStarted(c, part, w) {
+  const pm = c.pm || {}, def = pmDef(w)[part];
+  return (part === "el" && w !== "SUBSTATION" && Object.values(pm.mod || {}).some(o => o && Object.keys(o).length)) || def.chk.some(([k]) => (pm.k || {})[k]) || def.num.some(([k]) => (pm.k || {})[k]) || def.ph.some(([k]) => (c.ph[k] || []).length) || (part === "tc" && !!(pm.conf && pm.conf.who));
+}
+// one line per sheet for the daily page and the report
+function pmSummary(w) {
+  const c = bpsOf(w), pm = pmOf(c), out = [];
+  if (w !== "SUBSTATION") {
+    const n = pmMods(w), cells = []; for (let i = 1; i <= n; i++) for (const [k, no] of PM_MOD) { const v = (pm.mod[i] || {})[k]; if (v) cells.push({ i, k, no, v }); }
+    if (cells.length) { const bad = cells.filter(x => PM_BAD(x.v)), fix = cells.filter(x => x.v === "Corrected");
+      out.push(`Modules: ${cells.length} of ${n * PM_MOD.length} checks done${bad.length ? `, not OK: ${bad.map(x => `${x.no} module ${x.i} (${x.v})`).join(", ")}` : ", all OK"}${fix.length ? `, corrected: ${fix.map(x => `${x.no} module ${x.i}`).join(", ")}` : ""}`); }
+  }
+  for (const part of ["el", "tc"]) { const def = pmDef(w)[part];
+    for (const [k, no, lab] of def.chk) if (pm.k[k]) out.push(`${no} ${lab.split(":")[0].split(",")[0]}: ${pm.k[k]}${PM_BAD(pm.k[k]) && pm.why[k] ? " (" + pm.why[k] + ")" : ""}`);
+    for (const [k, no, lab] of def.num) if (pm.k[k]) out.push(`${no} ${lab.split(",")[0].replace(" (V)", "")}: ${pm.k[k]}${/\(V\)/.test(lab) && /^[\d.,]+$/.test(String(pm.k[k]).trim()) ? " V" : ""}`); }
+  if (pm.conf.who) out.push(`Bioseco confirmed: ${pm.conf.who}${pm.conf.at ? " at " + pm.conf.at : ""}`);
+  else if (pm.told) out.push(`Bioseco told we were on it at ${pm.told.at} (${pm.told.by}), confirmation not recorded yet`);
+  return out;
+}
+// tap to cycle: blank, then each option, then blank again
+const pmCyc = (opts, v) => { const i = opts.indexOf(v); return i < 0 ? opts[0] : i === opts.length - 1 ? "" : opts[i + 1]; };
+const pmCls = v => !v ? "" : PM_BAD(v) ? "bad" : v === "Corrected" ? "fix" : v === "N/A" ? "na" : "ok";
+function pmPhotoSlot(c, k, lab, no, edit) {
+  c.ph[k] = c.ph[k] || [];
+  return sheet("", h("div", { class: "band" }, `${no}  ${lab}`),
+    edit ? photoBlock(c.ph[k]) : c.ph[k].length ? h("div", { class: "photos" }, ...c.ph[k].map(p => h("figure", {}, photoImg(p, { alt: lab }), h("figcaption", {}, p.caption || "")))) : h("div", { class: "ro", style: "padding:8px" }, "No photo yet"));
+}
+function pmChk(c, pm, row, e, save) {
+  const [k, no, lab, opts] = row, v = pm.k[k];
+  return sheet("", h("div", { class: "pm-q" }, h("b", {}, no), " ", lab),
+    e ? seg(opts.map(o => [o, o]), v, nv => { pm.k[k] = nv; save(); render(); }) : h("div", { class: "ro pm-v " + pmCls(v) }, v || "-"),
+    v && PM_BAD(v) ? (e ? inp("text", pm.why[k], x => { pm.why[k] = x; save(); }, "Why? What happens next, and who must sort it?") : h("p", { class: "hint" }, pm.why[k] || "")) : null);
+}
+function pmNum(pm, row, e, save) {
+  const [k, no, lab, ph] = row;
+  return sheet("", h("div", { class: "pm-q" }, h("b", {}, no), " ", lab), e ? inp("text", pm.k[k], x => { pm.k[k] = x; save(); }, ph) : h("div", { class: "ro" }, pm.k[k] || "-"));
+}
+function pmShare(w) {
+  const c = bpsOf(w), pm = pmOf(c), now = new Date(), t = hhmm(now);
+  const txt = w === "SUBSTATION" ? `Fibraco is busy in the Wolf substation (${t}). The BPS rack is connected. Please confirm through the server that every turbine and module is online.`
+    : `Fibraco is on ${w} at Wolf (${t}). The BPS box is connected to the WTG FO panel. Please confirm the full chain through the server: BPS box, WTG FO panel, substation FO panel, Bioseco server, and every module online.`;
+  pm.told = { by: S.user, at: t, on: ymd(now) }; bpsTouch(c); persist(); render();
+  if (navigator.share) navigator.share({ text: txt }).catch(() => {});
+  else { const a = h("a", { href: "https://wa.me/?text=" + encodeURIComponent(txt), target: "_blank", rel: "noopener" }); document.body.append(a); a.click(); a.remove(); }
+}
+function pmView(w, eEl, eTc) {
+  const c = bpsOf(w), pm = pmOf(c), sub = w === "SUBSTATION", def = pmDef(w), eAny = eEl || eTc;
+  const save = () => { bpsTouch(c); persistSoon(); };
+  const out = [h("p", { class: "form-sub" }, sub ? "PRC-SRV-03 section 4, plus the substation work in Bioseco's scope of work (SOW 2.2)." : "PRC-SRV-03 sections 3.1 and 3.3, plus the fibre in Bioseco's scope of work (SOW 2.1.2) and Bioseco's check of the full chain.")];
+  // Electrical and mechanical (Marcel)
+  out.push(bpsPartHead(w, "el"));
+  const el = [];
+  if (!sub) {
+    const n = pmMods(w);
+    el.push(h("h3", { class: "bps-h" }, "3.1 Detection modules and deterrents"), h("p", { class: "hint" }, `Tap a module number to set it, tap again to change it. ${n} modules on this turbine. Anything not OK needs the module's serial number, what was found and a photo below.`));
+    for (const [k, no, lab, opts] of PM_MOD) {
+      el.push(sheet("", h("div", { class: "pm-q" }, h("b", {}, no), " ", lab, h("small", {}, opts.join(" / "))),
+        h("div", { class: "pm-mods" }, ...Array.from({ length: n }, (_, j) => { const i = j + 1, v = (pm.mod[i] || {})[k];
+          return h("button", { type: "button", class: "pm-c " + pmCls(v), disabled: !eEl, onclick: () => { const m = pm.mod[i] || (pm.mod[i] = {}); m[k] = pmCyc(opts, m[k]); if (!m[k]) delete m[k]; save(); render(); } }, h("b", {}, String(i)), h("small", {}, v ? PM_SHORT[v] || v : "")); }),
+          eEl ? h("button", { type: "button", class: "pm-all", onclick: () => { for (let i = 1; i <= n; i++) { const m = pm.mod[i] || (pm.mod[i] = {}); if (!m[k]) m[k] = opts[0]; } save(); render(); } }, `All ${opts[0] === "No water" ? "dry" : "OK"}`) : null)));
+    }
+    el.push(pmPhotoSlot(c, "mb1", "Modules before cleaning", "3.1.1", eEl), pmPhotoSlot(c, "ma1", "Modules after cleaning", "3.1.1", eEl), pmPhotoSlot(c, "mb2", "Camera glass before cleaning", "3.1.2", eEl), pmPhotoSlot(c, "ma2", "Camera glass after cleaning", "3.1.2", eEl));
+    const badMods = Array.from({ length: n }, (_, j) => j + 1).filter(i => PM_MOD.some(([k]) => PM_BAD((pm.mod[i] || {})[k]) || (pm.mod[i] || {})[k] === "Corrected"));
+    for (const i of badMods) { const f = pm.mf[i] || (pm.mf[i] = {}), what = PM_MOD.filter(([k]) => (pm.mod[i] || {})[k] && (pm.mod[i] || {})[k] !== "OK" && (pm.mod[i] || {})[k] !== "No water" && (pm.mod[i] || {})[k] !== "N/A").map(([k, no]) => `${no} ${pm.mod[i][k]}`).join(", ");
+      c.ph["n" + i] = c.ph["n" + i] || [];
+      el.push(sheet("pm-find", h("div", { class: "band" }, `Module ${i}: ${what}`),
+        h("table", {}, h("tbody", {}, h("tr", {}, h("td", { class: "lab" }, "Module serial number"), h("td", {}, eEl ? inp("text", f.sn, x => { f.sn = x; save(); }, "SN on the module label") : h("div", { class: "ro" }, f.sn || "-"))),
+          h("tr", {}, h("td", { class: "lab" }, "What was found and done"), h("td", {}, eEl ? growTxt(f.txt, x => { f.txt = x; save(); }, "e.g. water in the connector, dried, seal replaced, restart confirmed with Bioseco. Humidity before and after if high.", 56) : h("div", { class: "ro" }, f.txt || "-"))))),
+        eEl ? photoBlock(c.ph["n" + i]) : h("div", { class: "photos" }, ...c.ph["n" + i].map(p => h("figure", {}, photoImg(p, { alt: "Module " + i }), h("figcaption", {}, p.caption || ""))))));
+    }
+    el.push(h("h3", { class: "bps-h" }, "3.3 Power supply and junction box"));
+  } else el.push(h("h3", { class: "bps-h" }, "Substation: power, earthing and the rack"));
+  for (const r of def.el.chk) el.push(pmChk(c, pm, r, eEl, save));
+  for (const r of def.el.num) el.push(pmNum(pm, r, eEl, save));
+  for (const [k, lab, no] of def.el.ph) if (!["mb1", "ma1", "mb2", "ma2"].includes(k)) el.push(pmPhotoSlot(c, k, lab, no, eEl));
+  el.push(bpsSignBtn(w, "el"));
+  out.push(h("div", { class: "bps-sec" + (eEl ? "" : " ro") }, ...el));
+  // Telecoms (Marlon)
+  out.push(bpsPartHead(w, "tc"));
+  const tc = [h("h3", { class: "bps-h" }, sub ? "Substation: fibre, network and Bioseco's remote check" : "Fibre, network and Bioseco's check of the full chain")];
+  for (const r of def.tc.chk) tc.push(pmChk(c, pm, r, eTc, save));
+  tc.push(sheet("pm-chain", h("div", { class: "band" }, "Bioseco checks the chain before we move on"),
+    h("p", { class: "hint" }, sub ? "Tell Bioseco when the rack is connected, so they can check every turbine through the server." : "As soon as the BPS box is connected, tell Bioseco. They check BPS box, WTG FO panel, substation FO panel and server. Do not leave the turbine before they confirm."),
+    pm.told ? h("p", { class: "pm-told" }, `Bioseco told at ${pm.told.at} by ${pm.told.by}${pm.told.on !== ymd(today()) ? " on " + dmy(new Date(pm.told.on + "T12:00:00")) : ""}.`) : null,
+    eTc ? h("button", { type: "button", class: "mbtn pm-wa", onclick: () => pmShare(w) }, pm.told ? "TELL BIOSECO AGAIN" : "TELL BIOSECO WE'RE ON THIS " + (sub ? "SUBSTATION" : "TURBINE"), h("small", {}, "Opens WhatsApp with the message ready. Pick the Bioseco group and send.")) : null,
+    h("table", {}, h("tbody", {},
+      h("tr", {}, h("td", { class: "lab" }, "Confirmed by (Bioseco)"), h("td", {}, eTc ? inp("text", pm.conf.who, x => { pm.conf.who = x; save(); }, "e.g. Jakub Dziadak") : h("div", { class: "ro" }, pm.conf.who || "-"))),
+      h("tr", {}, h("td", { class: "lab" }, "Time confirmed"), h("td", {}, eTc ? inp("text", pm.conf.at, x => { pm.conf.at = x; save(); }, "e.g. 10h45") : h("div", { class: "ro" }, pm.conf.at || "-")))))));
+  for (const [k, lab, no] of def.tc.ph) tc.push(pmPhotoSlot(c, k, lab, no, eTc));
+  if (sub) tc.push(sheet("", h("div", { class: "band" }, "Written OK from Bioseco Operations to leave site (SOP-SRV-01)"),
+    h("table", {}, h("tbody", {}, h("tr", {}, h("td", { class: "lab" }, "Given by"), h("td", {}, eTc ? inp("text", (pm.leave || {}).who, x => { pm.leave = Object.assign(pm.leave || {}, { who: x }); save(); }, "Name at Bioseco") : h("div", { class: "ro" }, (pm.leave || {}).who || "-"))),
+      h("tr", {}, h("td", { class: "lab" }, "Date and time"), h("td", {}, eTc ? inp("text", (pm.leave || {}).at, x => { pm.leave = Object.assign(pm.leave || {}, { at: x }); save(); }, "e.g. 4 Nov 15h20") : h("div", { class: "ro" }, (pm.leave || {}).at || "-"))))),
+    pmPhotoSlot(c, "lv", "Bioseco's written OK (screenshot)", "SOP-SRV-01", eTc)));
+  tc.push(bpsSignBtn(w, "tc"));
+  out.push(h("div", { class: "bps-sec" + (eTc ? "" : " ro") }, ...tc));
+  // both parts: replaced parts, findings
+  out.push(h("h3", { class: "bps-h" }, "Replaced components (PRC-SRV-03 section 6)"),
+    sheet("", ...(pm.rep.length ? pm.rep.map((r, i) => h("div", { class: "pm-rep" },
+      ...[["item", "What was replaced"], ["pos", "Position (e.g. module 3)"], ["out", "Removed serial number"], ["in", "Fitted serial number"]].map(([k, ph]) => eAny ? inp("text", r[k], x => { r[k] = x; save(); }, ph) : h("div", { class: "ro" }, `${ph}: ${r[k] || "-"}`)),
+      eAny ? h("button", { type: "button", class: "btn-g", onclick: () => { pm.rep.splice(i, 1); save(); render(); } }, "Remove") : null)) : [h("p", { class: "hint", style: "padding:8px" }, "Nothing replaced.")]),
+      eAny ? h("button", { type: "button", class: "btn-g", style: "margin:8px", onclick: () => { pm.rep.push({ item: "", pos: "", out: "", in: "", by: S.user }); save(); render(); } }, "+ Add a replaced part") : null),
+    sheet("", h("div", { class: "band" }, "Findings and recommended corrective actions"), eAny ? growTxt(pm.find, x => { pm.find = x; save(); }, "Anything Bioseco must fix or follow up, and what you recommend.", 56) : h("div", { class: "ro" }, pm.find || "-")));
+  return out;
+}
+// Wanro 29 Oct: a turbine that cannot be finished because of someone else (no breaker in the Vestas cabinet, no light on the fibre).
+// It shows on the grid, on the daily report and in the PRC-SRV-03 list of turbines not completed, with the reason and a date.
+function bpsWaitBox(w) {
+  const c = bpsOf(w), wt = c.wait, e = !S.qcRO && canSignWork(S.user) && ([bpsOwner("el"), bpsOwner("tc")].includes(S.user) || isSM(S.user));
+  if (!wt && !e) return null;
+  if (!wt) return h("button", { type: "button", class: "pm-waitbtn", onclick: () => { c.wait = { on: "", why: "", until: "", by: S.user, since: ymd(today()) }; bpsTouch(c); persist(); render(); } }, "This turbine is waiting on someone else");
+  return sheet("pm-wait", h("div", { class: "band" }, "Waiting on others"),
+    h("table", {}, h("tbody", {},
+      h("tr", {}, h("td", { class: "lab" }, "Waiting on"), h("td", {}, e ? seg([["Red Rocket", "Red Rocket"], ["Vestas", "Vestas"], ["Bioseco", "Bioseco"], ["Other", "Other"]], wt.on, v => { wt.on = v; bpsTouch(c); persistSoon(); }) : h("div", { class: "ro" }, wt.on || "-"))),
+      h("tr", {}, h("td", { class: "lab" }, "Why"), h("td", {}, e ? inp("text", wt.why, v => { wt.why = v; bpsTouch(c); persistSoon(); }, "e.g. no breaker for the BPS supply in the Vestas cabinet") : h("div", { class: "ro" }, wt.why || "-"))),
+      h("tr", {}, h("td", { class: "lab" }, "Date to finish"), h("td", {}, e ? inp("date", wt.until, v => { wt.until = v; bpsTouch(c); persistSoon(); }) : h("div", { class: "ro" }, wt.until ? dmy(new Date(wt.until + "T12:00:00")) : "Not known yet"))))),
+    e ? h("button", { type: "button", class: "btn-g", style: "margin:8px", onclick: () => { delete c.wait; bpsTouch(c); persist(); render(); } }, "Not waiting any more") : null);
+}
 // ---------- the report, in Bioseco's layout ----------
 async function bpsReport(email, day = ymd(today())) {
   if (sending) return; sending = true;
   const ov = h("div", { class: "overlay", role: "dialog" }, h("div", { class: "modal" }, h("h2", {}, email ? "Approving and emailing" : "Making the report"), h("p", {}, "Fetching the photos and building the PDF. Keep the app open on this screen.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793310344"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793310344"); await loadJs("./js/pdf.js?v=1793310344");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793311604"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793311604"); await loadJs("./js/pdf.js?v=1793311604");
     const ws = ["SUBSTATION", ...bpsWtgs()], phs = ws.flatMap(w => Object.values(bpsOf(w).ph).flat());
     await Promise.all(phs.map(p => p.ph && !PHOTO_CACHE.has(p.ph) && !(p.url || "").startsWith("data:") ? Store.photo(p.ph).then(d => { if (d) PHOTO_CACHE.set(p.ph, d); }).catch(() => {}) : 0));
     const d = bpsDoc(S.project, day);
@@ -2748,13 +2927,38 @@ function bpsDoc(p, day) {
   // the day's page, first in the report (Wanro 29 Oct: Bioseco want it daily)
   const nm = w => w === "SUBSTATION" ? "Substation" : w, dayLog = day ? bpsDayLog(day) : [];
   const ptStarted = (w, c, pt) => { const def = (w === "SUBSTATION" ? BPS_SUB : BPS_WTG)[pt]; return def.ph.some(([k]) => (c.ph[k] || []).length) || def.need.some(([k]) => String(c.f[k] || "").trim() && !(k === "fibre" || k === "modules")); };
-  const stTxt = (w, c, pt) => { const s = c.parts[pt], b = c.back[pt]; if (s) return s.on === day ? `Signed this day by ${esc(s.by)} at ${esc(s.at)}` : `Signed ${esc(s.date || "")} by ${esc(s.by)}`; if (b) return `<span style="color:#a50e0e">Sent back: ${esc(b.why)}</span>`; if (!ptStarted(w, c, pt)) return "Not started"; const m = bpsMissing(w, pt).length; return m ? `In progress, ${m} ${m === 1 ? "item" : "items"} to do` : "Filled in, not signed yet"; };
+  const stTxt = (w, c, pt) => { const s = c.parts[pt], b = c.back[pt]; if (s) return s.on === day ? `Signed this day by ${esc(s.by)} at ${esc(s.at)}` : `Signed ${esc(s.date || "")} by ${esc(s.by)}`; if (b) return `<span style="color:#a50e0e">Sent back: ${esc(b.why)}</span>`; if (!ptStarted(w, c, pt) && !pmStarted(c, pt, w)) return "Not started"; const m = bpsMissing(w, pt).length + pmMissing(w, pt).length; return m ? `In progress, ${m} ${m === 1 ? "item" : "items"} to do` : "Filled in, not signed yet"; };
   const dayPage = !day ? "" : `<div class="pbreak"></div>${hdr}<h2>Daily report, ${esc(nice(new Date(day + "T12:00:00")))}</h2>
   <p>${dayLog.length ? `Work was done on ${dayLog.length} ${dayLog.length === 1 ? "sheet" : "sheets"} on this day: ${esc(dayLog.map(x => nm(x.w)).join(", "))}. Team: ${esc([...new Set(dayLog.flatMap(x => x.who))].join(", "))}.` : "No work was recorded on the Bioseco sheets on this day."} So far ${done.length} of ${ws.length} turbines${bpsState("SUBSTATION") === "done" ? " and the substation are" : " are"} fully signed off. The full documentation so far follows after this section.</p>
-  ${dayLog.length ? `<table class="g"><thead><tr><th>Sheet</th><th>Electrical and mechanical</th><th>Telecoms</th><th>Photos</th><th>Still to do</th></tr></thead><tbody>${dayLog.map(x => { const miss = ["el", "tc"].filter(pt => !x.c.parts[pt]).flatMap(pt => ptStarted(x.w, x.c, pt) ? bpsMissing(x.w, pt) : [`${pt === "el" ? "Electrical and mechanical" : "Telecoms"} part not started`]);
+  ${dayLog.length ? `<table class="g"><thead><tr><th>Sheet</th><th>Electrical and mechanical</th><th>Telecoms</th><th>Photos</th><th>Still to do</th></tr></thead><tbody>${dayLog.map(x => { const miss = ["el", "tc"].filter(pt => !x.c.parts[pt]).flatMap(pt => ptStarted(x.w, x.c, pt) || pmStarted(x.c, pt, x.w) ? [...bpsMissing(x.w, pt), ...pmMissing(x.w, pt).map(t => "PRC " + t)] : [`${pt === "el" ? "Electrical and mechanical" : "Telecoms"} part not started`]);
     return `<tr><td><b>${esc(nm(x.w))}</b></td><td>${stTxt(x.w, x.c, "el")}</td><td>${stTxt(x.w, x.c, "tc")}</td><td style="text-align:center">${x.phs.length}</td><td style="font-size:8pt">${miss.length ? esc(miss.join(", ")) : "Nothing, both parts signed"}</td></tr>`; }).join("")}</tbody></table>` : ""}
   ${dayLog.map(x => { const f = x.c.f, ph = x.phs.map(({ q, slot }) => ({ q, s: src(q), cap: `${bpsSlotLab(slot)}${q.time ? ", " + String(q.time).replace(":", "h") : ""}${q.by ? ", " + q.by : ""}` })).filter(y => y.s);
-    return `<h3>${esc(nm(x.w))}</h3>${x.notes.length ? x.notes.map(([n, v]) => `<p><b>${esc(n)}${v.at ? ", " + esc(String(v.at).replace(":", "h")) : ""}:</b> ${esc(v.txt)}</p>`).join("") : `<p class="bps-miss">No description of the work was written for this sheet on this day.</p>`}${f.link === "Not connected" && x.w !== "SUBSTATION" ? `<p><b>Not connected:</b> ${esc(f.why || "reason not given")}${f.raised ? ", raised " + esc(f.raised) : ""}.</p>` : ""}${ph.length ? `<div class="pgrid pgrid3">${ph.map(({ q, s, cap }) => `<figure><img src="${s}"><figcaption>${esc(cap)}${q.caption ? ", " + esc(q.caption) : ""}</figcaption></figure>`).join("")}</div>` : ""}`; }).join("")}`;
+    return `<h3>${esc(nm(x.w))}</h3>${x.notes.length ? x.notes.map(([n, v]) => `<p><b>${esc(n)}${v.at ? ", " + esc(String(v.at).replace(":", "h")) : ""}:</b> ${esc(v.txt)}</p>`).join("") : `<p class="bps-miss">No description of the work was written for this sheet on this day.</p>`}${x.c.wait ? `<p><b>Waiting on ${esc(x.c.wait.on || "others")}:</b> ${esc(x.c.wait.why || "reason not given")}${x.c.wait.until ? `, to finish by ${esc(dmy(new Date(x.c.wait.until + "T12:00:00")))}` : ", date to finish not known yet"}.</p>` : ""}${pmSummary(x.w).length ? `<p><b>PRC-SRV-03:</b> ${esc(pmSummary(x.w).join(". "))}.</p>` : ""}${f.link === "Not connected" && x.w !== "SUBSTATION" ? `<p><b>Not connected:</b> ${esc(f.why || "reason not given")}${f.raised ? ", raised " + esc(f.raised) : ""}.</p>` : ""}${ph.length ? `<div class="pgrid pgrid3">${ph.map(({ q, s, cap }) => `<figure><img src="${s}"><figcaption>${esc(cap)}${q.caption ? ", " + esc(q.caption) : ""}</figcaption></figure>`).join("")}</div>` : ""}`; }).join("")}`;
+  // PRC-SRV-03 section 6: the maintenance report Bioseco's scope of work asks for
+  const pmTeam = [...new Set([sub, ...ws.map(bpsOf)].flatMap(c => [c.parts.el && c.parts.el.by, c.parts.tc && c.parts.tc.by, ...Object.values(c.act || {}).flat()]).filter(Boolean))];
+  const pmWs = ws.filter(w => pmStarted(bpsOf(w), "el", w) || pmStarted(bpsOf(w), "tc", w));
+  const cellTxt = w => { const pm = pmOf(bpsOf(w)), n = pmMods(w), bad = [], fix = []; let set = 0;
+    for (let i = 1; i <= n; i++) for (const [k, no] of PM_MOD) { const v = (pm.mod[i] || {})[k]; if (!v) continue; set++; if (PM_BAD(v)) bad.push(`${no} m${i} ${v}`); else if (v === "Corrected") fix.push(`${no} m${i}`); }
+    return !set ? "Not checked yet" : `${set === n * PM_MOD.length ? "All checks done" : `${set} of ${n * PM_MOD.length} checks done`}${bad.length ? `. <b style="color:#a50e0e">Not OK: ${esc(bad.join(", "))}</b>` : ". All OK"}${fix.length ? `. Corrected: ${esc(fix.join(", "))}` : ""}`; };
+  const kv = (pm, k) => pm.k[k] ? `${esc(pm.k[k])}${PM_BAD(pm.k[k]) && pm.why[k] ? ` (${esc(pm.why[k])})` : ""}` : "-";
+  const pmPics = w => { const c = bpsOf(w), n = pmMods(w); return picsMany([[c.ph.mb1, "3.1.1 Modules before cleaning"], [c.ph.ma1, "3.1.1 Modules after cleaning"], [c.ph.mb2, "3.1.2 Camera glass before cleaning"], [c.ph.ma2, "3.1.2 Camera glass after cleaning"], ...Array.from({ length: n }, (_, j) => [c.ph["n" + (j + 1)], `Module ${j + 1} finding`]).filter(([l]) => (l || []).length), [c.ph.cs, "Bioseco's confirmation of the full chain"]].filter(([l, cap]) => (l || []).length || /before|after/.test(cap))); };
+  const finds = [...ws, "SUBSTATION"].flatMap(w => { const pm = pmOf(bpsOf(w)); return [...Object.entries(pm.mf).filter(([i]) => PM_MOD.some(([k]) => (pm.mod[i] || {})[k] && (pm.mod[i] || {})[k] !== "OK" && (pm.mod[i] || {})[k] !== "No water" && (pm.mod[i] || {})[k] !== "N/A")).map(([i, f]) => `<tr><td>${esc(nm(w))}</td><td>Module ${esc(i)}${f.sn ? ", SN " + esc(f.sn) : ""}</td><td>${esc(PM_MOD.filter(([k]) => (pm.mod[i] || {})[k] && !["OK", "No water", "N/A"].includes(pm.mod[i][k])).map(([k, no]) => `${no} ${pm.mod[i][k]}`).join(", "))}</td><td>${esc(f.txt || "")}</td></tr>`),
+    ...(pm.find ? [`<tr><td>${esc(nm(w))}</td><td>General</td><td></td><td>${esc(pm.find)}</td></tr>`] : [])]; });
+  const reps = [...ws, "SUBSTATION"].flatMap(w => (pmOf(bpsOf(w)).rep || []).filter(r => r.item || r.out || r.in).map(r => `<tr><td>${esc(nm(w))}</td><td>${esc(r.item)}</td><td>${esc(r.pos)}</td><td>${esc(r.out)}</td><td>${esc(r.in)}</td></tr>`));
+  const notDone = ws.filter(w => bpsState(w) !== "done").map(w => { const c = bpsOf(w), wt = c.wait;
+    return `<tr><td>${esc(w)}</td><td>${wt ? `Waiting on ${esc(wt.on || "others")}: ${esc(wt.why || "reason not given")}` : bpsState(w) === "todo" ? "Not started yet" : "In progress"}</td><td>${wt && wt.until ? esc(dmy(new Date(wt.until + "T12:00:00"))) : "To be confirmed"}</td></tr>`; });
+  const spm = pmOf(sub);
+  const pmSec = `<div class="pbreak"></div>${hdr}<h2>Preventive maintenance report (PRC-SRV-03, section 6)</h2>
+  <p>Commissioning and start-up of the BPS as per Bioseco's scope of work (SOW v1.0, 16.10.2026), with the preventive maintenance inspection to PRC-SRV-03 v1.2 on every wind turbine and in the substation.</p>
+  <table class="kv"><tr><th>Farm:</th><td>${esc(p.name.replace(/^Bioseco - /, ""))}</td></tr><tr><th>Report date:</th><td>${esc(dmy(day ? new Date(day + "T12:00:00") : new Date()))}</td></tr><tr><th>Team:</th><td>${esc(pmTeam.join(", ") || "-")}</td></tr><tr><th>Turbines covered so far:</th><td>${pmWs.length ? esc(pmWs.join(", ")) : "None yet"}</td></tr></table>
+  <h3>Checklist results per turbine</h3><table class="g"><thead><tr><th>WTG</th><th>3.1 Modules and deterrents</th><th>3.3 Power and junction box</th><th>Fibre PowerBox to SpliceBox</th><th>Self-diagnosis</th><th>Bioseco confirmed the chain</th></tr></thead><tbody>${ws.map(w => { const pm = pmOf(bpsOf(w));
+    if (!pmStarted(bpsOf(w), "el", w) && !pmStarted(bpsOf(w), "tc", w)) return `<tr><td><b>${esc(w)}</b></td><td colspan="5" style="color:#555">${bpsOf(w).wait ? `Waiting on ${esc(bpsOf(w).wait.on || "others")}: ${esc(bpsOf(w).wait.why || "")}` : "Not checked yet"}</td></tr>`;
+    return `<tr><td><b>${esc(w)}</b></td><td style="font-size:8pt">${cellTxt(w)}</td><td style="font-size:8pt">3.3.1 ${kv(pm, "psIns")}, 3.3.2 ${pm.k.psV ? esc(pm.k.psV) + (/^[\d.,]+$/.test(String(pm.k.psV).trim()) ? " V" : "") : "-"}, 3.3.3 ${kv(pm, "psEarth")}, 3.3.4 ${kv(pm, "psSw")}</td><td>${kv(pm, "sowFo")}</td><td>${kv(pm, "diag")}</td><td>${pm.conf.who ? esc(pm.conf.who) + (pm.conf.at ? ", " + esc(pm.conf.at) : "") : "-"}</td></tr>`; }).join("")}</tbody></table>
+  <h3>Substation (section 4 and SOW 2.2)</h3><table class="g"><tbody>${[...PM_SUB.el.chk, ...PM_SUB.el.num, ...PM_SUB.tc.chk].map(([k, no, lab]) => `<tr><td>${esc(no)}</td><td>${esc(lab)}</td><td>${kv(spm, k)}</td></tr>`).join("")}<tr><td>5.1</td><td>Confirmed by Bioseco</td><td>${spm.conf.who ? esc(spm.conf.who) + (spm.conf.at ? ", " + esc(spm.conf.at) : "") : "-"}</td></tr><tr><td>SOP-SRV-01</td><td>Written OK to leave site</td><td>${spm.leave && spm.leave.who ? esc(spm.leave.who) + (spm.leave.at ? ", " + esc(spm.leave.at) : "") : "Not yet"}</td></tr></tbody></table>
+  <h3>Findings and recommended corrective actions</h3>${finds.length ? `<table class="g"><thead><tr><th>Where</th><th>Module</th><th>Check</th><th>Found and done</th></tr></thead><tbody>${finds.join("")}</tbody></table>` : "<p>No findings so far.</p>"}
+  <h3>Replaced components</h3>${reps.length ? `<table class="g"><thead><tr><th>Where</th><th>Component</th><th>Position</th><th>Removed SN</th><th>Fitted SN</th></tr></thead><tbody>${reps.join("")}</tbody></table>` : "<p>No components replaced so far.</p>"}
+  <h3>Turbines not completed</h3>${notDone.length ? `<table class="g"><thead><tr><th>WTG</th><th>Reason</th><th>Date to complete</th></tr></thead><tbody>${notDone.join("")}</tbody></table>` : "<p>All turbines completed.</p>"}
+  <h3>Photos before and after</h3>${pmWs.map(w => `<h3>${esc(w)}</h3>${pmPics(w)}`).join("") || "<p>No photos yet.</p>"}${pics(sub.ph.sb1, "4.2 Rack and servers before cleaning")}${pics(sub.ph.sa1, "4.2 Rack and servers after cleaning")}${(sub.ph.p230 || []).length ? pics(sub.ph.p230, "SOW 2.2.1 230 V supply on the 16 A type B breaker") : ""}${(sub.ph.pearth || []).length ? pics(sub.ph.pearth, "SOW 2.2.2 Earthing cable on the rack") : ""}`;
   const lastDone = [sub, ...ws.map(bpsOf)].flatMap(c => [c.parts.el, c.parts.tc]).map(x => x && x.on).filter(Boolean).sort().pop();
   const dTxt = lastDone ? nice(new Date(lastDone + "T12:00:00")) : nice(new Date());
   const prep = bpsOwner("el"), elSig = sub.parts.el;
@@ -2816,6 +3020,7 @@ function bpsDoc(p, day) {
   <div class="sigs"><div><h3>Bioseco S.A.</h3><div class="sigline">${elSig && elSig.sig ? `<img src="${elSig.sig}" alt="">` : ""}</div><div>${esc(prep)}${elSig ? ", " + esc(elSig.date || "") : ""}</div><small>Date, name and surname</small></div>
   <div><h3>RECEIVING PERSON</h3><div class="sigline"></div><div>${esc(sf.receiver || "")}</div><small>Date, name and surname</small></div></div>
   <p class="foot">Bioseco S.A., ul. Budowlanych 68, 80-298 Gdańsk, Polska  |  www.bioseco.com  |  info@bioseco.com</p></div>
+  ${pmSec}
   <p class="foot">Prepared on site by ${esc(prep)} with the Fibraco Field app. ${done.length} of ${ws.length} turbines and ${bpsState("SUBSTATION") === "done" ? "the substation" : "not yet the substation"} signed off. Electrical and mechanical by ${esc(bpsOwner("el"))}, telecoms by ${esc(bpsOwner("tc"))}.${bpsRep().approved ? ` Approved by ${esc(bpsRep().approved.by)} on ${esc(bpsRep().approved.date)}.` : ""}</p>`;
   return { html, title: `BIOSECO - ${day ? "Daily Report" : "Post-Installation Documentation"} - ${p.short} (${dmy(day ? new Date(day + "T12:00:00") : new Date())})` };
 }
@@ -3252,7 +3457,7 @@ function dayPhotos(k) {
   try {
     const cut = k.lastIndexOf("|"), pid = k.slice(0, cut), day = k.slice(cut + 1);
     const bio = Object.assign({}, Object.fromEntries(Store.list("bio|" + pid + "|").map(([id, o]) => [id.split("|").slice(2).join("|"), o])), (S.bio || {})[pid] || {});
-    const lab = slot => { for (const d of [BPS_WTG.el, BPS_WTG.tc, BPS_SUB.el, BPS_SUB.tc]) { const x = d.ph.find(r => r[0] === slot); if (x) return `${x[2]} ${x[1]}`; } return slot === "p16" || slot === "s16" ? "Pic. 16 Patch cords left on site" : "Bioseco sheet"; };
+    const lab = bpsSlotLab;
     for (const [w, B] of Object.entries(bio)) {
       const ph = (B && B.pc && B.pc.ph) || {};
       for (const [slot, arr] of Object.entries(ph)) for (const p of arr || []) {
@@ -3372,8 +3577,8 @@ function outstanding(force) {
       if (p.kind === "turbines" && qcPhase(p) === "commissioning") {
         const bio = Object.assign({}, Object.fromEntries(Store.list("bio|" + p.id + "|").map(([id, o]) => [id.split("|").slice(2).join("|"), o])), (S.bio || {})[p.id] || {});
         for (const [w, B] of Object.entries(bio)) { const c = B && B.pc; if (!c) continue; const pt = c.parts || {};
-          const started = Object.keys(c.f || {}).some(x => !["fibre", "modules"].includes(x)) || Object.values(c.ph || {}).some(x => x && x.length) || pt.el || pt.tc;
-          if (started) for (const part of ["el", "tc"]) if (!pt[part]) add(bpsOwner(part, p), p, "", `Commissioning sheet ${w === "SUBSTATION" ? "substation" : w}: ${part === "el" ? "electrical and mechanical" : "telecoms"} part not signed`); }
+          const started = Object.keys(c.f || {}).some(x => !["fibre", "modules"].includes(x)) || Object.values(c.ph || {}).some(x => x && x.length) || pt.el || pt.tc || !!(c.pm && (Object.keys(c.pm.mod || {}).length || Object.values(c.pm.k || {}).some(Boolean))) || !!c.wait;
+          if (started) for (const part of ["el", "tc"]) if (!pt[part]) add(bpsOwner(part, p), p, "", `Commissioning sheet ${w === "SUBSTATION" ? "substation" : w}: ${part === "el" ? "electrical and mechanical" : "telecoms"} part not submitted${B.pc.wait ? ` (waiting on ${B.pc.wait.on || "others"})` : ""}`); }
       }
       // Bioseco daily report: a day with work on the sheets that Wanro has not approved and sent
       if (p.kind === "turbines" && qcPhase(p) === "commissioning") {
@@ -3510,7 +3715,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793310344"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793310344"); await loadJs("./js/pdf.js?v=1793310344");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793311604"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793311604"); await loadJs("./js/pdf.js?v=1793311604");
     await fetchDayPhotos(k);
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
@@ -3625,7 +3830,7 @@ async function processMailQ1() {
   let wl = null;
   try {
     wl = await wakeOn();
-    await loadJs("./js/lib/html2canvas.min.js?v=1793310344"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793310344"); await loadJs("./js/pdf.js?v=1793310344");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793311604"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793311604"); await loadJs("./js/pdf.js?v=1793311604");
     for (const j of go) {
       const p = CFG.projects.find(x => x.id === j.pid); if (!p) { j.done = true; continue; }
       if (!j.flash) { const m0 = Store.get(`mail|${j.pid}|${j.ds}`); if (m0 && m0.jobAt && m0.jobAt >= j.at) { j.done = true; continue; } } // another phone already sent it
@@ -4006,10 +4211,25 @@ let render = function () {
   // Wanro 29 Oct: the front page fits the screen, no scrolling up, down or sideways
   document.body.classList.toggle("vhome", (v === "projects" || !views[v]) && TILES() && isAdmin(S.user));
   document.body.classList.remove("nomove");
-  if (document.body.classList.contains("vhome")) requestAnimationFrame(() => { if (document.documentElement.scrollHeight <= innerHeight + 1) document.body.classList.add("nomove"); });
+  if (document.body.classList.contains("vhome")) requestAnimationFrame(fitHome);
   app.replaceChildren(...[].concat((views[v] || vProjects)()).filter(Boolean));
   pageForm();
 }
+// Wanro 30 Oct: the front page must FILL the screen, not sit small at the top. Everything is drawn at size 1, measured,
+// then the heights (k) and the lettering (kf) are scaled up until the page fills the screen height exactly. The lettering
+// grows less on narrow phones so no word is cut. Nothing scrolls up, down or sideways.
+function fitHome() {
+  const b = document.body, de = document.documentElement; if (!b.classList.contains("vhome")) return;
+  const set = (k, kf) => { b.style.setProperty("--k", k.toFixed(3)); b.style.setProperty("--kf", kf.toFixed(3)); };
+  const kfMax = Math.max(1, Math.min(1.45, innerWidth / 330));
+  set(1, 1); let k = 1;
+  const used = () => Math.max(document.getElementById("app").getBoundingClientRect().bottom + scrollY, 1);
+  for (let i = 0; i < 8; i++) { const hgt = used(), r = innerHeight / hgt; if (Math.abs(r - 1) < 0.01) break; k = Math.max(1, Math.min(2.2, k * (1 + (r - 1) * 0.9))); set(k, Math.min(kfMax, 1 + (k - 1) * 0.6)); }
+  while ((de.scrollHeight > innerHeight + 1 || used() > innerHeight + 1) && k > 1) { k = Math.max(1, k - 0.03); set(k, Math.min(kfMax, 1 + (k - 1) * 0.6)); }
+  b.classList.toggle("nomove", de.scrollHeight <= innerHeight + 1);
+}
+addEventListener("resize", () => { if (document.body.classList.contains("vhome")) requestAnimationFrame(fitHome); });
+try { document.fonts && document.fonts.ready.then(() => requestAnimationFrame(fitHome)); } catch (e) {}
 // ---------- page-by-page forms (tile layout): what fits on the screen, green NEXT and yellow BACK at the bottom ----------
 const PAGED_VIEWS = ["nearmiss", "jobobs", "incident", "invest", "si", "order", "dsti", "inspection", "toolbox", "check", "adhocjob"];
 let PG = { key: null, i: 0 };
@@ -4819,7 +5039,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793310344"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793310344"); await loadJs("./js/pdf.js?v=1793310344");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793311604"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793311604"); await loadJs("./js/pdf.js?v=1793311604");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),

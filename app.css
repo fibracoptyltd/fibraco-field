@@ -870,29 +870,29 @@ body.vgrid .bps-chip{font-size:8.5px;padding:1px 4px}
 /* front page fits one screen (Wanro 29 Oct): smaller tiles, nothing wider than the screen */
 html:has(body.vhome),body.vhome{overflow-x:hidden}
 body.vhome .tgrid>*{min-width:0}
-body.vhome .bar{padding-block:5px;margin-bottom:4px}
-body.vhome .bar .t b{font-size:14px}
-body.vhome .tw{gap:6px}
-body.vhome .who{font-size:12px}
-body.vhome .tgrid{gap:6px}
-body.vhome .tile{min-height:56px;padding:4px 3px;gap:3px;border-radius:10px}
-body.vhome .tile .tl{font-size:9.8px;letter-spacing:.01em;line-height:1.12;overflow-wrap:anywhere}
-body.vhome .ti-ic svg{width:21px;height:21px}
-body.vhome .tile.slim{min-height:40px;gap:5px;padding:4px 6px}
-body.vhome .tile.slim .tl{font-size:9.4px}
-body.vhome .tile.slim .ti-ic svg{width:18px;height:18px}
-body.vhome .tile.tpj{min-height:74px;padding:5px 6px;gap:2px}
-body.vhome .tpj-n{font-size:10.5px;line-height:1.1}
-body.vhome .tpj-c,body.vhome .tpj-s{font-size:8.8px;line-height:1.15}
-body.vhome .tsos.round{width:80px;height:80px;margin:4px auto 0;gap:2px;font-size:9.5px}
-body.vhome .tsos.round .ti-ic svg{width:24px;height:24px}
-body.vhome .tfoot{font-size:10px;margin:0}
-body.vhome .fb-btn.fb-inline{margin-top:2px;padding:6px 14px;font-size:12px}
+body.vhome .bar{padding-block:calc(5px*var(--k,1));margin-bottom:calc(4px*var(--k,1))}
+body.vhome .bar .t b{font-size:calc(14px*var(--kf,1))}
+body.vhome .tw{gap:calc(6px*var(--k,1))}
+body.vhome .who{font-size:calc(12px*var(--kf,1))}
+body.vhome .tgrid{gap:calc(6px*var(--k,1))}
+body.vhome .tile{min-height:calc(56px*var(--k,1));padding:calc(4px*var(--k,1)) 3px;gap:calc(3px*var(--k,1));border-radius:10px}
+body.vhome .tile .tl{font-size:calc(9.8px*var(--kf,1));letter-spacing:.01em;line-height:1.12;overflow-wrap:anywhere}
+body.vhome .ti-ic svg{width:calc(21px*var(--kf,1));height:calc(21px*var(--kf,1))}
+body.vhome .tile.slim{min-height:calc(40px*var(--k,1));gap:5px;padding:4px 6px}
+body.vhome .tile.slim .tl{font-size:calc(9.4px*var(--kf,1))}
+body.vhome .tile.slim .ti-ic svg{width:calc(18px*var(--kf,1));height:calc(18px*var(--kf,1))}
+body.vhome .tile.tpj{min-height:calc(74px*var(--k,1));padding:calc(5px*var(--k,1)) 6px;gap:calc(2px*var(--k,1))}
+body.vhome .tpj-n{font-size:calc(10.5px*var(--kf,1));line-height:1.1}
+body.vhome .tpj-c,body.vhome .tpj-s{font-size:calc(8.8px*var(--kf,1));line-height:1.15}
+body.vhome .tsos.round{width:calc(80px*var(--k,1));height:calc(80px*var(--k,1));margin:calc(4px*var(--k,1)) auto 0;gap:2px;font-size:calc(9.5px*var(--kf,1))}
+body.vhome .tsos.round .ti-ic svg{width:calc(24px*var(--k,1));height:calc(24px*var(--k,1))}
+body.vhome .tfoot{font-size:calc(10px*var(--kf,1));margin:0}
+body.vhome .fb-btn.fb-inline{margin-top:calc(2px*var(--k,1));padding:calc(6px*var(--k,1)) 14px;font-size:calc(12px*var(--kf,1))}
 body.vhome .tbadge{transform:scale(.85);transform-origin:top right}
 body.vhome{margin:0}
 body.vhome .app{min-height:0;padding-block:0 6px}
 html:has(body.vhome.nomove),body.vhome.nomove{overflow:hidden;overscroll-behavior:none}
-body.vhome .tile.tpj.outred .tpj-n{font-size:9px;letter-spacing:0}
+body.vhome .tile.tpj.outred .tpj-n{font-size:calc(9px*var(--kf,1));letter-spacing:0}
 .tile.tpj.outred .tpj-n{hyphens:manual;-webkit-hyphens:manual}
 /* Bioseco daily report day picker (Wanro 29 Oct) */
 .bps-days{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 8px}
@@ -901,3 +901,28 @@ body.vhome .tile.tpj.outred .tpj-n{font-size:9px;letter-spacing:0}
 .bps-day.sent{background:#e8f6ec;border-color:#1e8e3e;color:#1e6b34}
 .bps-day.on{outline:3px solid #0069aa;outline-offset:1px}
 .rep-st:not(.ok):not(.wait){background:#f1f3f5;color:#444;border:1px solid #c9ced6}
+/* PRC-SRV-03 sheet (Wanro 29 Oct) */
+.bps-tabs{display:flex;gap:6px;margin:4px 0 10px}
+.bps-tab{flex:1;padding:8px 6px;border-radius:10px;border:2px solid #6b8fae;background:#fff;font:inherit;font-weight:800;font-size:13px;color:#15191e;line-height:1.2}
+.bps-tab small{display:block;font-weight:600;font-size:11px;color:#5b6470;margin-top:2px}
+.bps-tab.on{background:#0069aa;border-color:#0069aa;color:#fff}.bps-tab.on small{color:#e6f0f8}
+.pm-q{padding:8px 10px 4px;font-size:13.5px;font-weight:600;color:#15191e}
+.pm-q b{color:#0069aa}.pm-q small{display:block;font-weight:600;font-size:11px;color:#5b6470;margin-top:2px}
+.pm-mods{display:flex;flex-wrap:wrap;gap:5px;padding:4px 10px 10px}
+.pm-c{width:44px;height:44px;border-radius:8px;border:2px solid #c9ced6;background:#fff;font:inherit;padding:0;line-height:1.05;color:#15191e}
+.pm-c b{display:block;font-size:15px}.pm-c small{display:block;font-size:9px;font-weight:800}
+.pm-c.ok{background:#34e27c;border-color:#1e8e3e}.pm-c.fix{background:#f6d365;border-color:#d4a72c}.pm-c.bad{background:#c8102e;border-color:#a50e0e;color:#fff}.pm-c.na{background:#dfe3e8;border-color:#9aa5b1}
+.pm-c:disabled{opacity:1}
+.pm-all{height:44px;padding:0 10px;border-radius:8px;border:2px dashed #1e8e3e;background:#fff;font:inherit;font-weight:800;font-size:12px;color:#1e6b34}
+.pm-v.ok{color:#1e6b34;font-weight:800}.pm-v.bad{color:#a50e0e;font-weight:800}.pm-v.fix{color:#8a4b00;font-weight:800}
+.pm-find{border:2px solid #c8102e}
+.pm-chain{border:2px solid #0069aa}
+.pm-told{margin:6px 10px;font-weight:700;color:#1e6b34;font-size:13px}
+.pm-wa{margin:6px 10px;width:calc(100% - 20px);background:#1e8e3e;color:#fff;border-color:#1e8e3e}.pm-wa small{color:#e9fbf0}
+.pm-rep{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:8px;border-bottom:1px solid #e1e5ea}
+.pm-rep input{min-width:0}
+.pm-wait{border:2px solid #6b5ca5}
+.bps-chip.wait{background:#6b5ca5;color:#fff;border-color:#6b5ca5}
+.pm-q + .seg{margin:0 10px 8px}
+.pm-chain .hint{padding:8px 10px 0;margin:0}
+.pm-waitbtn{display:block;width:100%;margin:2px 0 10px;padding:9px;border-radius:10px;border:2px dashed #6b5ca5;background:#fff;color:#4b3f85;font:inherit;font-weight:800;font-size:13px}
