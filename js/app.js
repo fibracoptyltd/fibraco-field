@@ -284,20 +284,27 @@ function openSig(label, done) {
 }
 
 // ---------- photos ----------
-function photoBlock(list) {
+function photoBlock(list, opts = {}) {
   const grid = h("div", { class: "photos" });
   const draw = () => { grid.replaceChildren(...list.map((p, i) => h("figure", {},
     photoImg(p, { alt: p.caption || "Site photo " + (i + 1) }),
     h("figcaption", {}, `${p.src}  |  ${p.time}`),
     inp("text", p.caption, v => p.caption = v, "Location or caption")))); grid.hidden = !list.length; };
   const add = async (files, src) => {
+    // Wanro 29 Oct: a photo that is already in this list, or (diary) already in the day's diary from anyone, is not added again
+    const pool = opts.day && S.project && S.date ? dayPhotos(dayKey()).filter(x => !list.some(y => y.ph && y.ph === x.ph)) : [], skipped = [];
     for (const f of files) {
       const time = new Date().toLocaleTimeString("en-ZA", { hour: "2-digit", minute: "2-digit" }), ph = "ph|" + Date.now().toString(36) + rid();
       const data = await shrinkPhoto(f).catch(() => null); if (!data) continue;
-      PHOTO_CACHE.set(ph, data); Store.put(ph, data, "ph");
-      list.push({ ph, url: data, caption: "", src, time, by: S.user });
+      const fp = await phFp(data); let dup = null;
+      if (fp) for (const q of [...list, ...pool]) { if (fpDist(fp, await fpOf(q, true)) <= FP_MAX) { dup = q; break; } }
+      if (dup) { skipped.push(dup); continue; }
+      PHOTO_CACHE.set(ph, data); Store.put(ph, data, "ph"); if (fp) FP_CACHE.set(ph, fp);
+      list.push({ ph, url: data, caption: "", src, time, by: S.user, fp });
     }
     draw(); persistSoon();
+    if (skipped.length) showInfo(skipped.length === 1 ? "Photo already in the diary" : `${skipped.length} photos already in the diary`,
+      skipped.map(q => `${q.by ? q.by + " loaded it" : "It was loaded"}${q.time ? " at " + String(q.time).replace(":", "h") : ""}${q.caption ? " (" + q.caption + ")" : ""}.`).join(" ") + ` ${opts.day ? "Today's diary already has it, so" : "So"} it was not added again.`);
   };
   const cam = h("input", { type: "file", accept: "image/*", capture: "environment", id: id("cam"), onchange: e => add(e.target.files, "App camera") });
   const gal = h("input", { type: "file", accept: "image/*", multiple: true, id: id("gal"), onchange: e => add(e.target.files, "From gallery") });
@@ -373,7 +380,7 @@ function vProjects() {
         bioSetup(); } }, "Fingerprint")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1793254627";
+const APPV = "1793257364";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -447,7 +454,7 @@ async function sendRegister(p, d, days) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793254627"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793254627"); await loadJs("./js/pdf.js?v=1793254627");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793257364"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793257364"); await loadJs("./js/pdf.js?v=1793257364");
     const { html, title } = attDoc(p, d, days); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
@@ -557,7 +564,7 @@ async function timeZone() {
   try {
     try { Store.kick(); await refreshDevices(true); } catch (e) {}
     await new Promise(r => setTimeout(r, 1800));
-    await loadJs("./js/lib/html2canvas.min.js?v=1793254627"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793254627"); await loadJs("./js/pdf.js?v=1793254627");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793257364"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793257364"); await loadJs("./js/pdf.js?v=1793257364");
     const D = tzData(), stamp = `${dmy(new Date())} ${hhmm()}`, name = `FIBRACO - Time Zone (${stamp})`;
     const pdf = await window.FibPdf.diaryPdf(tzHtml(D), name);
     const json = new File([JSON.stringify(D, null, 1)], name.replace(/[\\/:*?"<>|]+/g, "-") + ".json", { type: "application/json" });
@@ -1057,7 +1064,7 @@ function vDiary() {
       f.combined ? h("div", { style: "margin-top:4px" }, h("div", { class: "hint", style: "margin:2px 0" }, "Client sees it on the diary, or Internal (Fibraco only)?"),
         seg([["Client", "Client"], ["Internal", "Internal"]], (r.int !== undefined ? r.int : isInternal(r.c)) ? "Internal" : "Client", v => { r.int = v === "Internal"; })) : null),
       h("td", { style: "width:96px" }, inp("text", r.t, v => r.t = v, "Hrs"))), "+ Add delay", () => ({})),
-    sheet("", h("div", { class: "band" }, "Photo diary"), photoBlock(f.photos)),
+    sheet("", h("div", { class: "band" }, "Photo diary"), photoBlock(f.photos, { day: true })),
     f.correcting ? h("p", { class: "hint", style: "color:#8a4b00" }, "You are correcting a signed diary. Fix the team, the work done, the materials and the rest, then sign the correction with your PIN.") :
     f.combined ? h("p", { class: "hint" }, "No signature here. You sign once, in step 3 on the review page. The client signs on his own link the next morning.") : sheet("", h("div", { class: "band" }, "Representative"), h("table", {}, h("thead", {}, h("tr", {}, h("th", {}, ""), h("th", {}, "Fibraco rep"), h("th", {}, "Client rep"))), h("tbody", {},
       h("tr", {}, h("td", { class: "lab", style: "width:24%" }, "Name"), h("td", { class: "ro" }, f.user), h("td", {}, inp("text", f.clientRep, v => f.clientRep = v, "Client name"))),
@@ -1534,7 +1541,7 @@ async function recordPdf() {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793254627"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793254627"); await loadJs("./js/pdf.js?v=1793254627");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793257364"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793257364"); await loadJs("./js/pdf.js?v=1793257364");
     const f = S.form, src = [...app.children].filter(k => !k.matches(".bar, .fb-btn, .ro-bar, .psub, .err, .pnav, .addrow"));
     const box = document.createElement("div");
     for (const k of src) {
@@ -1785,7 +1792,7 @@ async function sendOrder(f) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793254627"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793254627"); await loadJs("./js/pdf.js?v=1793254627");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793257364"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793257364"); await loadJs("./js/pdf.js?v=1793257364");
     const { html, title } = orderDoc(f);
     const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
@@ -2618,7 +2625,7 @@ async function bpsReport(email) {
   const ov = h("div", { class: "overlay", role: "dialog" }, h("div", { class: "modal" }, h("h2", {}, email ? "Approving and emailing" : "Making the report"), h("p", {}, "Fetching the photos and building the PDF. Keep the app open on this screen.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793254627"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793254627"); await loadJs("./js/pdf.js?v=1793254627");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793257364"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793257364"); await loadJs("./js/pdf.js?v=1793257364");
     const ws = ["SUBSTATION", ...bpsWtgs()], phs = ws.flatMap(w => Object.values(bpsOf(w).ph).flat());
     await Promise.all(phs.map(p => p.ph && !PHOTO_CACHE.has(p.ph) && !(p.url || "").startsWith("data:") ? Store.photo(p.ph).then(d => { if (d) PHOTO_CACHE.set(p.ph, d); }).catch(() => {}) : 0));
     const d = bpsDoc(S.project);
@@ -3057,7 +3064,7 @@ function vMySection() {
     locked ? null : h("p", { class: "hint" }, "Client delays you log here go on the diary the client signs the next morning. That signature is our proof if time or standing time must be claimed."),
     sheet("", h("table", {}, h("tbody", {},
       h("tr", {}, h("td", { class: "lab" }, "Hours worked"), h("td", {}, locked ? h("div", { class: "ro" }, sec.hrs) : sel(hrsOpts, sec.hrs, v => sec.hrs = v, "Hrs")))))),
-    locked ? null : sheet("", h("div", { class: "band" }, "Photos"), photoBlock(sec.photos || (sec.photos = []))),
+    locked ? null : sheet("", h("div", { class: "band" }, "Photos"), photoBlock(sec.photos || (sec.photos = []), { day: true })),
     locked ? null : sheet("", h("table", {}, h("tbody", {}, h("tr", {}, h("td", { class: "lab" }, "My signature"), h("td", {}, sigCell(() => sec.sig, v => sec.sig = v, "Your signature", true)))))),
     locked ? h("div", { style: "text-align:center;margin:10px 0" }, statusPill(sec.status),
       canReopen(sec) ? h("div", { style: "margin-top:12px" },
@@ -3108,6 +3115,7 @@ function vReview() {
   const after = h("div", { class: "stack" },
     final && (isAdmin(S.user) || roleIn(S.user) === "sm") ? reportStatus(S.project, ymd(S.date)) : null,
     final || viewOnly ? h("button", { class: "mbtn", onclick: () => go("client") }, S.client[k] ? "Client signed. View the client copy" : "What the client sees", h("small", {}, S.client[k] ? `Signed by ${S.client[k].name} at ${S.client[k].at}` : "The page the client gets with the diary")) : null,
+    final && isAdmin(S.user) ? photoPicker(k) : null,
     final && isAdmin(S.user) && pmWait(k) ? h("button", { class: "submit", type: "button", style: "margin:4px 0 8px", onclick: () => approveDiary(k) }, "Approve and send to the client") : null,
     final && (!pmWait(k) || isAdmin(S.user)) ? h("button", { class: "mbtn", onclick: () => sendDiary(k, S.project, S.date) }, "Send diary", h("small", {}, "Makes the PDF and opens WhatsApp, email and the rest")) : null,
     final && isAdmin(S.user) ? h("button", { class: "mbtn", style: "border-color:#f29900;background:#fff8ec", onclick: () => openCorrection(k) }, pmWait(k) ? "Correct it first" : "Correct this diary", h("small", {}, pmWait(k) ? "Fix what the site manager missed, then sign. It goes to the client with your corrections" : "Office only. Fix it and sign, and the corrected diary goes to the client again")) : null,
@@ -3142,8 +3150,30 @@ function dayPhotos(k) {
   for (const sec of Object.values(S.sections[k] || {})) if (sec && sec.photos) for (const p of sec.photos) if (!out.some(x => x.ph && x.ph === p.ph)) out.push(p);
   const seen = new Set(); return out.filter(p => { const id = p.ph || p.url; if (!id || seen.has(id)) return false; seen.add(id); return true; });
 }
+// Wanro 29 Oct: before the diary goes to the client he sees the day's photos and taps any he wants left out. Repeats are left out by themselves.
+function photoPicker(k) {
+  const band = () => h("div", { class: "band" }, "Photos for the client");
+  const box = h("div", { class: "sheet" }, band(), h("p", { class: "hint", style: "margin:8px 12px" }, "Loading the day's photos..."));
+  const draw = () => {
+    const set = dayPhotoSet(k);
+    if (!set.length) { box.replaceChildren(band(), h("p", { class: "hint", style: "margin:8px 12px" }, "No photos were loaded on this day.")); return; }
+    const num = new Map(); let n = 0; set.forEach(x => { if (!x.dupOf) num.set(x.p, ++n); });
+    const toggle = x => { const f = Store.get("final|" + k) || {}, hp = new Set(f.hidePh || []); if (hp.has(x.p.ph)) hp.delete(x.p.ph); else hp.add(x.p.ph);
+      Store.put("final|" + k, Object.assign({}, f, { hidePh: [...hp] })); draw(); };
+    const going = set.filter(x => !x.dupOf && !x.hidden).length, reps = set.filter(x => x.dupOf).length;
+    box.replaceChildren(band(),
+      h("p", { class: "hint", style: "margin:8px 12px" }, `${going} photo${going === 1 ? "" : "s"} go${going === 1 ? "es" : ""} to the client.${reps ? ` ${reps} repeat${reps === 1 ? " was" : "s were"} left out by the app.` : ""} Tap a photo to leave it out or put it back.`),
+      h("div", { class: "pick-grid" }, ...set.map(x => h("button", { type: "button", class: "pick " + (x.dupOf ? "dup" : x.hidden ? "off" : "on"), disabled: !!x.dupOf, onclick: () => toggle(x) },
+        photoImg(x.p, { alt: x.p.caption || "Site photo" }),
+        h("span", { class: "pick-t" }, x.dupOf ? `Repeat of ${num.get(x.dupOf)}` : x.hidden ? "Left out" : `\u2713 ${num.get(x.p)}`),
+        h("small", {}, `${String(x.p.by || "").split(" ")[0]} ${x.p.time || ""}`.trim())))));
+  };
+  fetchDayPhotos(k).then(draw, draw);
+  return box;
+}
 async function fetchDayPhotos(k) { // photos come from the server only when needed, so fetch them before the PDF is made
   await Promise.all(dayPhotos(k).map(p => p.ph && !PHOTO_CACHE.has(p.ph) && !(p.url || "").startsWith("data:") ? Store.photo(p.ph).then(d => { if (d) PHOTO_CACHE.set(p.ph, d); }).catch(() => {}) : 0));
+  for (const p of dayPhotos(k)) await fpOf(p, false); // fingerprints, so repeats are left out of the PDF
 }
 function diaryDoc(k, project, date) {
   const site = Store.get("site|" + k) || {}, fin = Store.get("final|" + k) || {};
@@ -3177,10 +3207,10 @@ function diaryDoc(k, project, date) {
   <h2>Site instructions</h2><table class="kv">${row("Written", site.written || "None")}${row("Verbal", site.verbal || "None")}</table>
   <h2>Material delivered to site</h2>${tbl(["No", "Material"], (site.mats || []).filter(r => r.m).map((r, i) => [i + 1, r.m]))}
   <h2>Delays</h2>${tbl(["No", "Cause", "Time lost"], delays.map((d, i) => [i + 1, noName(d.c), d.t ? `${d.t} hrs` : ""]))}
-  ${(() => { const ph = dayPhotos(k).map(p => ({ src: (p.url || "").startsWith("data:") ? p.url : PHOTO_CACHE.get(p.ph), p })).filter(x => x.src);
+  ${(() => { const ph = dayPhotoSet(k).filter(x => !x.dupOf && !x.hidden).map(({ p }) => ({ src: phSrc(p), p })).filter(x => x.src);
     return ph.length ? `<h2>Photo diary (${ph.length})</h2><div class="pgrid">${ph.map(({ src, p }, i) => `<figure${i < 2 ? ' class="f1"' : ""}><img src="${src}" alt="Photo ${i + 1}"><figcaption>${i + 1}. ${esc(noName(p.caption) || "Site photo")}${p.time ? `  |  ${esc(p.time)}` : ""}</figcaption></figure>`).join("")}</div>` : ""; })()}
   <div class="sigs">
-    <div>${fin.pmOk ? `<h3>Fibraco project manager</h3><div class="sigline">${fin.pmSig ? `<img src="${fin.pmSig}" alt="Signature">` : ""}</div><div>${esc(fin.pmBy)}, Project Manager</div><div>Approved ${esc(fin.pmAt || "")} on ${esc(fin.pmDate || "")}</div>
+    <div>${fin.pmOk ? `<h3>Fibraco project manager</h3><div class="sigline">${fin.pmSig ? `<img src="${fin.pmSig}" alt="Signature">` : ""}</div><div>${esc(fin.pmBy)}, Project Manager</div><div>${fin.rev ? "Corrected and approved" : "Approved"} ${esc(fin.pmAt || "")} on ${esc(fin.pmDate || "")}</div>${fin.rev && fin.revWhy ? `<div style="margin-top:6px;font-size:11.5px"><b>Correction:</b> ${esc(fin.revWhy)}</div>` : ""}
       <div style="margin-top:8px;font-size:11.5px">Site manager: ${esc(fin.by || smName())}${fin.rev ? "" : `, signed ${esc(fin.at || "")}`}</div>${!fin.rev && fin.sig ? `<img src="${fin.sig}" alt="Site manager signature" style="height:34px;margin-top:2px">` : ""}`
       : `<h3>Fibraco site manager</h3><div class="sigline">${fin.sig ? `<img src="${fin.sig}" alt="Signature">` : ""}</div><div>${esc(fin.by || smName())}</div><div>Signed ${esc(fin.at || "")}</div>`}</div>
     <div><h3>Client representative</h3><div class="sigline"></div><div>Name: ${project.sm ? esc(String(project.sm).split(",")[0]) : "______________________"}</div><div>Date: ______________________</div></div>
@@ -3207,7 +3237,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793254627"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793254627"); await loadJs("./js/pdf.js?v=1793254627");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793257364"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793257364"); await loadJs("./js/pdf.js?v=1793257364");
     await fetchDayPhotos(k);
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
@@ -3301,6 +3331,12 @@ let mqBusy = false;
 // (app closed or put away while sending), so it sent again every time the app opened. Now:
 // only one copy of the app may send at a time, a job is marked "on its way" before it goes, and a job whose
 // answer was lost is never sent again by itself. The person is asked to check their inbox first.
+// Wanro 29 Oct: the corrected diary never went because the phone was put away halfway. While sending, the screen stays on
+// and a bar says to keep the app open.
+async function wakeOn() { let wl = null; try { if (navigator.wakeLock && document.visibilityState === "visible") wl = await navigator.wakeLock.request("screen"); } catch (e) {}
+  if (!document.getElementById("sendbar")) document.body.append(h("div", { id: "sendbar", class: "sendbar", role: "status" }, h("b", {}, "BUSY SENDING TO THE CLIENT"), h("small", {}, "Keep the app open on this screen. Do not lock the phone or switch apps until it says Emailed.")));
+  return wl; }
+function wakeOff(wl) { try { if (wl) wl.release(); } catch (e) {} const b = document.getElementById("sendbar"); if (b) b.remove(); }
 async function processMailQ() {
   if (navigator.locks && navigator.locks.request) return navigator.locks.request("fib-mailq", { ifAvailable: true }, lock => lock ? processMailQ1() : null);
   return processMailQ1();
@@ -3313,8 +3349,10 @@ async function processMailQ1() {
   for (const j of q) if (j.inflight || (!j.id && j.tries > 0)) { j.unsure = true; delete j.inflight; mqSave(j); }
   const go = q.filter(j => !j.unsure); if (!go.length) { if (["review", "menu", "today"].includes(S.view)) render(); return; }
   mqBusy = true; if (["review", "done"].includes(S.view)) render();
+  let wl = null;
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793254627"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793254627"); await loadJs("./js/pdf.js?v=1793254627");
+    wl = await wakeOn();
+    await loadJs("./js/lib/html2canvas.min.js?v=1793257364"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793257364"); await loadJs("./js/pdf.js?v=1793257364");
     for (const j of go) {
       const p = CFG.projects.find(x => x.id === j.pid); if (!p) { j.done = true; continue; }
       if (!j.flash) { const m0 = Store.get(`mail|${j.pid}|${j.ds}`); if (m0 && m0.jobAt && m0.jobAt >= j.at) { j.done = true; continue; } } // another phone already sent it
@@ -3373,7 +3411,7 @@ async function processMailQ1() {
       mqSave(j);
     }
   } catch (e) { window.__mqErr = String(e && e.message || e); /* PDF tools not loaded yet; try again later */ }
-  finally { const jk = x => x.id || x.flash || x.pid + "|" + x.ds; mqSet(mqGet().map(x => go.find(y => jk(y) === jk(x)) || x).filter(x => !x.done)); mqBusy = false; if (["done", "review", "menu", "mychecks", "today"].includes(S.view)) render(); }
+  finally { wakeOff(wl); const jk = x => x.id || x.flash || x.pid + "|" + x.ds; mqSet(mqGet().map(x => go.find(y => jk(y) === jk(x)) || x).filter(x => !x.done)); mqBusy = false; if (["done", "review", "menu", "mychecks", "today"].includes(S.view)) render(); }
 }
 addEventListener("online", () => setTimeout(processMailQ, 2000));
 window.FibReports = { queue: (pid, ds) => queueReports(CFG.projects.find(x => x.id === pid), new Date(ds + "T12:00:00")), run: () => processMailQ(), pending: () => mqGet() };
@@ -3722,6 +3760,35 @@ function gotoPageOf(el) {
 // ---------- live layer: identity, PIN, saving, sync, feedback ----------
 const CONF = { url: "https://ahbcixfknqgqvmauhnyo.supabase.co", anon: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFoYmNpeGZrbnFncXZtYXVobnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIxNzI0NDMsImV4cCI6MjEwNzc0ODQ0M30.n58qy_PcGFoi9-JGzUecra9ggxUn_Yprsg9kO_2M02c" };
 const PHOTO_CACHE = new Map();
+// Wanro 29 Oct: the same picture went into the 28 Oct diary 2 and 3 times, loaded by different people.
+// A fingerprint of the picture itself (not the file) finds a repeat even after WhatsApp or a re-save.
+// The bottom strip with the name and time is left out. Tested on the 28 Oct photos: repeats differ by 2 to 14 of 256, different photos by 87 or more.
+const FP_CACHE = new Map(), FP_MAX = 30;
+function phFp(src) {
+  return new Promise(res => { if (!src) return res(""); const im = new Image();
+    im.onload = () => { try {
+      const W = im.naturalWidth, H = Math.round(im.naturalHeight * 0.92), c1 = document.createElement("canvas"); c1.width = 136; c1.height = 128;
+      const x1 = c1.getContext("2d"); x1.imageSmoothingQuality = "high"; x1.drawImage(im, 0, 0, W, H, 0, 0, 136, 128);
+      const c = document.createElement("canvas"); c.width = 17; c.height = 16; const x = c.getContext("2d"); x.imageSmoothingQuality = "high"; x.drawImage(c1, 0, 0, 17, 16);
+      const d = x.getImageData(0, 0, 17, 16).data, g = i => d[i * 4] * .299 + d[i * 4 + 1] * .587 + d[i * 4 + 2] * .114;
+      let bits = ""; for (let r = 0; r < 16; r++) for (let q = 0; q < 16; q++) bits += g(r * 17 + q + 1) > g(r * 17 + q) ? "1" : "0";
+      let hex = ""; for (let i = 0; i < 256; i += 4) hex += parseInt(bits.slice(i, i + 4), 2).toString(16); res(hex);
+    } catch (e) { res(""); } };
+    im.onerror = () => res(""); im.src = src; });
+}
+const fpDist = (a, b) => { if (!a || !b || a.length !== b.length) return 999; let n = 0; for (let i = 0; i < a.length; i++) { let v = parseInt(a[i], 16) ^ parseInt(b[i], 16); while (v) { n += v & 1; v >>= 1; } } return n; };
+const phSrc = p => p && (p.url || "").startsWith("data:") ? p.url : p ? PHOTO_CACHE.get(p.ph) : null;
+async function fpOf(p, fetch) {
+  if (!p) return ""; if (p.fp) return p.fp; const key = p.ph || p.url; if (FP_CACHE.has(key)) return FP_CACHE.get(key);
+  let src = phSrc(p); if (!src && fetch && p.ph && Store.online()) { src = await Store.photo(p.ph).catch(() => null); if (src) PHOTO_CACHE.set(p.ph, src); }
+  const f = src ? await phFp(src) : ""; if (f) FP_CACHE.set(key, f); return f;
+}
+// the day's photos with repeats marked: keep the first, the rest point to it. hide = photos Wanro took off the client copy
+function dayPhotoSet(k) {
+  const fin = Store.get("final|" + k) || {}, hide = new Set(fin.hidePh || []), kept = [];
+  return dayPhotos(k).map(p => { const f = p.fp || FP_CACHE.get(p.ph || p.url), first = f ? kept.find(x => fpDist(x.f, f) <= FP_MAX) : null;
+    const o = { p, f, dupOf: first ? first.p : null, hidden: hide.has(p.ph) }; if (!first && f) kept.push({ p, f }); return o; });
+}
 const lastSaved = new Map();
 const strip = (k, v) => k === "url" ? undefined : (k === "project" && v && typeof v === "object") ? v.id : v;
 const J = o => JSON.stringify(o, strip);
@@ -4460,7 +4527,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793254627"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793254627"); await loadJs("./js/pdf.js?v=1793254627");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793257364"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793257364"); await loadJs("./js/pdf.js?v=1793257364");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),

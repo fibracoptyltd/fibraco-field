@@ -837,3 +837,15 @@ body.vgrid .bps-tile{aspect-ratio:auto;min-height:60px;padding:5px 2px;gap:3px;b
 body.vgrid .bps-tile b{font-size:13px;line-height:1.1}
 body.vgrid .bps-chips{gap:3px;margin-top:2px}
 body.vgrid .bps-chip{font-size:8.5px;padding:1px 4px}
+
+/* photos for the client (Wanro 29 Oct): tap to leave out, repeats greyed */
+.pick-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:0 10px 10px}
+.pick{position:relative;border:3px solid #34e27c;border-radius:8px;padding:0;background:#fff;overflow:hidden;display:flex;flex-direction:column;font:inherit;color:#15191e}
+.pick img{width:100%;aspect-ratio:1;object-fit:cover;display:block;min-height:0!important}
+.pick-t{font-size:11px;font-weight:800;padding:3px 4px 0}
+.pick small{font-size:10px;color:#5b6470;padding:0 4px 3px}
+.pick.off{border-color:#c9ced6}.pick.off img{opacity:.35;filter:grayscale(1)}.pick.off .pick-t{color:#8a8f98}
+.pick.dup{border-color:#e7ebf0;border-style:dashed}.pick.dup img{opacity:.3;filter:grayscale(1)}.pick.dup .pick-t{color:#8a8f98}
+/* sending bar (Wanro 29 Oct) */
+.sendbar{position:fixed;left:0;right:0;top:0;z-index:2147482000;background:#0069aa;color:#fff;text-align:center;padding:calc(10px + env(safe-area-inset-top,0px)) 14px 10px;display:flex;flex-direction:column;gap:2px;box-shadow:0 3px 12px rgba(0,0,0,.25)}
+.sendbar b{font-size:15px;letter-spacing:.05em}.sendbar small{font-size:12px;opacity:.95}
