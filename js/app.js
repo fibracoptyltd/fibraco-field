@@ -380,7 +380,7 @@ function vProjects() {
         bioSetup(); } }, "Fingerprint")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1793300799";
+const APPV = "1793301060";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -454,7 +454,7 @@ async function sendRegister(p, d, days) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793300799"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793300799"); await loadJs("./js/pdf.js?v=1793300799");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793301060"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793301060"); await loadJs("./js/pdf.js?v=1793301060");
     const { html, title } = attDoc(p, d, days); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
@@ -564,7 +564,7 @@ async function timeZone() {
   try {
     try { Store.kick(); await refreshDevices(true); } catch (e) {}
     await new Promise(r => setTimeout(r, 1800));
-    await loadJs("./js/lib/html2canvas.min.js?v=1793300799"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793300799"); await loadJs("./js/pdf.js?v=1793300799");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793301060"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793301060"); await loadJs("./js/pdf.js?v=1793301060");
     const D = tzData(), stamp = `${dmy(new Date())} ${hhmm()}`, name = `FIBRACO - Time Zone (${stamp})`;
     const pdf = await window.FibPdf.diaryPdf(tzHtml(D), name);
     const json = new File([JSON.stringify(D, null, 1)], name.replace(/[\\/:*?"<>|]+/g, "-") + ".json", { type: "application/json" });
@@ -706,6 +706,8 @@ const TI = {
   drill2: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>',
   pen: '<path d="M4 20h4l10-10-4-4L4 16z"/><path d="M14 6l4 4"/>',
   book: '<path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11"/><path d="M9 8h6"/>',
+  camera: '<path d="M3 8h4l2-3h6l2 3h4v12H3z"/><circle cx="12" cy="14" r="3.5"/>',
+  folder: '<path d="M3 6h6l2 2h10v11H3z"/>',
   shield: '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/>',
   eye: '<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
   wave: '<path d="M3 18h18"/><path d="M3 15l3-6 3 4 3-8 3 10 3-5 3 5"/>',
@@ -879,6 +881,7 @@ function vMenuTiles() {
         tile("map", "Drawings and\nschedule", () => go("drawings")),
         tile("clock", "Internal\ndelays", () => go("delays"), dl),
         tile("list", "Records", () => { S.recProj = p.id; S.recF = null; go("records"); }),
+        tile("camera", "Image\ndiary", () => go("imgdiary")),
         contacts]]]);
   } else {
     const t = myTasks(S.user), sec = sectionOf(S.user);
@@ -1541,7 +1544,7 @@ async function recordPdf() {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793300799"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793300799"); await loadJs("./js/pdf.js?v=1793300799");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793301060"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793301060"); await loadJs("./js/pdf.js?v=1793301060");
     const f = S.form, src = [...app.children].filter(k => !k.matches(".bar, .fb-btn, .ro-bar, .psub, .err, .pnav, .addrow"));
     const box = document.createElement("div");
     for (const k of src) {
@@ -1792,7 +1795,7 @@ async function sendOrder(f) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793300799"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793300799"); await loadJs("./js/pdf.js?v=1793300799");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793301060"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793301060"); await loadJs("./js/pdf.js?v=1793301060");
     const { html, title } = orderDoc(f);
     const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
@@ -2629,7 +2632,7 @@ async function bpsReport(email) {
   const ov = h("div", { class: "overlay", role: "dialog" }, h("div", { class: "modal" }, h("h2", {}, email ? "Approving and emailing" : "Making the report"), h("p", {}, "Fetching the photos and building the PDF. Keep the app open on this screen.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793300799"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793300799"); await loadJs("./js/pdf.js?v=1793300799");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793301060"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793301060"); await loadJs("./js/pdf.js?v=1793301060");
     const ws = ["SUBSTATION", ...bpsWtgs()], phs = ws.flatMap(w => Object.values(bpsOf(w).ph).flat());
     await Promise.all(phs.map(p => p.ph && !PHOTO_CACHE.has(p.ph) && !(p.url || "").startsWith("data:") ? Store.photo(p.ph).then(d => { if (d) PHOTO_CACHE.set(p.ph, d); }).catch(() => {}) : 0));
     const d = bpsDoc(S.project);
@@ -3191,6 +3194,49 @@ function photoPicker(k) {
   fetchDayPhotos(k).then(draw, draw);
   return box;
 }
+// ---------- image diary (Wanro 29 Oct) ----------
+// Every photo anyone loaded on this project, in a folder per person, kept for good and downloadable at any time.
+// Photos Wanro leaves out of the client's diary stay here too.
+function bpsSlotName(slot) {
+  for (const d of [BPS_WTG.el, BPS_WTG.tc, BPS_SUB.el, BPS_SUB.tc]) { const x = d.ph.find(r => r[0] === slot); if (x) return `${x[2]} ${x[1]}`; }
+  return slot === "p16" || slot === "s16" ? "Pic. 16 Patch cords left on site" : "Bioseco sheet";
+}
+function allProjectPhotos(pid) {
+  const out = [], seen = new Set();
+  const add = (p, who, where, day) => { if (!p || !(p.ph || p.url)) return; const id = p.ph || p.url; if (seen.has(id)) return; seen.add(id);
+    out.push({ p, who: p.by || who || "Unknown", where, day: phDay(p.ph) || day || "" }); };
+  for (const [id, s] of Store.list("site|" + pid + "|")) { const day = id.split("|").pop(), fin = Store.get(`final|${pid}|${day}`) || {}; for (const p of (s && s.photos) || []) add(p, fin.by, "Daily diary", day); }
+  for (const [id, s] of Store.list("sec|" + pid + "|")) { const x = id.split("|"); for (const p of (s && s.photos) || []) add(p, x[x.length - 1], "Daily diary", x[x.length - 2]); }
+  for (const [k, secs] of Object.entries(S.sections || {})) if (k.startsWith(pid + "|")) for (const [who, sec] of Object.entries(secs || {})) for (const p of (sec && sec.photos) || []) add(p, who, "Daily diary", k.slice(pid.length + 1));
+  const bio = Object.assign({}, Object.fromEntries(Store.list("bio|" + pid + "|").map(([id, o]) => [id.split("|").slice(2).join("|"), o])), (S.bio || {})[pid] || {});
+  for (const [w, B] of Object.entries(bio)) for (const [slot, arr] of Object.entries((B && B.pc && B.pc.ph) || {})) for (const p of arr || []) add(p, "", `${w === "SUBSTATION" ? "Substation" : w}, ${bpsSlotName(slot)}`, "");
+  return out;
+}
+function vImgDiary() {
+  const p = S.project, all = allProjectPhotos(p.id), pm = (pmPerson() || {}).name;
+  const names = [...new Set([pm, ...Object.keys(p.team || {}), ...all.map(x => x.who)].filter(Boolean))];
+  return [topbar("Image diary", p.short, true),
+    h("p", { class: "form-sub" }, "Every photo loaded on this project, in a folder per person, kept for good. Photos left out of the client's diary stay here too."),
+    tBlocks("", [["pj", "Folders", names.map(n => { const c = all.filter(x => x.who === n).length;
+      return tile("folder", `${n.split(" ")[0]}\n${c} photo${c === 1 ? "" : "s"}`, () => { S.imgWho = n; go("imgfolder"); }); })]])];
+}
+function vImgFolder() {
+  const p = S.project, who = S.imgWho, list = allProjectPhotos(p.id).filter(x => x.who === who);
+  const days = [...new Set(list.map(x => x.day))].sort().reverse();
+  const fname = x => `${p.short} ${x.day || ""} ${String(x.p.time || "").replace(":", "h")} ${who.split(" ")[0]} ${String(x.p.ph || "").slice(-5)}`.replace(/[^\w\- ]+/g, "").trim().replace(/\s+/g, "_") + ".jpg";
+  const save = async x => {
+    let d = phSrc(x.p); if (!d && x.p.ph) { d = await Store.photo(x.p.ph).catch(() => null); if (d) PHOTO_CACHE.set(x.p.ph, d); }
+    if (!d) { toast("Photo not loaded yet. Connect to signal."); return false; }
+    const a = document.createElement("a"); a.href = d; a.download = fname(x); document.body.append(a); a.click(); a.remove(); return true;
+  };
+  return [topbar(who, `${p.short}  |  Image diary`, true),
+    h("p", { class: "form-sub" }, `${list.length} photo${list.length === 1 ? "" : "s"}, newest day first. Tap a photo to save it to the phone.`),
+    list.length ? h("button", { class: "mbtn", type: "button", onclick: async () => { let n = 0; for (const x of list) { if (await save(x)) n++; await new Promise(r => setTimeout(r, 450)); } toast(`${n} of ${list.length} photos saved`); } },
+      `DOWNLOAD ALL (${list.length})`, h("small", {}, "Saves every photo in this folder to the phone")) : h("p", { class: "hint", style: "margin:8px 12px" }, "No photos yet."),
+    ...days.map(d => sheet("", h("div", { class: "band" }, d ? nice(new Date(d + "T12:00:00")) : "Date not known"),
+      h("div", { class: "photos" }, ...list.filter(x => x.day === d).map(x => h("figure", { style: "cursor:pointer", onclick: () => save(x) },
+        photoImg(x.p, { alt: x.p.caption || "Site photo" }), h("figcaption", {}, [x.where, x.p.caption, x.p.time].filter(Boolean).join("  |  "))))))) ];
+}
 async function fetchDayPhotos(k) { // photos come from the server only when needed, so fetch them before the PDF is made
   await Promise.all(dayPhotos(k).map(p => p.ph && !PHOTO_CACHE.has(p.ph) && !(p.url || "").startsWith("data:") ? Store.photo(p.ph).then(d => { if (d) PHOTO_CACHE.set(p.ph, d); }).catch(() => {}) : 0));
   for (const p of dayPhotos(k)) await fpOf(p, false); // fingerprints, so repeats are left out of the PDF
@@ -3259,7 +3305,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793300799"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793300799"); await loadJs("./js/pdf.js?v=1793300799");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793301060"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793301060"); await loadJs("./js/pdf.js?v=1793301060");
     await fetchDayPhotos(k);
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
@@ -3374,7 +3420,7 @@ async function processMailQ1() {
   let wl = null;
   try {
     wl = await wakeOn();
-    await loadJs("./js/lib/html2canvas.min.js?v=1793300799"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793300799"); await loadJs("./js/pdf.js?v=1793300799");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793301060"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793301060"); await loadJs("./js/pdf.js?v=1793301060");
     for (const j of go) {
       const p = CFG.projects.find(x => x.id === j.pid); if (!p) { j.done = true; continue; }
       if (!j.flash) { const m0 = Store.get(`mail|${j.pid}|${j.ds}`); if (m0 && m0.jobAt && m0.jobAt >= j.at) { j.done = true; continue; } } // another phone already sent it
@@ -3746,7 +3792,7 @@ function vDelays() {
 // ---------- render ----------
 let render = function () {
   const v = S.view;
-  const views = { users: vUsers, projects: vProjects, calendar: vCalendar, menu: vMenu, inspections: vInspections, client: vClient, tests: vTests, link: vLink, logtest: vLogTest, biocheck: vBioCheck, allocate: vAllocate, mysection: vMySection, review: vReview, kpi: vKpi, rams: vRams, ramsdoc: vRamsDoc, drawings: vDrawings, drawing: vDrawing, diary: vDiary, dsti: vDsti, dstilist: vDstiList, dstiopen: vDstiOpen, bps: vBps, bpswtg: vBpsWtg, bpssub: vBpsSub, iqc: vIqc, inspection: vInspection, check: vCheck, toolbox: vToolbox, incident: vIncident, si: vSI, order: vOrder, done: vDone, feedback: vFeedback, devices: vDevices, dash: vDash, qc: vQc, qcspot: vQcSpot, tsheets: vTsheets, tsheet: vTsheet, treport: vTreport, attendance: vAttendance, claude: vClaude, delays: vDelays, nearmiss: vNearMiss, jobobs: vJobObs, adhoc: vAdhoc, adhocjob: vAdhocJob, mychecks: vMyChecks, invest: vInvest, today: vToday, records: vRecords };
+  const views = { users: vUsers, projects: vProjects, calendar: vCalendar, menu: vMenu, inspections: vInspections, client: vClient, tests: vTests, link: vLink, logtest: vLogTest, biocheck: vBioCheck, allocate: vAllocate, mysection: vMySection, review: vReview, kpi: vKpi, rams: vRams, ramsdoc: vRamsDoc, drawings: vDrawings, drawing: vDrawing, diary: vDiary, dsti: vDsti, dstilist: vDstiList, dstiopen: vDstiOpen, bps: vBps, bpswtg: vBpsWtg, bpssub: vBpsSub, iqc: vIqc, inspection: vInspection, check: vCheck, toolbox: vToolbox, incident: vIncident, si: vSI, order: vOrder, done: vDone, feedback: vFeedback, devices: vDevices, dash: vDash, qc: vQc, qcspot: vQcSpot, tsheets: vTsheets, tsheet: vTsheet, treport: vTreport, attendance: vAttendance, claude: vClaude, delays: vDelays, nearmiss: vNearMiss, jobobs: vJobObs, adhoc: vAdhoc, adhocjob: vAdhocJob, mychecks: vMyChecks, invest: vInvest, today: vToday, records: vRecords, imgdiary: vImgDiary, imgfolder: vImgFolder };
   document.body.classList.toggle("qcro", !!S.qcRO && ["iqc", "biocheck", "bps", "bpswtg", "bpssub"].includes(v));
   document.body.classList.toggle("vmenu", v === "menu" && TILES());
   document.body.classList.toggle("vgrid", v === "bps" || v === "iqc");
@@ -4562,7 +4608,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793300799"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793300799"); await loadJs("./js/pdf.js?v=1793300799");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793301060"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793301060"); await loadJs("./js/pdf.js?v=1793301060");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
