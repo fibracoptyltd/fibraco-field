@@ -225,6 +225,10 @@ const Store = (() => {
     // office only
     listDevices: () => rpc("list_devices", {}),
     setDevice: (member, dev, status) => rpc("set_device", { p_member: member, p_dev: dev, p_status: status }),
+    // Wanro 30 Oct: a box in the setup file meant for this person only, opened with a key made from this phone's own link token
+    async personal(box) { if (!box || !TOKEN) return null;
+      try { const raw = await crypto.subtle.digest("SHA-256", enc.encode("fibraco-personal|" + TOKEN)), k = await crypto.subtle.importKey("raw", raw, "AES-GCM", false, ["decrypt"]);
+        const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: unb64url(box.iv) }, k, unb64url(box.ct)); return JSON.parse(new TextDecoder().decode(pt)); } catch (e) { return null; } },
     // kept on this phone only, scrambled, never sent to the server
     async keepLocal(k, v) { await metaSet("loc_" + k, v == null ? null : await seal(v)); },
     async readLocal(k) { const b = await metaGet("loc_" + k).catch(() => null); if (!b) return null; try { return await open(b.iv, b.data); } catch (e) { return null; } },
