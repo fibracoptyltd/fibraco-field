@@ -380,7 +380,7 @@ function vProjects() {
         bioSetup(); } }, "Fingerprint")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1793388137";
+const APPV = "1793391164";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -463,7 +463,7 @@ async function sendRegister(p, d, days) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793388137"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793388137"); await loadJs("./js/pdf.js?v=1793388137");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793391164"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793391164"); await loadJs("./js/pdf.js?v=1793391164");
     const { html, title } = attDoc(p, d, days); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
@@ -573,7 +573,7 @@ async function timeZone() {
   try {
     try { Store.kick(); await refreshDevices(true); } catch (e) {}
     await new Promise(r => setTimeout(r, 1800));
-    await loadJs("./js/lib/html2canvas.min.js?v=1793388137"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793388137"); await loadJs("./js/pdf.js?v=1793388137");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793391164"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793391164"); await loadJs("./js/pdf.js?v=1793391164");
     const D = tzData(), stamp = `${dmy(new Date())} ${hhmm()}`, name = `FIBRACO - Time Zone (${stamp})`;
     const pdf = await window.FibPdf.diaryPdf(tzHtml(D), name);
     const json = new File([JSON.stringify(D, null, 1)], name.replace(/[\\/:*?"<>|]+/g, "-") + ".json", { type: "application/json" });
@@ -836,6 +836,11 @@ function vProjectsTiles() {
         return h("button", { type: "button", class: "tproj", onclick: () => { S.project = p; S.date = today(); S.month = today(); go("menu"); } },
           h("span", { class: "tdot", style: `background:${col}` }), h("span", { class: "tpt" }, h("b", {}, p.name.toUpperCase()), h("small", {}, line)), h("span", { class: "tgo", "aria-hidden": "true" }, "›")); })),
       PROJECTS.length ? null : h("p", { class: "note" }, "No active projects yet. The office adds you to a project."),
+      // Wanro 30 Oct: the zero tolerance leaflet on everybody's front page until he has signed FIB-POL-002
+      admin ? null : (() => { const pol = POLS().find(x => x.no === "FIB-POL-002"); if (!pol) return null; const sg = polSigOf(pol, meId()), ready = polReady(pol);
+        return h("button", { type: "button", class: "mbtn zt-bar" + (sg ? " ok" : ""), "aria-label": "Zero tolerance, alcohol and drugs", onclick: () => { S.pol = pol.id; go("policy"); } }, "Zero tolerance: alcohol and drugs",
+          h("small", {}, "0.00 or you do not work. First positive test: final written warning. Second: disciplinary hearing, you can be dismissed. Refusing a test counts as positive."),
+          h("em", {}, sg ? `Signed ${dmy(new Date(sg.at))}` : ready ? "Tap to read it and sign with your PIN" : "Read it now. Signing opens soon")); })(),
       // Wanro 30 Oct: the Bioseco team opens BIOSECO Poland QC live straight from the front page
       admin ? null : (() => { const c = SHARE(), bp = c && PROJECTS.find(x => x.id === c.pid); if (!bp || !qcLive(bp, "commissioning")) return null;
         const bd = Object.values(SH.recs).filter(o => o && o.t === "board" && o.v === 2 && o.pid === bp.id), done = bd.filter(o => o.st === "done" || o.st === "vpn").length;
@@ -1569,7 +1574,7 @@ async function recordPdf() {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793388137"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793388137"); await loadJs("./js/pdf.js?v=1793388137");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793391164"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793391164"); await loadJs("./js/pdf.js?v=1793391164");
     const f = S.form, src = [...app.children].filter(k => !k.matches(".bar, .fb-btn, .ro-bar, .psub, .err, .pnav, .addrow"));
     const box = document.createElement("div");
     for (const k of src) {
@@ -1820,7 +1825,7 @@ async function sendOrder(f) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793388137"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793388137"); await loadJs("./js/pdf.js?v=1793388137");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793391164"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793391164"); await loadJs("./js/pdf.js?v=1793391164");
     const { html, title } = orderDoc(f);
     const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
@@ -3120,7 +3125,7 @@ function liveExtra(pid) {
 }
 // Wanro 30 Oct: Piotr's table, filled in by itself. The office marks extra works. Download his Excel or email it to him.
 const piotrRows = () => { const o = {}; for (const [r, , w] of LiveUI.PIOTR) { const y = liveBoard(w, 0).y; o[r] = LiveUI.PCOLS.map(([k]) => y[k]); } return o; };
-async function piotrFile() { await loadJs("./js/piotr.js?v=1793388137"); const b = window.PiotrXlsx.build(piotrRows()); return new File([b], `Bioseco_Wolf_Fibraco_status (${dmy(today())}).xlsx`, { type: b.type }); }
+async function piotrFile() { await loadJs("./js/piotr.js?v=1793391164"); const b = window.PiotrXlsx.build(piotrRows()); return new File([b], `Bioseco_Wolf_Fibraco_status (${dmy(today())}).xlsx`, { type: b.type }); }
 function vPiotr() {
   const p = S.project, admin = isAdmin(S.user), box = h("div", { class: "lv" });
   const cell = (w, k, v) => { if (k !== "xw" || !admin) return null; const c = bpsOf(w);
@@ -3141,7 +3146,7 @@ function vPiotr() {
     admin && xw.length ? sheet("", h("div", { class: "band" }, "Extra works, a short note each (Bioseco see it)"), h("table", {}, h("tbody", {}, ...xw.map(([, lab, w]) => { const c = bpsOf(w);
       return h("tr", {}, h("td", { class: "lab" }, lab), h("td", {}, inp("text", c.xw.note, v => { c.xw.note = v; persistSoon(); shareSoon(1500); }, "e.g. module replaced on Bioseco's request"))); })))) : null,
     h("div", { class: "row", style: "gap:8px;flex-wrap:wrap" },
-      h("button", { type: "button", class: "btn-w", onclick: async () => { try { const f = await piotrFile(); await loadJs("./js/pdf.js?v=1793388137"); await window.FibPdf.shareFile(f, f.name); } catch (e) { showInfo("Could not make the Excel", `${e.message || e}.`); } } }, "Download the Excel"),
+      h("button", { type: "button", class: "btn-w", onclick: async () => { try { const f = await piotrFile(); await loadJs("./js/pdf.js?v=1793391164"); await window.FibPdf.shareFile(f, f.name); } catch (e) { showInfo("Could not make the Excel", `${e.message || e}.`); } } }, "Download the Excel"),
       admin ? h("button", { type: "button", class: "submit", onclick: send }, "Email it to Piotr now") : null)];
 }
 function vLive() {
@@ -3200,10 +3205,10 @@ function vPolicy() {
 // One case per incident: the facts (with the alcohol test record when it is alcohol), the notice, his side, the decision
 // and the signatures. The register shows each man's valid warnings and when they expire, so the next step is always clear.
 // Records "warn|..." carry only the office's tag, so nobody else's phone ever gets them.
-const W_LEVELS = { counsel: ["Counselling", 0], verbal: ["Verbal warning (recorded)", 3], written: ["Written warning", 6], final: ["Final written warning", 12], enquiry: ["Disciplinary enquiry", 0], dismissed: ["Dismissed after an enquiry", 0], none: ["Not proved, no action", 0] };
+const W_LEVELS = { counsel: ["Counselling", 0], verbal: ["Verbal warning (recorded)", 3], written: ["Written warning", 6], final: ["Final written warning", 12], enquiry: ["Disciplinary hearing", 0], dismissed: ["Dismissed after a hearing", 0], none: ["Not proved, no action", 0] };
 const W_CATS = [
-  ["alc_gate", "Positive alcohol or drug test, or refusal, at the client's gate or before work", ["enquiry"], true],
-  ["alc_work", "Under the influence of alcohol or drugs while working", ["enquiry"], true],
+  ["alc_gate", "Positive alcohol or drug test, refusal or tampering, at the client's gate, before work or while working", ["final", "enquiry"], true],
+  ["alc_work", "Positive alcohol or drug test linked to an incident, an injury or damage", ["enquiry"], true],
   ["accom", "Alcohol at company-arranged accommodation on a work night", ["written", "final", "enquiry"], false],
   ["late", "Late, absent without notice, or leaving early without permission", ["verbal", "written", "final", "enquiry"], false],
   ["paper", "Daily paperwork in the app not done (register, diary, DSTI, checks)", ["verbal", "written", "final", "enquiry"], false],
@@ -3219,7 +3224,6 @@ const wCases = () => Store.list("warn|").map(([, o]) => o).filter(o => o && o.id
 const wValidUntil = c => { const d = c.decision; if (!d || !W_LEVELS[d.level] || !W_LEVELS[d.level][1]) return null; const x = new Date(d.on + "T12:00:00"); x.setMonth(x.getMonth() + W_LEVELS[d.level][1]); return ymd(x); };
 const wActive = (who, cat) => wCases().filter(c => c.who === who && c.decision && (!cat || c.cat === cat) && wValidUntil(c) && wValidUntil(c) >= ymd(today()));
 function wSuggest(c) {
-  if (c.pre03 && wCat(c.cat)[3]) return "final";
   const [, , ladder] = wCat(c.cat), prev = wActive(c.who, c.cat).filter(x => x.id !== c.id);
   const top = prev.reduce((m, x) => Math.max(m, ladder.indexOf(x.decision.level)), -1);
   return ladder[Math.min(ladder.length - 1, top + 1)];
@@ -3229,7 +3233,9 @@ async function warnImport() {
   try { const me = (CFG.people || []).find(p => p.name === S.user) || {}, box = (CFG.personal || {})[me.id]; if (!box || !isAdmin(S.user)) return;
     const pack = await Store.personal(box); if (!pack || !pack.cases) return;
     const done = (await Store.readLocal("wimp")) || [];
-    for (const c of pack.cases) if (!done.includes(c.id)) { if (!Store.get("warn|" + c.id)) Store.put("warn|" + c.id, c); done.push(c.id); }
+    for (const c of pack.cases) { const cur = Store.get("warn|" + c.id);
+      if (!done.includes(c.id)) { if (!cur) Store.put("warn|" + c.id, c); done.push(c.id); }
+      else if (cur && !cur.upd && cur.rev !== c.rev) Store.put("warn|" + c.id, c); }
     await Store.keepLocal("wimp", done);
   } catch (e) {}
 }
@@ -3299,7 +3305,7 @@ function vWarnCase() {
   if (c.notice && c.response && String(c.response.txt || "").trim()) {
     out.push(h("h3", { class: "bps-h" }, "4. Decision"));
     if (c.basis) out.push(h("p", { class: "hint" }, c.basis));
-    if (sug) out.push(h("p", { class: "hint", style: "font-weight:700" }, `FIB-POL-003 says: ${W_LEVELS[sug][0]}${prev.some(x => x.cat === c.cat) ? ", because of his valid warning for the same offence" : ""}.${alc ? " An enquiry needs 48 hours written notice and a chairperson who was not involved." : ""}`));
+    if (sug) out.push(h("p", { class: "hint", style: "font-weight:700" }, `FIB-POL-003 says: ${W_LEVELS[sug][0]}${prev.some(x => x.cat === c.cat) ? ", because of his valid warning for the same offence" : ""}.${alc ? " A hearing needs 48 hours written notice and a chairperson who was not involved." : ""}`));
     if (!c.decision) out.push(sheet("", h("div", { style: "padding:10px" }, seg(Object.entries(W_LEVELS).map(([k, v]) => [k, v[0]]), c.pick || sug, v => { c.pick = v; re(); }),
       h("div", { style: "margin-top:8px" }, txt("improve", "What must change, and by when")),
       h("button", { type: "button", class: "submit", style: "margin-top:10px", onclick: () => { const lv = c.pick || sug; if (!lv) return; mySig(v => { if (!v) return; c.decision = { level: lv, on: ymd(today()), by: S.user, sig: v }; re(); }); } }, "DECIDE AND SIGN"))));
@@ -3321,7 +3327,7 @@ async function warnPdf(c, kind) {
   const ov = h("div", { class: "overlay", role: "dialog" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793388137"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793388137"); await loadJs("./js/pdf.js?v=1793388137");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793391164"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793391164"); await loadJs("./js/pdf.js?v=1793391164");
     const esc = x => String(x == null ? "" : x).replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[ch]);
     const p = PEOPLE.find(x => x.name === c.who) || {}, pr = CFG.projects.find(x => x.id === c.pid) || {}, t = c.test || {}, [, catLab, , alc] = wCat(c.cat);
     const head = `<table style="width:100%;border-collapse:collapse;margin-bottom:12px"><tr><td rowspan="3" style="border:0.6pt solid #888;width:38%;text-align:center"><img src="${LOGO}" style="width:180px"></td><td style="border:0.6pt solid #888;font-size:8.5pt"><u>E-mail #</u></td><td style="border:0.6pt solid #888;font-size:8.5pt">info@fibraco.co.za &amp; wanro@fibraco.co.za</td></tr><tr><td style="border:0.6pt solid #888;font-size:8.5pt"><u>Reg #</u></td><td style="border:0.6pt solid #888;font-size:8.5pt">2021 / 770505 / 07</td></tr><tr><td style="border:0.6pt solid #888;font-size:8.5pt"><u>Address #</u></td><td style="border:0.6pt solid #888;font-size:8.5pt">Section 5A, SS Don Dias, Beach Indaba Building, 22 Dias Rd, Jeffreys Bay, South Africa, 6330</td></tr></table>`;
@@ -3356,7 +3362,7 @@ async function bpsReport(email, day = ymd(today())) {
   const ov = h("div", { class: "overlay", role: "dialog" }, h("div", { class: "modal" }, h("h2", {}, email ? "Approving and emailing" : "Making the report"), h("p", {}, "Fetching the photos and building the PDF. Keep the app open on this screen.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793388137"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793388137"); await loadJs("./js/pdf.js?v=1793388137");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793391164"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793391164"); await loadJs("./js/pdf.js?v=1793391164");
     const ws = ["SUBSTATION", ...bpsWtgs()], phs = ws.flatMap(w => Object.values(bpsOf(w).ph).flat());
     await Promise.all(phs.map(p => p.ph && !PHOTO_CACHE.has(p.ph) && !(p.url || "").startsWith("data:") ? Store.photo(p.ph).then(d => { if (d) PHOTO_CACHE.set(p.ph, d); }).catch(() => {}) : 0));
     const d = bpsDoc(S.project, day);
@@ -4217,7 +4223,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793388137"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793388137"); await loadJs("./js/pdf.js?v=1793388137");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793391164"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793391164"); await loadJs("./js/pdf.js?v=1793391164");
     await fetchDayPhotos(k);
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
@@ -4332,7 +4338,7 @@ async function processMailQ1() {
   let wl = null;
   try {
     wl = await wakeOn();
-    await loadJs("./js/lib/html2canvas.min.js?v=1793388137"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793388137"); await loadJs("./js/pdf.js?v=1793388137");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793391164"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793391164"); await loadJs("./js/pdf.js?v=1793391164");
     for (const j of go) {
       const p = CFG.projects.find(x => x.id === j.pid); if (!p) { j.done = true; continue; }
       if (!j.flash) { const m0 = Store.get(`mail|${j.pid}|${j.ds}`); if (m0 && m0.jobAt && m0.jobAt >= j.at) { j.done = true; continue; } } // another phone already sent it
@@ -5547,7 +5553,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793388137"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793388137"); await loadJs("./js/pdf.js?v=1793388137");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793391164"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793391164"); await loadJs("./js/pdf.js?v=1793391164");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),

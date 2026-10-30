@@ -1010,3 +1010,7 @@ body.vhome .tile.tpj.outred .tpj-n{font-size:calc(9px*var(--kf,1));letter-spacin
 .lv .lv-pt .pt-y{background:#d6f5e2;color:#1e6b34;font-weight:800}.lv .lv-pt .pt-n{background:#fde2e2;color:#8a1020;font-weight:800}.lv .lv-pt .pt-na{color:#6b7480}
 .lv .lv-pt .pt-d{text-align:left;min-width:260px;font-size:11px;line-height:1.35}
 .pt-xw{border:0;background:none;font:inherit;font-weight:800;width:100%;padding:6px 2px;cursor:pointer;text-decoration:underline}
+.mbtn.zt-bar{background:#fff7e0;border-color:#c8102e;border-left:8px solid #c8102e;color:#7a0a1c;font-weight:900;margin:10px 0;text-transform:uppercase;text-align:left}
+.mbtn.zt-bar small{color:#3a2a00;text-transform:none;font-weight:700;display:block;margin-top:4px}
+.mbtn.zt-bar em{display:block;font-style:normal;text-transform:none;margin-top:6px;color:#c8102e;font-weight:800}
+.mbtn.zt-bar.ok{background:#eefaf2;border-color:#1e6b34}.mbtn.zt-bar.ok em{color:#1e6b34}
