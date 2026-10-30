@@ -999,3 +999,5 @@ body.vhome .tile.tpj.outred .tpj-n{font-size:calc(9px*var(--kf,1));letter-spacin
 
 .mbtn.out-bar{background:#c8102e;border-color:#7a0a1c;border-top:7px solid #7a0a1c;color:#fff;font-weight:900;margin:10px 0;text-transform:uppercase}
 .mbtn.out-bar small{color:#fff;text-transform:none;font-weight:700}
+.mbtn.live-bar{background:#0b3d2e;border-color:#39ff14;border-top:7px solid #39ff14;color:#fff;font-weight:900;margin:10px 0;text-transform:uppercase;box-shadow:0 0 10px rgba(57,255,20,.45)}
+.mbtn.live-bar small{color:#d8ffd0;text-transform:none;font-weight:700}
