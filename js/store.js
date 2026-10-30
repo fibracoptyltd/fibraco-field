@@ -10,6 +10,9 @@ const Store = (() => {
   const unb64url = s => unb64(s.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((s.length + 3) % 4));
 
   let K = null, HK = null, FK = null, TOKEN = null, DEV = null, CONF = null, ME = null;
+  // Wanro 30 Oct: the Bioseco live portal. Its records are sealed with a separate share key, so the portal never holds
+  // the Fibraco key. The phones of the Bioseco team hold both keys and keep the portal up to date.
+  let SK = null; const shareFns = new Set();
   const mem = new Map();          // id -> {obj, kind, at, dirty}
   const listeners = new Set();
   let pendingLocks = [];
@@ -46,6 +49,7 @@ const Store = (() => {
     const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: unb64(iv) }, K, unb64(data));
     return JSON.parse(dec.decode(pt));
   }
+  async function sopen(iv, data) { const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: unb64(iv) }, SK, unb64(data)); return JSON.parse(dec.decode(pt)); }
   async function openBytes(buf) { // project files: 12 byte iv then ciphertext, opened with the files key
     if (!FK) throw new Error("files key missing");
     const a = new Uint8Array(buf);
@@ -319,7 +323,9 @@ const Store = (() => {
           if (!rows || !rows.length) break;
           for (const r of rows) {
             lastPull = r.updated_at > lastPull ? r.updated_at : lastPull;
-            let o; try { o = await open(r.iv, r.data); } catch (e) { continue; }
+            let o; try { o = await open(r.iv, r.data); } catch (e) {
+              if (SK) { try { const so = await sopen(r.iv, r.data); shareFns.forEach(fn => fn(r.id, so, r.updated_at)); } catch (e2) {} }
+              continue; }
             const local = mem.get(o.id);
             if (local && local.at > o.at) continue; // this phone has a newer copy (sent or still waiting): it wins
             if (local && local.dirty) continue; // a change on this phone still waiting to send: it goes first, the server decides
@@ -340,6 +346,20 @@ const Store = (() => {
         listeners.forEach(fn => fn([], /device not approved|not allowed/.test(e.message) ? "denied" : "error", e));
       } finally { syncing = false; }
     },
+    // ---------- Bioseco live portal ----------
+    async setShareKey(k) { SK = await crypto.subtle.importKey("raw", unb64url(k), "AES-GCM", false, ["encrypt", "decrypt"]); },
+    onShare(fn) { shareFns.add(fn); },
+    shareId: name => hid("share|" + name),
+    atOf(id) { const v = mem.get(id); return v ? v.at : null; },
+    async sharePut(list, tagNames) { // list: [{id, obj, kind}]
+      if (!SK || !navigator.onLine) throw new Error("offline");
+      const tags = await Promise.all(tagNames.map(t => hid("tag|" + t))), rows = [];
+      for (const x of list) { const iv = crypto.getRandomValues(new Uint8Array(12)); const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, SK, enc.encode(JSON.stringify(x.obj)));
+        rows.push({ id: x.id, kind: x.kind || "r", iv: b64(iv), data: b64(ct), shared: true, tags }); }
+      const res = await rpc("put_records", { p_rows: rows }); return res;
+    },
+    async sharePhoto(id) { const rows = await rpc("get_by_ids", { p_ids: [id] }).catch(() => []); for (const r of rows || []) { try { const o = await sopen(r.iv, r.data); return o && o.d; } catch (e) {} } return null; },
+    async shareSaved(v) { if (v === undefined) { const b = await metaGet("share").catch(() => null); return b ? open(b.iv, b.data).catch(() => null) : null; } await metaSet("share", await seal(v)); },
     // admin only: the office
     dump() { const o = {}; for (const [id, v] of mem) if (v.kind !== "ph") o[id] = v.obj; return o; },
     _b64: { b64, unb64, b64url, unb64url }

@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0069AA">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>BIOSECO Poland QC live</title>
+<link rel="icon" href="icons/icon-192.png">
+<style>
+@font-face{font-family:Archivo;src:url(fonts/archivo-latin-500-normal.woff2) format("woff2");font-weight:400 500;font-display:swap}@font-face{font-family:Archivo;src:url(fonts/archivo-latin-800-normal.woff2) format("woff2");font-weight:600 900;font-display:swap}
+:root{--b:#0069aa;--ink:#15191e;--mut:#5b6470;--line:#d9dee4;--bg:#eef1f4}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 Archivo,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;-webkit-user-select:none;user-select:none}
+.top{background:var(--b);color:#fff;padding:12px max(16px,env(safe-area-inset-left)) 12px max(16px,env(safe-area-inset-right));display:flex;align-items:center;gap:12px}
+.top img{height:30px;background:#fff;border-radius:6px;padding:3px 6px}
+.top b{display:block;font-size:16px;letter-spacing:.02em}.top small{opacity:.85;font-size:12.5px}
+main{max-width:920px;margin:0 auto;padding:12px max(16px,env(safe-area-inset-left)) 40px max(16px,env(safe-area-inset-right))}
+.card{background:#fff;border-radius:14px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,.08);max-width:440px;margin:30px auto}
+.card h1{font-size:20px;margin:0 0 8px}.card p{color:var(--mut);margin:0 0 14px}
+input{width:100%;font:inherit;font-size:18px;padding:12px;border:2px solid var(--line);border-radius:10px}
+button.go{width:100%;margin-top:12px;font:inherit;font-weight:800;font-size:16px;padding:13px;border:0;border-radius:10px;background:var(--b);color:#fff}
+.err{color:#a50e0e;font-weight:700;margin-top:10px}
+.lv-head{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap;margin:4px 0 10px}
+.lv-head b{display:block;font-size:20px}.lv-head small{color:var(--mut)}
+.lv-upd{font-size:12.5px;color:var(--mut)}
+.lv-ask{background:var(--b);color:#fff;border-radius:12px;padding:12px;margin:0 0 10px}
+.lv-ask b{display:block;margin-bottom:6px}.lv-ask small{display:block;opacity:.9}.lv-ask em{display:block;font-style:normal;font-size:12.5px;opacity:.85;margin-top:4px}
+.lv-askrow{display:block;width:100%;text-align:left;background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.4);border-radius:10px;padding:10px;margin-top:6px;font:inherit}
+.lv-askrow span{font-weight:800;font-size:16px}
+.lv-here{background:#fff;border:2px solid #f29900;border-radius:10px;padding:9px 12px;font-weight:700;margin:0 0 10px}.lv-here.off{border-color:var(--line);color:var(--mut);font-weight:600}
+.lv-sum{font-weight:800;margin:0 0 8px}
+.lv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px}
+.lv-t{position:relative;border:0;border-radius:12px;padding:16px 6px 10px;font:inherit;text-align:center;min-height:74px;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.lv-t b{display:block;font-size:15px}.lv-t small{display:block;font-size:11px;font-weight:700;margin-top:3px}
+.lv-t i{position:absolute;top:4px;left:7px;font-style:normal;font-size:10.5px;font-weight:800;opacity:.6}
+.lv-t.sub{grid-column:1/-1;min-height:56px}
+.lv-t.here{outline:3px solid #f29900;outline-offset:2px}
+.lv-now{position:absolute;top:-9px;right:-4px;background:#f29900;color:#fff;font-size:10px;font-weight:900;padding:2px 6px;border-radius:999px;animation:pul 1.6s infinite}
+@keyframes pul{50%{transform:scale(1.12)}}
+.lv-key{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 4px}.lv-key span{font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px}
+.lv-note{font-size:12px;color:var(--mut);margin:6px 0}
+.lv-h,h3{font-size:15px;text-transform:uppercase;letter-spacing:.04em;color:var(--b);margin:18px 0 6px}
+.lv-feed{background:#fff;border-radius:12px;overflow:hidden}
+.lv-day{background:#e3e8ee;font-size:12px;font-weight:800;padding:5px 12px;color:#3a434d}
+.lv-ev{display:flex;gap:10px;width:100%;text-align:left;border:0;border-top:1px solid var(--line);background:#fff;padding:9px 12px;font:inherit;font-size:14px;color:var(--ink)}
+.lv-ev time{font-weight:800;color:var(--b);min-width:44px}
+.lv-wait{color:var(--mut);background:#fff;border-radius:10px;padding:12px}
+.lv-back{border:0;background:#fff;border-radius:999px;padding:8px 14px;font:inherit;font-weight:700;margin:4px 0 10px}
+.lv-dh{display:flex;align-items:center;gap:10px}.lv-dh b{font-size:22px}.lv-dh span{font-size:12px;font-weight:800;padding:4px 10px;border-radius:999px}
+.lv-line{margin:6px 0}.lv-sub{color:var(--mut);font-size:12.5px;margin:0 0 6px}
+.lv-kv{width:100%;border-collapse:collapse;background:#fff;border-radius:10px;overflow:hidden;margin:4px 0}
+.lv-kv th,.lv-kv td{text-align:left;padding:7px 10px;border-top:1px solid var(--line);font-size:13.5px;vertical-align:top}.lv-kv th{width:45%;color:var(--mut);font-weight:600}
+.lv-mx{overflow-x:auto;background:#fff;border-radius:10px;margin:6px 0}
+.lv-mx table{border-collapse:collapse;font-size:12px;min-width:100%}.lv-mx th,.lv-mx td{padding:5px 4px;border-top:1px solid var(--line);text-align:center;white-space:nowrap}.lv-mx tbody th{text-align:left;font-weight:600;white-space:normal;min-width:118px;font-size:11px}
+.c-ok{background:#d6f5e2;color:#1e6b34;font-weight:800}.c-bad{background:#c8102e;color:#fff;font-weight:800}.c-fix{background:#f6d365;font-weight:800}.c-na{color:#777}
+.lv-find{background:#fff;border-left:4px solid #c8102e;border-radius:8px;padding:9px 12px;margin:6px 0;font-size:14px}
+.lv-ph{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.lv-ph figure{margin:0;background:#fff;border-radius:10px;padding:5px}.lv-ph img{width:100%;height:150px;object-fit:cover;border-radius:7px;background:#dde2e7;display:block;cursor:zoom-in}
+.lv-ph figcaption{font-size:11.5px;color:var(--mut);margin-top:4px}
+.zoom{position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;z-index:50;padding:10px}.zoom img{max-width:100%;max-height:92vh;border-radius:8px}
+#wm{position:fixed;inset:0;pointer-events:none;z-index:40;opacity:.12}
+body.away main{filter:blur(18px)}
+.foot{text-align:center;font-size:11.5px;color:var(--mut);margin-top:24px}
+</style>
+</head>
+<body>
+<div class="top"><img src="icons/bps/logo.jpg" alt="Bioseco"><div><b>BIOSECO</b><small>Poland QC live  |  Wolf Wind Farm  |  read only</small></div></div>
+<main id="m"></main>
+<script src="js/live.js?v=1793347622"></script>
+<script>
+"use strict";
+(() => {
+  const URL0 = "https://ahbcixfknqgqvmauhnyo.supabase.co", ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFoYmNpeGZrbnFncXZtYXVobnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIxNzI0NDMsImV4cCI6MjEwNzc0ODQ0M30.n58qy_PcGFoi9-JGzUecra9ggxUn_Yprsg9kO_2M02c", KEY = "fib-bioseco-live", m = document.getElementById("m");
+  const enc = new TextEncoder(), dec = new TextDecoder();
+  const unb64 = s => Uint8Array.from(atob(s.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((s.length + 3) % 4)), c => c.charCodeAt(0));
+  const rnd = () => btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(24)))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  const el = (t, a, ...k) => { const e = document.createElement(t); Object.assign(e, a || {}); e.append(...k); return e; };
+  const load = () => { try { return JSON.parse(localStorage.getItem(KEY) || "null"); } catch (e) { return null; } };
+  const save = v => { try { localStorage.setItem(KEY, JSON.stringify(v)); } catch (e) {} };
+  let ST = load(), SK = null, recs = {}, since = "1970-01-01T00:00:00Z", sel = null, timer = 0;
+  async function rpc(fn, body) {
+    const r = await fetch(`${URL0}/rest/v1/rpc/${fn}`, { method: "POST", headers: { "Content-Type": "application/json", apikey: ANON, Authorization: `Bearer ${ANON}` }, body: JSON.stringify(Object.assign({ p_token: ST.t, p_device: ST.d }, body)) });
+    if (!r.ok) { const t = await r.text(); const e = new Error(t.slice(0, 200)); e.status = r.status; throw e; }
+    return r.json();
+  }
+  async function sopen(iv, data) { return JSON.parse(dec.decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv: unb64(iv) }, SK, unb64(data)))); }
+  function card(title, text, ...more) { m.replaceChildren(el("div", { className: "card" }, el("h1", { textContent: title }), el("p", { textContent: text }), ...more)); }
+  // first open from the link: his password unlocks the share key, then this device remembers it
+  async function fromLink() {
+    const h = new URLSearchParams(location.hash.slice(1)), t = h.get("t"), w = h.get("w");
+    if (!t || !w) return false;
+    return new Promise(done => {
+      const pw = el("input", { type: "password", placeholder: "Password", autocomplete: "current-password" }), err = el("div", { className: "err" });
+      const go = el("button", { className: "go", type: "button", textContent: "OPEN" });
+      const tryIt = async () => {
+        err.textContent = ""; go.disabled = true; go.textContent = "Opening...";
+        try {
+          const [salt, iv, ct] = w.split(".").map(unb64);
+          const base = await crypto.subtle.importKey("raw", enc.encode(pw.value.trim()), "PBKDF2", false, ["deriveKey"]);
+          const k = await crypto.subtle.deriveKey({ name: "PBKDF2", salt, iterations: 150000, hash: "SHA-256" }, base, { name: "AES-GCM", length: 256 }, false, ["decrypt"]);
+          const v = JSON.parse(dec.decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv }, k, ct)));
+          ST = { t, d: (ST && ST.d) || rnd(), k: v.k, n: v.n, c: v.c, p: v.p }; save(ST);
+          history.replaceState(null, "", location.pathname); done(true);
+        } catch (e) { err.textContent = "That password is not right. Check it and try again."; go.disabled = false; go.textContent = "OPEN"; }
+      };
+      go.onclick = tryIt; pw.onkeydown = e => { if (e.key === "Enter") tryIt(); };
+      card("Welcome", "Type the password Fibraco sent you. You only do this once on this device.", pw, go, err); setTimeout(() => pw.focus(), 50);
+    });
+  }
+  function wm() {
+    const txt = `${ST.n}  ${ST.c}  ${ST.p}  ${new Date().toLocaleDateString("en-GB")}`;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180"><text x="10" y="100" transform="rotate(-24 160 90)" font-family="Arial" font-size="15" fill="#000">${txt.replace(/[<&]/g, "")}</text></svg>`;
+    let w = document.getElementById("wm"); if (!w) { w = el("div", { id: "wm" }); document.body.append(w); }
+    w.style.background = `url("data:image/svg+xml;utf8,${encodeURIComponent(svg)}")`;
+  }
+  const photoCache = new Map();
+  async function photo(id) {
+    if (photoCache.has(id)) return photoCache.get(id);
+    const rows = await rpc("get_by_ids", { p_ids: [id] }).catch(() => []);
+    for (const r of rows || []) { try { const o = await sopen(r.iv, r.data); photoCache.set(id, o.d); return o.d; } catch (e) {} }
+    return null;
+  }
+  function zoom(u, cap) { const z = el("div", { className: "zoom", onclick: () => z.remove() }, el("img", { src: u, alt: cap })); document.body.append(z); }
+  function draw() {
+    const box = el("div");
+    LiveUI.render(box, recs, { title: "Poland QC live", sub: "Wolf Wind Farm, BPS commissioning by Fibraco", sel, photo, zoom, open: w => { sel = w; draw(); window.scrollTo(0, 0); } });
+    m.replaceChildren(box, el("p", { className: "foot", textContent: "Updates on its own every few seconds. Fibraco (Pty) Ltd" }));
+  }
+  async function pull() {
+    try {
+      for (;;) {
+        const rows = await rpc("get_records", { p_since: since, p_kinds: ["r"] });
+        if (!rows || !rows.length) break;
+        for (const r of rows) { if (r.updated_at > since) since = r.updated_at; try { const o = await sopen(r.iv, r.data); if (o && o.t) recs[r.id] = o; } catch (e) {} }
+        if (rows.length < 500) break;
+      }
+      try { localStorage.setItem(KEY + "-c", JSON.stringify({ since, recs })); } catch (e) {}
+      draw();
+    } catch (e) {
+      if (/device not approved/.test(e.message)) { card("Waiting for Fibraco", "This device is new. Fibraco must allow it first. This page opens by itself as soon as they do."); }
+      else if (/not allowed/.test(e.message)) { localStorage.removeItem(KEY); localStorage.removeItem(KEY + "-c"); card("Access stopped", "This live page is switched off for this device. Contact Fibraco if you need it again."); clearInterval(timer); }
+    }
+  }
+  async function start() {
+    if (location.hash.length > 5) await fromLink();
+    if (!ST || !ST.k) { card("Bioseco live", "Open this page with the link Fibraco sent you."); return; }
+    SK = await crypto.subtle.importKey("raw", unb64(ST.k), "AES-GCM", false, ["decrypt"]);
+    wm();
+    try { const c = JSON.parse(localStorage.getItem(KEY + "-c") || "null"); if (c && c.recs) { recs = c.recs; since = c.since || since; draw(); } } catch (e) {}
+    if (!Object.keys(recs).length) card("Bioseco live", "Loading...");
+    try { const r = await rpc("whoami", { p_label: navigator.userAgent.slice(0, 110) }); const row = Array.isArray(r) ? r[0] : r;
+      if (row && row.status === "off") { localStorage.removeItem(KEY); card("Access stopped", "This live page is switched off. Contact Fibraco if you need it again."); return; }
+      if (row && row.status !== "active") card("Waiting for Fibraco", "This device is new. Fibraco must allow it first. This page opens by itself as soon as they do.");
+    } catch (e) { if (/not allowed/.test(e.message)) { card("Access stopped", "This live page is switched off. Contact Fibraco if you need it again."); return; } }
+    await pull(); timer = setInterval(() => { if (!document.hidden) pull(); }, 8000);
+    document.addEventListener("visibilitychange", () => { document.body.classList.toggle("away", document.hidden); if (!document.hidden) pull(); });
+  }
+  document.addEventListener("contextmenu", e => e.preventDefault());
+  start();
+})();
+</script>
+</body>
+</html>
