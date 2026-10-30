@@ -996,3 +996,6 @@ body.vhome .tile.tpj.outred .tpj-n{font-size:calc(9px*var(--kf,1));letter-spacin
 .pol-done{padding:10px}.pol-done img{max-width:240px;display:block}.pol-done p{margin:6px 0 0;font-weight:700;color:#1e6b34}
 .tile.outt{background:#c8102e;border-color:#c8102e;color:#fff}.tile.outt .ti-ic svg{stroke:#fff}.tile.outt .tbadge{background:#fff;color:#c8102e}
 .sheet.out-me{border:2px solid #c8102e}
+
+.mbtn.out-bar{background:#c8102e;border-color:#7a0a1c;border-top:7px solid #7a0a1c;color:#fff;font-weight:900;margin:10px 0;text-transform:uppercase}
+.mbtn.out-bar small{color:#fff;text-transform:none;font-weight:700}
