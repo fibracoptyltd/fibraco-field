@@ -1001,3 +1001,12 @@ body.vhome .tile.tpj.outred .tpj-n{font-size:calc(9px*var(--kf,1));letter-spacin
 .mbtn.out-bar small{color:#fff;text-transform:none;font-weight:700}
 .mbtn.live-bar{background:#0b3d2e;border-color:#39ff14;border-top:7px solid #39ff14;color:#fff;font-weight:900;margin:10px 0;text-transform:uppercase;box-shadow:0 0 10px rgba(57,255,20,.45)}
 .mbtn.live-bar small{color:#d8ffd0;text-transform:none;font-weight:700}
+.lv .lv-pt{overflow-x:auto;background:#fff;border-radius:10px;margin:6px 0;-webkit-overflow-scrolling:touch}
+.lv .lv-pt table{border-collapse:collapse;font-size:12px;min-width:760px}
+.lv .lv-pt th,.lv .lv-pt td{padding:6px 5px;border:1px solid #d5dbe2;text-align:center;vertical-align:middle}
+.lv .lv-pt thead th{background:#eef2f6;font-size:11px;font-weight:700}
+.lv .lv-pt tbody th{text-align:left;white-space:nowrap;font-weight:700;background:#f7f9fb;position:sticky;left:0;z-index:1}
+.lv .lv-pt tbody tr{cursor:pointer}
+.lv .lv-pt .pt-y{background:#d6f5e2;color:#1e6b34;font-weight:800}.lv .lv-pt .pt-n{background:#fde2e2;color:#8a1020;font-weight:800}.lv .lv-pt .pt-na{color:#6b7480}
+.lv .lv-pt .pt-d{text-align:left;min-width:260px;font-size:11px;line-height:1.35}
+.pt-xw{border:0;background:none;font:inherit;font-weight:800;width:100%;padding:6px 2px;cursor:pointer;text-decoration:underline}

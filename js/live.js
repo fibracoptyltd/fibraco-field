@@ -10,6 +10,17 @@ const LiveUI = (() => {
   const both = iso => { const a = tm(iso, SA), mine = Intl.DateTimeFormat().resolvedOptions().timeZone, b = tm(iso, mine); return a === b || mine === SA ? `${a} SA time` : `${a} SA time (${b} your time)`; };
   const dayOf = (iso, tz = SA) => { try { return new Date(iso).toLocaleDateString("en-CA", { timeZone: tz }); } catch (e) { return ""; } };
   const ST = { todo: ["Not started", "#e6e9ed", "#4a525c"], busy: ["Team working", "#fff3c4", "#6b4e00"], check: ["Please check now", "#0069aa", "#fff"], ok: ["Chain confirmed", "#d6f5e2", "#1e6b34"], done: ["Both parts done", "#34e27c", "#08311a"], hold: ["On hold", "#e4defa", "#4b3f85"], vpn: ["VPN check needed", "#ffd8a8", "#7a3d00"], nok: ["Not OK, team on it", "#c8102e", "#fff"] };
+  // Piotr's status table (Bioseco_Wolf_Fibraco_status.xlsx): his row labels and order, his column headings, row numbers in his sheet
+  const PIOTR = [[3, "WEA03", "WTG 03"], [4, "WEA04", "WTG 04"], [5, "WEA05", "WTG 05"], [6, "WEA06", "WTG 06"], [7, "WEA07", "WTG 07"], [8, "WEA08", "WTG 08"], [9, "WEA09", "WTG 09"], [10, "WEA10", "WTG 10"],
+    [11, "O&M building / substation", "SUBSTATION"], [12, "WEA17", "WTG 17"], [13, "WEA19", "WTG 19"], [14, "WEA21", "WTG 21"], [15, "WEA22", "WTG 22"], [16, "WEA23", "WTG 23"], [17, "WEA24", "WTG 24"], [18, "WEA25", "WTG 25"], [19, "WEA27", "WTG 27"], [20, "WEA28", "WTG 28"]];
+  const PCOLS = [["en", "energized [Y/N]"], ["fo", "Fiber optics"], ["mod", "modules check"], ["jb", "Junction box check"], ["bps", "BPS box check"], ["risk", "risk"], ["xw", "extra works"], ["d", "Description"]];
+  // rowOf(w) gives { en, fo, mod, jb, bps, risk, xw, d }. cell(w, key, value) can return an element to put in place of a value (the office's extra works button).
+  function ptable(rowOf, o = {}) {
+    const yn = v => h("td", { class: "pt-" + (v === "Y" ? "y" : v === "N" ? "n" : "na") }, v || "");
+    return h("div", { class: "lv-pt" }, h("table", {}, h("thead", {}, h("tr", {}, h("th", {}, ""), ...PCOLS.map(([, lab]) => h("th", {}, lab)))),
+      h("tbody", {}, ...PIOTR.map(([, lab, w]) => { const r = rowOf(w) || {};
+        return h("tr", { onclick: o.open ? () => o.open(w) : null }, h("th", {}, lab), ...PCOLS.map(([k]) => { const c = o.cell && o.cell(w, k, r[k]); return c || (k === "d" ? h("td", { class: "pt-d" }, r.d || "") : yn(r[k])); })); }))));
+  }
   function boards(recs) { return Object.values(recs).filter(o => o && o.t === "board" && o.v === 2).sort((a, b) => (a.order || 0) - (b.order || 0)); }
   function detOf(recs, w) { return Object.values(recs).find(o => o && o.t === "det" && o.v === 2 && o.w === w); }
   // the conversation with Bioseco: their messages and Fibraco's answers, oldest first
@@ -39,6 +50,9 @@ const LiveUI = (() => {
           h("b", {}, b.w === "SUBSTATION" ? "Substation" : b.w), h("small", {}, lab)); })),
       h("p", { class: "lv-note" }, "Numbers show the working order. The team works one turbine at a time, from the lowest number to the highest."),
       h("div", { class: "lv-key" }, ...Object.values(ST).map(([lab, bg, fg]) => h("span", { style: `background:${bg};color:${fg}` }, lab))),
+      h("h3", { class: "lv-h" }, "Status table (Y or N per turbine)"),
+      ptable(w => { const b = bs.find(x => x.w === w); return b && b.y; }, { open: opts.open }),
+      h("p", { class: "lv-note" }, "Filled in by itself from the commissioning sheets as the team submits. Tap a row for the results and photos."),
       h("h3", { class: "lv-h" }, "As it happens"),
       evs.length ? h("div", { class: "lv-feed" }, ...evs.slice(0, 200).flatMap((e, i) => { const d = dayOf(e.at), prev = i ? dayOf(evs[i - 1].at) : null;
         return [d !== prev ? h("div", { class: "lv-day" }, dt(e.at, SA)) : null, h("button", { type: "button", class: "lv-ev", onclick: () => opts.open && opts.open(e.w) }, h("time", {}, tm(e.at, SA)), h("span", {}, e.txt))]; })) : h("p", { class: "lv-wait" }, "Nothing yet."),
@@ -96,6 +110,6 @@ const LiveUI = (() => {
     }
     return box;
   }
-  return { render, both, dayOf, tm, msgs, thread, h };
+  return { render, both, dayOf, tm, msgs, thread, h, ptable, PIOTR, PCOLS };
 })();
 if (typeof module !== "undefined") module.exports = LiveUI;
