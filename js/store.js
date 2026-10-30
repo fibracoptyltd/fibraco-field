@@ -351,11 +351,12 @@ const Store = (() => {
     onShare(fn) { shareFns.add(fn); },
     shareId: name => hid("share|" + name),
     atOf(id) { const v = mem.get(id); return v ? v.at : null; },
-    async sharePut(list, tagNames) { // list: [{id, obj, kind}]
+    tagHash: name => hid("tag|" + name),
+    async sharePut(list, tagNames, shared = false) { // list: [{id, obj, kind}]. Not shared: only the writer, the office, site managers and the people tagged may change it
       if (!SK || !navigator.onLine) throw new Error("offline");
       const tags = await Promise.all(tagNames.map(t => hid("tag|" + t))), rows = [];
       for (const x of list) { const iv = crypto.getRandomValues(new Uint8Array(12)); const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, SK, enc.encode(JSON.stringify(x.obj)));
-        rows.push({ id: x.id, kind: x.kind || "r", iv: b64(iv), data: b64(ct), shared: true, tags }); }
+        rows.push({ id: x.id, kind: x.kind || "r", iv: b64(iv), data: b64(ct), shared: !!shared, tags }); }
       const res = await rpc("put_records", { p_rows: rows }); return res;
     },
     async sharePhoto(id) { const rows = await rpc("get_by_ids", { p_ids: [id] }).catch(() => []); for (const r of rows || []) { try { const o = await sopen(r.iv, r.data); return o && o.d; } catch (e) {} } return null; },

@@ -9,9 +9,11 @@ const LiveUI = (() => {
   const dt = (iso, tz) => { try { return new Date(iso).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: tz }); } catch (e) { return ""; } };
   const both = iso => { const a = tm(iso, SA), mine = Intl.DateTimeFormat().resolvedOptions().timeZone, b = tm(iso, mine); return a === b || mine === SA ? `${a} SA time` : `${a} SA time (${b} your time)`; };
   const dayOf = (iso, tz = SA) => { try { return new Date(iso).toLocaleDateString("en-CA", { timeZone: tz }); } catch (e) { return ""; } };
-  const ST = { todo: ["Not started", "#e6e9ed", "#4a525c"], busy: ["Team working", "#fff3c4", "#6b4e00"], check: ["Please check now", "#0069aa", "#fff"], ok: ["Chain confirmed", "#d6f5e2", "#1e6b34"], done: ["Both parts done", "#34e27c", "#08311a"], hold: ["On hold", "#e4defa", "#4b3f85"] };
-  function boards(recs) { return Object.values(recs).filter(o => o && o.t === "board").sort((a, b) => (a.order || 0) - (b.order || 0)); }
-  function detOf(recs, w) { return Object.values(recs).find(o => o && o.t === "det" && o.w === w); }
+  const ST = { todo: ["Not started", "#e6e9ed", "#4a525c"], busy: ["Team working", "#fff3c4", "#6b4e00"], check: ["Please check now", "#0069aa", "#fff"], ok: ["Chain confirmed", "#d6f5e2", "#1e6b34"], done: ["Both parts done", "#34e27c", "#08311a"], hold: ["On hold", "#e4defa", "#4b3f85"], vpn: ["VPN check needed", "#ffd8a8", "#7a3d00"], nok: ["Not OK, team on it", "#c8102e", "#fff"] };
+  function boards(recs) { return Object.values(recs).filter(o => o && o.t === "board" && o.v === 2).sort((a, b) => (a.order || 0) - (b.order || 0)); }
+  function detOf(recs, w) { return Object.values(recs).find(o => o && o.t === "det" && o.v === 2 && o.w === w); }
+  // the conversation with Bioseco: their messages and Fibraco's answers, oldest first
+  function msgs(recs, w) { return Object.entries(recs).filter(([, o]) => o && o.t === "msg" && o.v === 2 && (w === undefined || o.w === w)).map(([id, o]) => Object.assign({ id }, o)).sort((a, b) => String(a.at).localeCompare(String(b.at))); }
   // the whole board
   function render(root, recs, opts = {}) {
     const bs = boards(recs), now = Date.now();
@@ -20,12 +22,15 @@ const LiveUI = (() => {
     // where the team is now: the sheet with the latest work today, within the last three hours
     const here = bs.filter(b => b.last && dayOf(b.last) === tdy && now - new Date(b.last).getTime() < 3 * 3600e3 && b.st !== "done").sort((a, b) => String(b.last).localeCompare(String(a.last)))[0];
     bs.forEach(b => { b.here = !!here && b.w === here.w; });
-    const evs = Object.values(recs).filter(o => o && o.t === "ev" && o.at).sort((a, b) => String(b.at).localeCompare(String(a.at)));
+    const vpn = bs.filter(b => b.st === "vpn");
+    const evs = Object.values(recs).filter(o => o && o.t === "ev" && o.v === 2 && o.at).sort((a, b) => String(b.at).localeCompare(String(a.at)));
     const done = bs.filter(b => b.st === "done").length, upd = Object.values(recs).map(o => o && o.at).filter(Boolean).sort().pop();
     root.replaceChildren(...[
       h("div", { class: "lv-head" }, h("div", {}, h("b", {}, opts.title || "Bioseco live"), h("small", {}, opts.sub || "")), h("div", { class: "lv-upd" }, upd ? `Last change ${both(upd)}` : "Nothing yet")),
       asks.length ? h("div", { class: "lv-ask" }, h("b", {}, asks.length === 1 ? "The team asks you to check:" : "The team asks you to check these now:"),
         ...asks.map(b => h("button", { type: "button", class: "lv-askrow", onclick: () => opts.open && opts.open(b.w) }, h("span", {}, b.w === "SUBSTATION" ? "Substation" : b.w), h("small", {}, b.ask || "Full chain: BPS box, WTG FO panel, substation FO panel, server, every module online"), h("em", {}, `Asked ${both(b.askAt)}`)))) : null,
+      vpn.length ? h("div", { class: "lv-vpn" }, h("b", {}, "Still to check in your system through the VPN:"), h("div", {}, ...vpn.map(b => h("button", { type: "button", onclick: () => opts.open && opts.open(b.w) }, b.w === "SUBSTATION" ? "Substation" : b.w)))) : null,
+      opts.top ? opts.top() : null,
       here ? h("div", { class: "lv-here" }, `Team now at ${here.w === "SUBSTATION" ? "the substation" : here.w}, since ${tm(here.first, SA)} SA time`) : h("div", { class: "lv-here off" }, "No work on the BPS recorded yet today"),
       h("div", { class: "lv-sum" }, `${done} of ${bs.length} complete`),
       h("div", { class: "lv-grid" }, ...bs.map((b, i) => { const [lab, bg, fg] = ST[b.st] || ST.todo;
@@ -46,6 +51,7 @@ const LiveUI = (() => {
     const [lab, bg, fg] = ST[(b && b.st) || "todo"] || ST.todo;
     const out = [back, h("div", { class: "lv-dh" }, h("b", {}, nm), h("span", { style: `background:${bg};color:${fg}` }, lab)), b && b.line ? h("p", { class: "lv-line" }, b.line) : null];
     if (b && b.st === "check") out.push(h("div", { class: "lv-ask" }, h("b", {}, "The team asks you to check now"), h("small", {}, b.ask || ""), h("em", {}, `Asked ${both(b.askAt)}`)));
+    if (opts.detTop) out.push(opts.detTop(w));
     if (!d || (!d.el && !d.tc)) { out.push(h("p", { class: "lv-wait" }, "Results show here as soon as the team submits this sheet.")); return h("div", {}, ...out); }
     if (d.el) {
       const e = d.el;
@@ -72,6 +78,24 @@ const LiveUI = (() => {
     }
     return h("div", {}, ...out);
   }
-  return { render, both, dayOf, tm };
+  // messages between Bioseco and Fibraco. side: who is reading ("bioseco" or "fibraco"). send(txt) when a box is wanted.
+  function thread(list, o = {}) {
+    const box = h("div", { class: "lv-thr" }, h("b", { class: "lv-thr-h" }, o.title || "Messages"));
+    if (!list.length) box.append(h("p", { class: "lv-thr-none" }, o.empty || "No messages yet."));
+    for (const m of list.slice(-(o.max || 30))) {
+      const mine = m.from === o.side;
+      box.append(h("div", { class: "lv-msg " + (m.from === "bioseco" ? "bio" : "fib") + (mine ? " mine" : "") },
+        h("div", { class: "lv-msg-h" }, `${m.who || (m.from === "bioseco" ? "Bioseco" : "Fibraco")}${m.from === "bioseco" ? " (Bioseco)" : " (Fibraco)"}${m.w && m.w !== "GENERAL" && !o.w ? ", " + (m.w === "SUBSTATION" ? "Substation" : m.w) : ""}  |  ${dt(m.at, SA)} ${tm(m.at, SA)}`),
+        h("div", { class: "lv-msg-t" }, m.txt || ""), o.extra ? o.extra(m) : null));
+    }
+    if (o.send) {
+      const ta = h("textarea", { rows: "2", placeholder: o.ph || "Type a message" }), err = h("div", { class: "lv-err" });
+      const b = h("button", { type: "button", class: "lv-send", onclick: async () => { const t = ta.value.trim(); if (!t) return; b.disabled = true; b.textContent = "Sending..."; err.textContent = "";
+        try { await o.send(t); ta.value = ""; } catch (e) { err.textContent = "Not sent. Check the signal and try again."; } b.disabled = false; b.textContent = "SEND"; } }, "SEND");
+      box.append(h("div", { class: "lv-comp" }, ta, b), err);
+    }
+    return box;
+  }
+  return { render, both, dayOf, tm, msgs, thread, h };
 })();
 if (typeof module !== "undefined") module.exports = LiveUI;

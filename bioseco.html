@@ -59,6 +59,19 @@ button.go{width:100%;margin-top:12px;font:inherit;font-weight:800;font-size:16px
 .lv-ph{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
 .lv-ph figure{margin:0;background:#fff;border-radius:10px;padding:5px}.lv-ph img{width:100%;height:150px;object-fit:cover;border-radius:7px;background:#dde2e7;display:block;cursor:zoom-in}
 .lv-ph figcaption{font-size:11.5px;color:var(--mut);margin-top:4px}
+.lv-vpn{background:#fff4e5;border:2px solid #f29900;border-radius:12px;padding:10px 12px;margin:0 0 10px}.lv-vpn b{display:block;margin-bottom:6px}
+.lv-vpn button{border:0;background:#f29900;color:#fff;font:inherit;font-weight:800;border-radius:999px;padding:6px 12px;margin:0 6px 6px 0}
+.lv-thr{background:#fff;border-radius:12px;padding:10px 12px;margin:0 0 12px}.lv-thr-h{display:block;color:var(--b);text-transform:uppercase;letter-spacing:.04em;font-size:13px;margin-bottom:6px}
+.lv-thr-none{color:var(--mut);font-size:13px;margin:4px 0 8px}
+.lv-msg{border-radius:10px;padding:7px 10px;margin:6px 0;max-width:88%}.lv-msg.bio{background:#eef4fa}.lv-msg.fib{background:#eaf7ee}.lv-msg.mine{margin-left:auto}
+.lv-msg-h{font-size:11.5px;color:var(--mut);font-weight:700}.lv-msg-t{font-size:14.5px;white-space:pre-wrap}
+.lv-comp{display:flex;gap:6px;margin-top:8px}.lv-comp textarea{flex:1;min-width:0;font:inherit;font-size:15px;border:2px solid var(--line);border-radius:10px;padding:8px;-webkit-user-select:text;user-select:text}
+.lv-send{border:0;border-radius:10px;background:var(--b);color:#fff;font:inherit;font-weight:800;padding:0 14px}
+.lv-err{color:#a50e0e;font-weight:700;font-size:13px;margin-top:4px}
+.lv-conf{background:#fff;border:2px solid var(--b);border-radius:12px;padding:10px 12px;margin:8px 0 12px}.lv-conf b{display:block}.lv-conf small{display:block;color:var(--mut);margin:2px 0 8px}
+.lv-conf-b{display:flex;gap:8px;margin-bottom:8px}.lv-conf-b button{flex:1;border:0;border-radius:10px;font:inherit;font-weight:900;padding:12px 6px;color:#fff}.lv-conf-b .ok{background:#1e8e3e}.lv-conf-b .bad{background:#c8102e}
+.lv-conf textarea{width:100%;font:inherit;border:2px solid var(--line);border-radius:10px;padding:8px;-webkit-user-select:text;user-select:text}
+.lv-conf-r{font-size:13.5px;font-weight:700;padding:5px 8px;border-radius:8px;margin:4px 0}.lv-conf-r.ok{background:#d6f5e2;color:#1e6b34}.lv-conf-r.bad{background:#fde2e1;color:#a50e0e}
 .zoom{position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;z-index:50;padding:10px}.zoom img{max-width:100%;max-height:92vh;border-radius:8px}
 #wm{position:fixed;inset:0;pointer-events:none;z-index:40;opacity:.12}
 body.away main{filter:blur(18px)}
@@ -66,9 +79,9 @@ body.away main{filter:blur(18px)}
 </style>
 </head>
 <body>
-<div class="top"><img src="icons/bps/logo.jpg" alt="Bioseco"><div><b>BIOSECO</b><small>Poland QC live  |  Wolf Wind Farm  |  read only</small></div></div>
+<div class="top"><img src="icons/bps/logo.jpg" alt="Bioseco"><div><b>BIOSECO</b><small>Poland QC live  |  Wolf Wind Farm  |  with Fibraco</small></div></div>
 <main id="m"></main>
-<script src="js/live.js?v=1793349824"></script>
+<script src="js/live.js?v=1793355652"></script>
 <script>
 "use strict";
 (() => {
@@ -84,6 +97,34 @@ body.away main{filter:blur(18px)}
     const r = await fetch(`${URL0}/rest/v1/rpc/${fn}`, { method: "POST", headers: { "Content-Type": "application/json", apikey: ANON, Authorization: `Bearer ${ANON}` }, body: JSON.stringify(Object.assign({ p_token: ST.t, p_device: ST.d }, body)) });
     if (!r.ok) { const t = await r.text(); const e = new Error(t.slice(0, 200)); e.status = r.status; throw e; }
     return r.json();
+  }
+  const b64 = a => btoa(String.fromCharCode(...new Uint8Array(a)));
+  const cfgTags = () => { const c = Object.values(recs).find(o => o && o.t === "cfg" && o.v === 2); return c ? c.tags : null; };
+  // his answers and messages: sealed with the share key, tagged so the Bioseco team's phones and the other Bioseco viewers get them
+  async function sput(obj) {
+    const tags = cfgTags(); if (!tags) throw new Error("not ready");
+    const id = rnd().slice(0, 32), iv = crypto.getRandomValues(new Uint8Array(12));
+    const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, SK, enc.encode(JSON.stringify(obj)));
+    const res = await rpc("put_records", { p_rows: [{ id, kind: "r", iv: b64(iv), data: b64(ct), shared: false, tags }] });
+    if (res && res.rejected && res.rejected.length) throw new Error("refused");
+    recs[id] = obj; draw();
+  }
+  const now = () => new Date().toISOString();
+  const nm = w => w === "SUBSTATION" ? "Substation" : w;
+  function top() {
+    return LiveUI.thread(LiveUI.msgs(recs), { side: "bioseco", title: "Messages with Fibraco", max: 8, empty: "No messages yet. Anything you need from the team on site, write it here. It goes to Hendrik (site manager) and Wanro.",
+      ph: "Message to Fibraco (Hendrik and Wanro)", send: t => sput({ t: "msg", v: 2, pid: "bioseco", w: "GENERAL", from: "bioseco", who: ST.n, txt: t, at: now() }) });
+  }
+  function detTop(w) {
+    const E = LiveUI.h, confs = Object.values(recs).filter(o => o && o.t === "conf" && o.v === 2 && o.w === w).sort((a, b) => String(a.at).localeCompare(String(b.at)));
+    const note = E("textarea", { rows: "2", placeholder: "What is not OK? (needed for Not OK)" }), err = E("div", { class: "lv-err" });
+    const send = async ok => { if (!ok && !note.value.trim()) { err.textContent = "Write what is not OK first."; note.focus(); return; } err.textContent = "";
+      try { await sput({ t: "conf", v: 2, pid: "bioseco", w, ok, note: note.value.trim(), who: ST.n, at: now() }); } catch (e) { err.textContent = "Not sent. Check the signal and try again."; } };
+    return E("div", {},
+      E("div", { class: "lv-conf" }, E("b", {}, `Is ${nm(w)} visible in your system through the VPN?`), E("small", {}, "Not only the service box: BPS module, power box, WTG FO panel, substation FO panel, network and VPN, server, every module online."),
+        ...confs.map(c => E("div", { class: "lv-conf-r " + (c.ok ? "ok" : "bad") }, `${c.ok ? "\u2714 Seen in our system" : "\u2716 Not OK"}: ${c.who}, ${LiveUI.both(c.at)}${c.note ? ". " + c.note : ""}`)),
+        E("div", { class: "lv-conf-b" }, E("button", { type: "button", class: "ok", onclick: () => send(true) }, "SEEN IN OUR SYSTEM"), E("button", { type: "button", class: "bad", onclick: () => send(false) }, "NOT OK")), note, err),
+      LiveUI.thread(LiveUI.msgs(recs, w), { side: "bioseco", w, title: `Messages about ${nm(w)}`, ph: `Message to Fibraco about ${nm(w)}`, send: t => sput({ t: "msg", v: 2, pid: "bioseco", w, from: "bioseco", who: ST.n, txt: t, at: now() }) }));
   }
   async function sopen(iv, data) { return JSON.parse(dec.decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv: unb64(iv) }, SK, unb64(data)))); }
   function card(title, text, ...more) { m.replaceChildren(el("div", { className: "card" }, el("h1", { textContent: title }), el("p", { textContent: text }), ...more)); }
@@ -125,19 +166,22 @@ body.away main{filter:blur(18px)}
   function zoom(u, cap) { const z = el("div", { className: "zoom", onclick: () => z.remove() }, el("img", { src: u, alt: cap })); document.body.append(z); }
   function draw() {
     const box = el("div");
-    LiveUI.render(box, recs, { title: "Poland QC live", sub: "Wolf Wind Farm, BPS commissioning by Fibraco", sel, photo, zoom, open: w => { sel = w; draw(); window.scrollTo(0, 0); } });
+    LiveUI.render(box, recs, { title: "Poland QC live", sub: "Wolf Wind Farm, BPS commissioning by Fibraco", sel, photo, zoom, top, detTop, open: w => { sel = w; draw(); window.scrollTo(0, 0); } });
     m.replaceChildren(box, el("p", { className: "foot", textContent: "Updates on its own every few seconds. Fibraco (Pty) Ltd" }));
   }
+  let pending = true;
   async function pull() {
+    let got = 0;
     try {
       for (;;) {
         const rows = await rpc("get_records", { p_since: since, p_kinds: ["r"] });
         if (!rows || !rows.length) break;
-        for (const r of rows) { if (r.updated_at > since) since = r.updated_at; try { const o = await sopen(r.iv, r.data); if (o && o.t) recs[r.id] = o; } catch (e) {} }
+        for (const r of rows) { if (r.updated_at > since) since = r.updated_at; try { const o = await sopen(r.iv, r.data); if (o && o.t) { recs[r.id] = o; got++; } } catch (e) {} }
         if (rows.length < 500) break;
       }
       try { localStorage.setItem(KEY + "-c", JSON.stringify({ since, recs })); } catch (e) {}
-      draw();
+      const a = document.activeElement; if (a && a.tagName === "TEXTAREA" && a.value) { pending = true; return; }
+      if (got || pending) { pending = false; draw(); }
     } catch (e) {
       if (/device not approved/.test(e.message)) { card("Waiting for Fibraco", "This device is new. Fibraco must allow it first. This page opens by itself as soon as they do."); }
       else if (/not allowed/.test(e.message)) { localStorage.removeItem(KEY); localStorage.removeItem(KEY + "-c"); card("Access stopped", "This live page is switched off for this device. Contact Fibraco if you need it again."); clearInterval(timer); }
@@ -146,7 +190,7 @@ body.away main{filter:blur(18px)}
   async function start() {
     if (location.hash.length > 5) await fromLink();
     if (!ST || !ST.k) { card("Bioseco live", "Open this page with the link Fibraco sent you."); return; }
-    SK = await crypto.subtle.importKey("raw", unb64(ST.k), "AES-GCM", false, ["decrypt"]);
+    SK = await crypto.subtle.importKey("raw", unb64(ST.k), "AES-GCM", false, ["encrypt", "decrypt"]);
     wm();
     try { const c = JSON.parse(localStorage.getItem(KEY + "-c") || "null"); if (c && c.recs) { recs = c.recs; since = c.since || since; draw(); } } catch (e) {}
     if (!Object.keys(recs).length) card("Bioseco live", "Loading...");

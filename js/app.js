@@ -380,7 +380,7 @@ function vProjects() {
         bioSetup(); } }, "Fingerprint")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1793349824";
+const APPV = "1793355652";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -463,7 +463,7 @@ async function sendRegister(p, d, days) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793349824"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793349824"); await loadJs("./js/pdf.js?v=1793349824");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793355652"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793355652"); await loadJs("./js/pdf.js?v=1793355652");
     const { html, title } = attDoc(p, d, days); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
@@ -573,7 +573,7 @@ async function timeZone() {
   try {
     try { Store.kick(); await refreshDevices(true); } catch (e) {}
     await new Promise(r => setTimeout(r, 1800));
-    await loadJs("./js/lib/html2canvas.min.js?v=1793349824"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793349824"); await loadJs("./js/pdf.js?v=1793349824");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793355652"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793355652"); await loadJs("./js/pdf.js?v=1793355652");
     const D = tzData(), stamp = `${dmy(new Date())} ${hhmm()}`, name = `FIBRACO - Time Zone (${stamp})`;
     const pdf = await window.FibPdf.diaryPdf(tzHtml(D), name);
     const json = new File([JSON.stringify(D, null, 1)], name.replace(/[\\/:*?"<>|]+/g, "-") + ".json", { type: "application/json" });
@@ -864,7 +864,7 @@ function vMenuTiles() {
   const dl = { badge: open.length || "", bc: top >= 3 ? "" : "o", cls: "dark" };
   const comm = p.kind === "turbines" ? [tile("check", "Installation QC\nnew build", () => openQc("build"), { cls: qcLive(p, "build") ? "" : "grey" }),
     tile("doc", "Installation QC\ncommissioning", () => openQc("commissioning"), { cls: qcLive(p, "commissioning") ? "" : "grey" }),
-    SHARE() && SHARE().pid === p.id && qcLive(p, "commissioning") ? tile("eye", "BIOSECO\nPoland QC live", () => { S.liveSel = null; go("live"); }) : null] : null;
+    SHARE() && SHARE().pid === p.id && qcLive(p, "commissioning") ? tile("eye", "BIOSECO\nPoland QC live", () => { S.liveSel = null; go("live"); }, liveTalk() && liveOpen(p.id) ? { badge: liveOpen(p.id), bc: "" } : {}) : null] : null;
   const tests = p.routes ? tile("wave", "Test\nsheets", () => go("tsheets")) : tile(p.kind === "turbines" ? "turb" : "wave", p.kind === "turbines" ? "Turbines" : p.kind === "opgw" ? "Joint and\ntests" : "Cable\ntests", () => go("tests"));
   const contacts = tile("phone", "Client\ncontacts", () => { const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Client contacts" }, h("div", { class: "modal" }, projCard(p), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close")))); document.body.append(ov); });
   const red = (t, sub, fn) => h("button", { class: "mbtn tred", type: "button", onclick: fn }, t, h("small", {}, sub));
@@ -1556,7 +1556,7 @@ async function recordPdf() {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793349824"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793349824"); await loadJs("./js/pdf.js?v=1793349824");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793355652"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793355652"); await loadJs("./js/pdf.js?v=1793355652");
     const f = S.form, src = [...app.children].filter(k => !k.matches(".bar, .fb-btn, .ro-bar, .psub, .err, .pnav, .addrow"));
     const box = document.createElement("div");
     for (const k of src) {
@@ -1807,7 +1807,7 @@ async function sendOrder(f) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793349824"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793349824"); await loadJs("./js/pdf.js?v=1793349824");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793355652"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793355652"); await loadJs("./js/pdf.js?v=1793355652");
     const { html, title } = orderDoc(f);
     const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
@@ -2554,7 +2554,7 @@ function bpsDays() {
 const bpsDayLab = ds => new Date(ds + "T12:00:00").toLocaleDateString("en-ZA", { weekday: "short", day: "numeric", month: "short" });
 // what was done on this sheet today, per man, for Bioseco's daily page
 function bpsLogBox(w) {
-  const c = bpsOf(w), d = ymd(today()), mayWrite = !S.qcRO && canSignWork(S.user) && ([bpsOwner("el"), bpsOwner("tc")].includes(S.user) || isSM(S.user));
+  const c = bpsOf(w), d = ymd(today()), mayWrite = !S.qcRO && canSignWork(S.user) && (bpsMine("el") || bpsMine("tc") || isSM(S.user));
   c.log = c.log || {};
   const todays = bpsNotes(c, d).filter(([n]) => n !== S.user), past = Object.keys(c.log).filter(k => k !== d).sort().reverse().flatMap(k => bpsNotes(c, k).map(([n, v]) => [k, n, v])).slice(0, 6);
   return sheet("", h("div", { class: "band" }, "Today's work on this sheet (goes on Bioseco's daily report)"),
@@ -2563,7 +2563,10 @@ function bpsLogBox(w) {
     !mayWrite && !todays.length ? h("div", { class: "ro" }, "Nothing written today.") : null,
     ...past.map(([k, n, v]) => h("p", { class: "hint", style: "opacity:.75" }, `${dmy(new Date(k + "T12:00:00"))}, ${n}: ${v.txt}`)));
 }
-const bpsCanEdit = part => !S.qcRO && canSignWork(S.user) && (S.user === bpsOwner(part) || isSM(S.user));
+// Wanro 30 Oct: when the owner of a part is away, someone else covers it (Marcel does the fibre while Marlon is off)
+const bpsCover = (part, p = S.project) => ((p && p.qcCover) || {})[part] || [];
+const bpsMine = (part, u = S.user) => u === bpsOwner(part) || bpsCover(part).includes(u);
+const bpsCanEdit = part => !S.qcRO && canSignWork(S.user) && (bpsMine(part) || isSM(S.user));
 // the two sheets of a turbine, as tabs, each with what is still to do
 function bpsTabs(w) {
   const a = ["el", "tc"].filter(pt => !bpsOf(w).parts[pt]).reduce((n, pt) => n + bpsMissing(w, pt).length, 0), b = ["el", "tc"].filter(pt => !bpsOf(w).parts[pt]).reduce((n, pt) => n + pmMissing(w, pt).length, 0);
@@ -2578,7 +2581,7 @@ function bpsPhotoSlot(c, k, lab, pic, edit) {
 function bpsPartHead(w, part) {
   const c = bpsOf(w), sg = c.parts[part], back = c.back[part], who = bpsOwner(part);
   return h("div", { class: "bps-part " + (sg ? "done" : back ? "back" : "") },
-    h("div", {}, h("b", {}, `${who.split(" ")[0]}: ${BPS_PARTS[part]}`), h("small", {}, sg ? `Submitted by ${sg.by} at ${sg.at} on ${sg.date || ""}${isSM(S.user) && !S.qcRO ? ". You can still add or correct." : ""}` : back ? `Sent back by ${back.by}: ${back.why}` : S.user === who ? `Your part. Fill it in and submit it to ${smName().split(" ")[0]}.` : isSM(S.user) && !S.qcRO ? `${who} fills this in. As site manager you can also fill it in and sign it off.` : `${who} fills this in.`)),
+    h("div", {}, h("b", {}, `${who.split(" ")[0]}: ${BPS_PARTS[part]}`), h("small", {}, sg ? `Submitted by ${sg.by} at ${sg.at} on ${sg.date || ""}${isSM(S.user) && !S.qcRO ? ". You can still add or correct." : ""}` : back ? `Sent back by ${back.by}: ${back.why}` : S.user === who ? `Your part. Fill it in and submit it to ${smName().split(" ")[0]}.` : bpsCover(part).includes(S.user) ? `You cover this part while ${who.split(" ")[0]} is away. Fill it in and submit it to ${smName().split(" ")[0]}.` : isSM(S.user) && !S.qcRO ? `${who} fills this in. As site manager you can also fill it in and sign it off.` : `${who} fills this in.`)),
     sg && (isSM(S.user) || isAdmin(S.user)) && !S.qcRO ? h("button", { type: "button", class: "btn-g", onclick: () => bpsSendBack(w, part) }, "Send back") : null);
 }
 function bpsSendBack(w, part) {
@@ -2596,7 +2599,7 @@ function bpsSign(w, part) {
 function bpsSignBtn(w, part) {
   // Wanro 29 Oct: the site manager can also sign off either part, so the work keeps moving when the owner is
   // busy elsewhere (Marlon in the substation, Hendrik on the turbines). The signature shows who actually signed.
-  const mine = S.user === bpsOwner(part);
+  const mine = bpsMine(part);
   if (!bpsCanEdit(part) || bpsPartDone(w, part) || !(mine || isSM(S.user))) return null;
   const lab = part === "el" ? "ELECTRICAL AND MECHANICAL" : "TELECOMS";
   // Wanro 29 Oct: Marcel and Marlon submit their parts to Hendrik only. He adds or corrects, then submits the day to Wanro.
@@ -2759,7 +2762,7 @@ function pmMissing(w, part) {
   for (const [k, lab] of def.ph) if (!(c.ph[k] || []).length) m.push(lab);
   for (const [k, no, lab] of def.chk) { const v = pm.k[k]; if (!v) m.push(`${no} ${lab.split(":")[0].split(",")[0]}`); else if (PM_BAD(v) && !String(pm.why[k] || "").trim()) m.push(`Why ${no} is ${v.toLowerCase()}`); }
   for (const [k, no, lab] of def.num) if (!String(pm.k[k] || "").trim()) m.push(`${no} ${lab.split(",")[0]}`);
-  if (part === "tc" && (!String(pm.conf.who || "").trim() || !String(pm.conf.at || "").trim())) m.push("Who at Bioseco confirmed, and the time");
+  if (part === "tc" && (!String(pm.conf.who || "").trim() || !String(pm.conf.at || "").trim())) m.push("Who at Bioseco saw it in their system through the VPN, and the time");
   return m;
 }
 function pmStarted(c, part, w) {
@@ -2802,7 +2805,7 @@ function pmNum(pm, row, e, save) {
 function pmShare(w) {
   const c = bpsOf(w), pm = pmOf(c), now = new Date(), t = hhmm(now);
   const txt = w === "SUBSTATION" ? `Fibraco is busy in the Wolf substation (${t}). The BPS rack is connected. Please confirm through the server that every turbine and module is online.`
-    : `Fibraco is on ${w} at Wolf (${t}). The BPS box is connected to the WTG FO panel. Please confirm the full chain through the server: BPS box, WTG FO panel, substation FO panel, Bioseco server, and every module online.`;
+    : `Fibraco is on ${w} at Wolf (${t}). The BPS box is connected to the WTG FO panel. Please check it in your system through the VPN, not only the service box: BPS module, BPS power box, WTG FO panel, substation FO panel, network and VPN, Bioseco server, and every module online. @Marcin @Jakub`;
   pm.told = { by: S.user, at: t, on: ymd(now) }; bpsTouch(c); persist(); render();
   if (navigator.share) navigator.share({ text: txt }).catch(() => {});
   else { const a = h("a", { href: "https://wa.me/?text=" + encodeURIComponent(txt), target: "_blank", rel: "noopener" }); document.body.append(a); a.click(); a.remove(); }
@@ -2855,12 +2858,14 @@ function pmView(w, eEl, eTc) {
   const tc = [h("h3", { class: "bps-h" }, sub ? "Substation: fibre, network and Bioseco's remote check" : "Fibre, network and Bioseco's check of the full chain")];
   for (const r of def.tc.chk) tc.push(pmChk(c, pm, r, eTc, save));
   tc.push(sheet("pm-chain", h("div", { class: "band" }, "Bioseco checks the chain before we move on"),
-    h("p", { class: "hint" }, sub ? "Tell Bioseco when the rack is connected, so they can check every turbine through the server." : "As soon as the BPS box is connected, tell Bioseco. They check BPS box, WTG FO panel, substation FO panel and server. Do not leave the turbine before they confirm."),
-    pmAsk(w, eTc, sub ? "The rack is connected. Please do the remote check (5.1): every turbine and module online, images, detection and deterrence." : "BPS box connected. Please check the full chain: BPS box, WTG FO panel, substation FO panel, server, every module online.", sub ? "ASK BIOSECO FOR THE REMOTE CHECK" : "ASK BIOSECO TO CHECK THE CHAIN NOW"),
+    h("p", { class: "hint" }, sub ? "Tell Bioseco when the rack is connected, so they can check every turbine through the server." : "As soon as the BPS box is connected, ask Bioseco. They check it in their system through the VPN (not only the service box): BPS module, power box, WTG FO panel, substation FO panel, network and VPN, server. Do not leave the turbine before they confirm."),
+    pm.conf.from === "live" && pm.conf.who ? h("p", { class: "pm-told", style: "font-size:15px" }, `\u2714 Seen in the Bioseco system by ${pm.conf.who} at ${pm.conf.at} (from their live page)`) : null,
+    pm.nok && !(pm.conf.vpn && pm.conf.seen > pm.nok.at) ? h("p", { class: "pm-told", style: "color:#a50e0e;font-size:15px" }, `\u2716 Not OK from ${pm.nok.who} at ${hhmm(new Date(pm.nok.at))}${pm.nok.note ? ": " + pm.nok.note : ""}`) : null,
+    pmAsk(w, eTc, sub ? "The rack is connected. Please do the remote check (5.1): every turbine and module online, images, detection and deterrence." : "BPS box connected. Please check in your system through the VPN, not only the service box: BPS module, BPS power box, WTG FO panel, substation FO panel, network and VPN, server, every module online.", sub ? "ASK BIOSECO FOR THE REMOTE CHECK" : "ASK BIOSECO TO CHECK THE CHAIN NOW"),
     pm.told ? h("p", { class: "pm-told" }, `Bioseco told at ${pm.told.at} by ${pm.told.by}${pm.told.on !== ymd(today()) ? " on " + dmy(new Date(pm.told.on + "T12:00:00")) : ""}.`) : null,
     eTc ? h("button", { type: "button", class: "mbtn pm-wa", onclick: () => pmShare(w) }, pm.told ? "WHATSAPP BIOSECO AGAIN" : "ALSO TELL THEM ON WHATSAPP", h("small", {}, "Opens WhatsApp with the message ready. Pick the Bioseco group and send.")) : null,
     h("table", {}, h("tbody", {},
-      h("tr", {}, h("td", { class: "lab" }, "Confirmed by (Bioseco)"), h("td", {}, eTc ? inp("text", pm.conf.who, x => { pm.conf.who = x; if (x && pm.ask) pm.ask.done = pm.ask.done || new Date().toISOString(); save(); }, "e.g. Jakub Dziadak") : h("div", { class: "ro" }, pm.conf.who || "-"))),
+      h("tr", {}, h("td", { class: "lab" }, "Visible in the Bioseco system through the VPN (not only the service box), confirmed by"), h("td", {}, eTc ? inp("text", pm.conf.who, x => { pm.conf.who = x; if (x && pm.ask) pm.ask.done = pm.ask.done || new Date().toISOString(); save(); }, "e.g. Jakub Dziadak") : h("div", { class: "ro" }, pm.conf.who || "-"))),
       h("tr", {}, h("td", { class: "lab" }, "Time confirmed"), h("td", {}, eTc ? inp("text", pm.conf.at, x => { pm.conf.at = x; save(); }, "e.g. 10h45") : h("div", { class: "ro" }, pm.conf.at || "-")))))));
   for (const [k, lab, no] of def.tc.ph) tc.push(pmPhotoSlot(c, k, lab, no, eTc));
   if (sub) tc.push(sheet("", h("div", { class: "band" }, "Written OK from Bioseco Operations to leave site (SOP-SRV-01)"),
@@ -2881,7 +2886,7 @@ function pmView(w, eEl, eTc) {
 // Wanro 29 Oct: a turbine that cannot be finished because of someone else (no breaker in the Vestas cabinet, no light on the fibre).
 // It shows on the grid, on the daily report and in the PRC-SRV-03 list of turbines not completed, with the reason and a date.
 function bpsWaitBox(w) {
-  const c = bpsOf(w), wt = c.wait, e = !S.qcRO && canSignWork(S.user) && ([bpsOwner("el"), bpsOwner("tc")].includes(S.user) || isSM(S.user));
+  const c = bpsOf(w), wt = c.wait, e = !S.qcRO && canSignWork(S.user) && (bpsMine("el") || bpsMine("tc") || isSM(S.user));
   if (!wt && !e) return null;
   if (!wt) return h("button", { type: "button", class: "pm-waitbtn", onclick: () => { c.wait = { on: "", why: "", until: "", by: S.user, since: ymd(today()), iso: new Date().toISOString() }; bpsTouch(c); persist(); render(); } }, "This turbine is waiting on someone else");
   return sheet("pm-wait", h("div", { class: "band" }, "Waiting on others"),
@@ -2901,7 +2906,14 @@ let SH = { recs: {}, pub: {}, phUp: {} }, shareT = 0, shareBusy = false, shareRe
 async function shareInit() {
   const c = SHARE(); if (!c || shareReady) return; shareReady = true;
   try { await Store.setShareKey(c.k); const v = await Store.shareSaved(); if (v && v.recs) SH = Object.assign({ recs: {}, pub: {}, phUp: {} }, v); } catch (e) {}
-  Store.onShare((id, o, at) => { if (!o || !o.t) return; SH.recs[id] = Object.assign({}, o, { _srv: at }); shareSave(); if (S.view === "live") render(); });
+  SH.applied = SH.applied || {}; SH.seenMsg = SH.seenMsg || {};
+  Store.onShare((id, o, at) => {
+    if (!o || !o.t || o.v !== 2) return; // version 1 (30 Oct morning) was shared and is replaced
+    SH.recs[id] = Object.assign({}, o, { _srv: at }); shareSave();
+    if (o.t === "conf") shareSoon(200);
+    if (o.t === "msg" && o.from === "bioseco" && !SH.seenMsg[id]) { SH.seenMsg[id] = 1; if (isAdmin(S.user) || isSM(S.user)) toast(`Message from ${o.who || "Bioseco"}: ${String(o.txt || "").slice(0, 80)}`); }
+    if (S.view === "live" || S.view === "menu") render();
+  });
   Store.on((ids, what) => { if (what === "synced") shareSoon(1500); });
 }
 let shareSaveT = 0; const shareSave = () => { clearTimeout(shareSaveT); shareSaveT = setTimeout(() => Store.shareSaved(SH).catch(() => {}), 800); };
@@ -2916,9 +2928,11 @@ function liveBoard(w, order) {
   const c = w === "SUBSTATION" ? bpsSubDefaults(bpsOf(w)) : bpsOf(w), pm = pmOf(c), tdy = ymd(today()), dt = (c.dayT || {})[tdy];
   // started means real work: a photo, a submitted part, a PRC-SRV-03 entry or a working day (the substation's cover page defaults do not count)
   const st0 = c.parts.el && c.parts.tc ? "done" : Object.values(c.ph).some(a => (a || []).length) || c.parts.el || c.parts.tc || Object.keys(pm.mod).length || Object.values(pm.k).some(Boolean) || Object.keys(c.dayT || {}).length ? "busy" : "todo";
-  const conf = pm.conf.who ? `Chain confirmed by ${pm.conf.who}${pm.conf.at ? " at " + pm.conf.at : ""}` : "";
+  const conf = pm.conf.who ? `Seen in the Bioseco system by ${pm.conf.who}${pm.conf.at ? " at " + pm.conf.at : ""}` : "";
   let st, line;
-  if (st0 === "done") { st = "done"; line = ["Both parts submitted", conf].filter(Boolean).join(". "); }
+  if (pm.nok && !(pm.conf.vpn && pm.conf.seen > pm.nok.at)) { st = "nok"; line = `Not OK from ${pm.nok.who} at ${hhmm(new Date(pm.nok.at))} SA time${pm.nok.note ? ": " + pm.nok.note : ""}. The team is on it.`; }
+  else if (st0 === "done" && !pm.conf.who) { st = "vpn"; line = "Both parts submitted. Still to be checked in the Bioseco system through the VPN."; }
+  else if (st0 === "done") { st = "done"; line = ["Both parts submitted", conf].filter(Boolean).join(". "); }
   else if (askOpen(pm)) { st = "check"; line = `The team asked for your check at ${hhmm(new Date(pm.ask.at))} SA time`; }
   else if (pm.conf.who) { st = "ok"; line = conf + ". The team is finishing the sheets."; }
   else if (c.wait) { st = "hold"; line = c.wait.on === "Bioseco" ? `Waiting on Bioseco: ${c.wait.why || ""}` : `On hold, waiting on site power or access (not Fibraco)${c.wait.until ? ", expected " + dmy(new Date(c.wait.until + "T12:00:00")) : ""}`; }
@@ -2935,7 +2949,8 @@ function liveEvents(w) {
   for (const [d, i] of Object.entries(days)) out.push({ k: "start|" + d, at: i, w, txt: `Team started work on ${nm}` });
   for (const pt of ["el", "tc"]) { const s = c.parts[pt]; if (s) out.push({ k: "sub|" + pt + "|" + (s.on || ""), at: s.iso || isoOf(s.on, s.at), w, txt: `${nm}: ${pt === "el" ? "power, modules and mounting" : "fibre and network"} submitted. Results and photos are available.` }); }
   if (pm.ask && pm.ask.at) out.push({ k: "ask|" + pm.ask.at, at: pm.ask.at, w, txt: `${nm}: the team asks you to check. ${pm.ask.txt || ""}`.trim() });
-  if (pm.conf.who && pm.conf.seen) out.push({ k: "conf", at: pm.conf.seen, w, txt: `${nm}: chain confirmed by ${pm.conf.who}${pm.conf.at ? " at " + pm.conf.at : ""}` });
+  if (pm.conf.who && pm.conf.seen) out.push({ k: "conf", at: pm.conf.seen, w, txt: `${nm}: seen in the Bioseco system by ${pm.conf.who}${pm.conf.at ? " at " + pm.conf.at : ""}` });
+  if (pm.nok) out.push({ k: "nok|" + pm.nok.at, at: pm.nok.at, w, txt: `${nm}: not OK from ${pm.nok.who}${pm.nok.note ? ": " + pm.nok.note : ""}` });
   if (c.wait && c.wait.iso) out.push({ k: "hold|" + c.wait.iso, at: c.wait.iso, w, txt: `${nm}: on hold, ${c.wait.on === "Bioseco" ? "waiting on Bioseco: " + (c.wait.why || "") : "waiting on site power or access (not Fibraco)"}` });
   if (c.parts.el && c.parts.tc) { const a = [c.parts.el, c.parts.tc].map(s => s.iso || isoOf(s.on, s.at)).sort().pop(); out.push({ k: "done", at: a, w, txt: `${nm} complete, both parts submitted` }); }
   return out.filter(e => e.at);
@@ -2979,7 +2994,7 @@ async function liveDetail(w) {
   if ((c.parts.el || c.parts.tc) && pm.find) (d.find = d.find || []).push({ head: "General", txt: pm.find });
   if (c.parts.el || c.parts.tc) d.rep = (pm.rep || []).filter(r => r.item || r.out || r.in).map(r => ({ item: r.item, pos: r.pos, out: r.out, in: r.in }));
   d.photos = [];
-  for (const x of phs) d.photos.push({ id: await Store.shareId("ph|" + x.q.ph), cap: x.cap, src: x.q.ph });
+  for (const x of phs) d.photos.push({ id: await Store.shareId("ph2|" + x.q.ph), cap: x.cap, src: x.q.ph });
   return d;
 }
 // a smaller copy of the photo for Bioseco, sealed with the share key
@@ -2991,21 +3006,36 @@ async function liveSmall(q) {
   const s = Math.min(1, 1280 / Math.max(img.width, img.height)), cv = document.createElement("canvas"); cv.width = Math.round(img.width * s); cv.height = Math.round(img.height * s);
   cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height); return cv.toDataURL("image/jpeg", 0.7);
 }
+// who may change what the phones publish: the Bioseco team and the office. Bioseco's viewers can read it, never change it.
+function liveTags() { const c = SHARE(), p = CFG.projects.find(x => x.id === c.pid) || {}, ids = Object.keys(p.team || {}).map(n => (PEOPLE.find(x => x.name === n) || {}).id).filter(Boolean);
+  return [...c.tags, ...ids.map(i => "user:" + i)]; }
 async function shareSync() {
   const c = SHARE(); if (!c || shareBusy || !shareMine() || !navigator.onLine) return;
   shareBusy = true; const keep = S.project;
   try {
     S.project = PROJECTS.find(x => x.id === c.pid); const pid = S.project.id; seedLinks(); if (S.project.design) DESIGN = S.project.design;
     const ws = ["SUBSTATION", ...liveOrder(bpsWtgs())], out = [], now = new Date().toISOString();
+    // Bioseco's answers from their live page: seen in their system through the VPN, or not OK with a note
+    let changed = false;
+    for (const [id, o] of Object.entries(SH.recs)) {
+      if (!o || o.t !== "conf" || o.pid !== pid || SH.applied[id] || !ws.includes(o.w)) continue;
+      const bc = bpsOf(o.w), pm = pmOf(bc);
+      if (o.ok) { if (!pm.conf.who) Object.assign(pm.conf, { who: o.who, at: hhmm(new Date(o.at)) }); pm.conf.vpn = true; pm.conf.seen = pm.conf.seen || o.at; pm.conf.from = "live"; delete pm.nok; if (pm.ask) pm.ask.done = pm.ask.done || o.at; }
+      else { pm.nok = { who: o.who, at: o.at, note: o.note || "" }; if (pm.ask) pm.ask.done = pm.ask.done || o.at; }
+      SH.applied[id] = 1; changed = true;
+    }
+    if (changed) { persist(); shareSave(); }
+    // where Bioseco's page writes its answers, so the team's phones receive them
+    out.push({ id: await Store.shareId("v2|cfg|" + pid), obj: { t: "cfg", v: 2, pid, tags: [await Store.tagHash("proj:" + pid), await Store.tagHash("share:" + pid)], at: now }, j: "cfg" });
     for (let i = 0; i < ws.length; i++) {
       const w = ws[i], bc = bpsOf(w), src = Store.atOf(`bio|${pid}|${w}`) || "";
       if (bc.pm && bc.pm.conf && bc.pm.conf.who && !bc.pm.conf.seen) { bc.pm.conf.seen = now; persist(); }
       const recs = [["board|" + pid + "|" + w, liveBoard(w, i)], ["det|" + pid + "|" + w, await liveDetail(w)], ...liveEvents(w).map(e => ["ev|" + pid + "|" + w + "|" + e.k, { t: "ev", pid, w: e.w, at: e.at, txt: e.txt }])];
       for (const [name, o] of recs) {
-        const id = await Store.shareId(name), j = JSON.stringify(o);
+        const id = await Store.shareId("v2|" + name), j = JSON.stringify(o);
         if (SH.pub[id] === j) continue;
         const theirs = SH.recs[id]; if (theirs && theirs.src && src && theirs.src > src && theirs.by !== (Store.me() || {}).member) continue; // another phone has newer work on this sheet
-        out.push({ id, obj: Object.assign({}, o, { src, by: (Store.me() || {}).member, at: o.t === "ev" ? o.at : now }), j });
+        out.push({ id, obj: Object.assign({}, o, { v: 2, src, by: (Store.me() || {}).member, at: o.t === "ev" ? o.at : now }), j });
       }
     }
     // photos first, so the results never point at a photo that is not there yet
@@ -3013,11 +3043,11 @@ async function shareSync() {
     for (const p of phs) {
       let ph = null; for (const w of ws) { for (const arr of Object.values(bpsOf(w).ph)) { const hit = (arr || []).find(y => y && y.ph === p.src); if (hit) { ph = hit; break; } } if (ph) break; }
       const data = ph ? await liveSmall(ph).catch(() => null) : null; if (!data) continue;
-      await Store.sharePut([{ id: p.id, obj: { t: "ph", d: data }, kind: "ph" }], c.tags); SH.phUp[p.id] = 1; shareSave();
+      await Store.sharePut([{ id: p.id, obj: { t: "ph", v: 2, d: data }, kind: "ph" }], liveTags()); SH.phUp[p.id] = 1; shareSave();
     }
     for (const x of out) if (x.obj.t === "det") x.obj.photos = (x.obj.photos || []).filter(p => SH.phUp[p.id]).map(p => ({ id: p.id, cap: p.cap }));
     for (let i = 0; i < out.length; i += 20) {
-      const batch = out.slice(i, i + 20); await Store.sharePut(batch.map(x => ({ id: x.id, obj: x.obj })), c.tags);
+      const batch = out.slice(i, i + 20); await Store.sharePut(batch.map(x => ({ id: x.id, obj: x.obj })), liveTags());
       for (const x of batch) { SH.pub[x.id] = x.j; SH.recs[x.id] = x.obj; }
     }
     if (out.length) { shareSave(); if (S.view === "live") render(); }
@@ -3025,13 +3055,34 @@ async function shareSync() {
 }
 // the office and the site manager see exactly what Bioseco sees
 async function livePhoto(id) { return Store.sharePhoto(id); }
+// Wanro 30 Oct: two-way. Bioseco's messages go to Hendrik and Wanro only, never straight to the crew. Only they answer.
+// Each message from Bioseco gets a decision kept for Fibraco only: part of our scope, or extra work referred to Wanro.
+const liveTalk = () => isAdmin(S.user) || isSM(S.user);
+const bmsgOf = (pid, id) => Store.get(`bmsg|${pid}|${id}`) || null;
+function liveOpen(pid) { return LiveUI.msgs(SH.recs).filter(m => m.pid === pid && m.from === "bioseco" && !bmsgOf(pid, m.id)).length; }
+async function liveSend(w, txt) {
+  const c = SHARE(), id = await Store.shareId("v2|msg|" + Date.now().toString(36) + rid()), now = new Date().toISOString();
+  const obj = { t: "msg", v: 2, pid: c.pid, w: w || "GENERAL", from: "fibraco", who: S.user.split(" ")[0], txt, at: now };
+  await Store.sharePut([{ id, obj }], liveTags()); SH.recs[id] = obj; shareSave(); render();
+}
+function liveDecide(pid, m, st) { Store.put(`bmsg|${pid}|${m.id}`, { st, by: S.user, at: new Date().toISOString(), txt: m.txt, who: m.who, w: m.w }, "r", { tags: [`mgr:${pid}`] }); persistSoon(); render(); }
+function liveExtra(pid) {
+  return m => { if (m.from !== "bioseco" || !liveTalk()) return null;
+    const d = bmsgOf(pid, m.id);
+    if (d) return h("div", { class: "lv-dec " + d.st }, d.st === "scope" ? `Part of our scope, ${d.by.split(" ")[0]}` : d.st === "extra" ? `Extra work, referred to Wanro by ${d.by.split(" ")[0]}` : `Noted by ${d.by.split(" ")[0]}`, h("small", {}, " (only Fibraco sees this)"));
+    return h("div", { class: "lv-decb" }, h("button", { type: "button", onclick: () => liveDecide(pid, m, "scope") }, "PART OF OUR SCOPE"), h("button", { type: "button", class: "x", onclick: () => liveDecide(pid, m, "extra") }, "EXTRA WORK: REFER TO WANRO")); };
+}
 function vLive() {
   const p = S.project, box = h("div", { class: "lv" });
   const recs = Object.fromEntries(Object.entries(SH.recs).filter(([, o]) => o && o.pid === p.id));
-  const draw = () => LiveUI.render(box, recs, { title: "BIOSECO Poland QC live", sub: `${p.name.replace(/^Bioseco - /, "")}  |  what Bioseco sees, read only`, sel: S.liveSel, feed: true,
+  const talk = liveTalk(), extra = liveExtra(p.id);
+  const top = () => talk ? LiveUI.thread(LiveUI.msgs(recs), { side: "fibraco", title: "Messages with Bioseco", max: 12, extra, empty: "No messages from Bioseco yet.", ph: "Answer Bioseco (they see it straight away)", send: t => liveSend("GENERAL", t) }) : null;
+  const detTop = w => talk ? LiveUI.thread(LiveUI.msgs(recs, w), { side: "fibraco", w, extra, title: `Messages about ${w === "SUBSTATION" ? "the substation" : w}`, ph: "Answer Bioseco about this turbine", send: t => liveSend(w, t) }) : null;
+  const draw = () => LiveUI.render(box, recs, { title: "BIOSECO Poland QC live", sub: `${p.name.replace(/^Bioseco - /, "")}  |  what Bioseco sees`, sel: S.liveSel, feed: true, top, detTop,
     open: w => { S.liveSel = w; draw(); window.scrollTo(0, 0); }, photo: livePhoto, zoom: (u, cap) => { const ov = h("div", { class: "overlay", role: "dialog", onclick: () => ov.remove() }, h("img", { src: u, alt: cap, style: "max-width:96vw;max-height:90vh;border-radius:8px" })); document.body.append(ov); } });
   draw(); shareSoon(300);
-  return [topbar("BIOSECO", "Poland QC live  |  Read only", true), h("p", { class: "form-sub" }, `Exactly what Bioseco in Poland (Dariusz, Jakub and Marcin) sees, live. Nothing to fill in here. It comes straight from the commissioning sheets the moment you work and submit.`), box];
+  return [topbar("BIOSECO", `Poland QC live  |  ${talk ? "You can answer Bioseco here" : "Read only"}`, true),
+    h("p", { class: "form-sub" }, talk ? "Exactly what Bioseco in Poland (Dariusz, Jakub and Marcin) sees, live, plus their messages. Only you and Wanro see their messages and answer them. Decide for each one: part of our scope, or extra work for Wanro." : "Exactly what Bioseco in Poland (Dariusz, Jakub and Marcin) sees, live. Nothing to fill in here. It comes straight from the commissioning sheets the moment you work and submit."), box];
 }
 // ---------- the report, in Bioseco's layout ----------
 async function bpsReport(email, day = ymd(today())) {
@@ -3039,7 +3090,7 @@ async function bpsReport(email, day = ymd(today())) {
   const ov = h("div", { class: "overlay", role: "dialog" }, h("div", { class: "modal" }, h("h2", {}, email ? "Approving and emailing" : "Making the report"), h("p", {}, "Fetching the photos and building the PDF. Keep the app open on this screen.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793349824"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793349824"); await loadJs("./js/pdf.js?v=1793349824");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793355652"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793355652"); await loadJs("./js/pdf.js?v=1793355652");
     const ws = ["SUBSTATION", ...bpsWtgs()], phs = ws.flatMap(w => Object.values(bpsOf(w).ph).flat());
     await Promise.all(phs.map(p => p.ph && !PHOTO_CACHE.has(p.ph) && !(p.url || "").startsWith("data:") ? Store.photo(p.ph).then(d => { if (d) PHOTO_CACHE.set(p.ph, d); }).catch(() => {}) : 0));
     const d = bpsDoc(S.project, day);
@@ -3871,7 +3922,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793349824"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793349824"); await loadJs("./js/pdf.js?v=1793349824");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793355652"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793355652"); await loadJs("./js/pdf.js?v=1793355652");
     await fetchDayPhotos(k);
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
@@ -3986,7 +4037,7 @@ async function processMailQ1() {
   let wl = null;
   try {
     wl = await wakeOn();
-    await loadJs("./js/lib/html2canvas.min.js?v=1793349824"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793349824"); await loadJs("./js/pdf.js?v=1793349824");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793355652"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793355652"); await loadJs("./js/pdf.js?v=1793355652");
     for (const j of go) {
       const p = CFG.projects.find(x => x.id === j.pid); if (!p) { j.done = true; continue; }
       if (!j.flash) { const m0 = Store.get(`mail|${j.pid}|${j.ds}`); if (m0 && m0.jobAt && m0.jobAt >= j.at) { j.done = true; continue; } } // another phone already sent it
@@ -5197,7 +5248,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793349824"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793349824"); await loadJs("./js/pdf.js?v=1793349824");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793355652"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793355652"); await loadJs("./js/pdf.js?v=1793355652");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
