@@ -985,3 +985,12 @@ body.vhome .tile.tpj.outred .tpj-n{font-size:calc(9px*var(--kf,1));letter-spacin
 .pm-ask.on .pm-askb{background:#fff;color:#0069aa}.pm-ask.on .pm-askb small{color:#3a6a90}
 .lv .lv-dec{font-size:12px;font-weight:800;margin-top:4px}.lv .lv-dec.scope{color:#1e6b34}.lv .lv-dec.extra{color:#a50e0e}.lv .lv-dec small{font-weight:600;color:#5b6470}
 .lv .lv-decb{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}.lv .lv-decb button{border:0;border-radius:8px;background:#1e8e3e;color:#fff;font:inherit;font-size:11.5px;font-weight:800;padding:7px 9px}.lv .lv-decb button.x{background:#c8102e}
+/* Company policies and warnings (Wanro 30 Oct) */
+.pol-c{display:block;width:100%;text-align:left;background:#fff;border:2px solid #d9dee4;border-left-width:8px;border-radius:12px;padding:10px 12px;margin:0 0 8px;font:inherit;color:#15191e}
+.pol-c b{display:block;font-size:15px}.pol-c small{display:block;color:#5b6470;font-size:12px;margin:2px 0 4px}.pol-c span{display:block;font-size:13px}
+.pol-c em{display:block;font-style:normal;font-weight:800;font-size:12.5px;margin-top:6px}
+.pol-c.must{border-color:#e1ad01}.pol-c.must em{color:#8a4b00}.pol-c.ok{border-color:#1e8e3e}.pol-c.ok em{color:#1e6b34}
+.pol-pages{display:flex;flex-direction:column;gap:8px;margin:6px 0 10px}
+.pol-pg{padding:0;border:1px solid #c9ced6;border-radius:6px;background:#fff;overflow:hidden}.pol-pg img{display:block;width:100%;height:auto}
+.pol-ok{display:flex;gap:10px;align-items:flex-start;font-size:14px;margin-bottom:10px}.pol-ok input{width:26px;height:26px;flex:0 0 auto}
+.pol-done{padding:10px}.pol-done img{max-width:240px;display:block}.pol-done p{margin:6px 0 0;font-weight:700;color:#1e6b34}

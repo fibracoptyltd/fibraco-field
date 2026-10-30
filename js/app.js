@@ -380,7 +380,7 @@ function vProjects() {
         bioSetup(); } }, "Fingerprint")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1793355652";
+const APPV = "1793358741";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -463,7 +463,7 @@ async function sendRegister(p, d, days) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793355652"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793355652"); await loadJs("./js/pdf.js?v=1793355652");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793358741"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793358741"); await loadJs("./js/pdf.js?v=1793358741");
     const { html, title } = attDoc(p, d, days); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
@@ -573,7 +573,7 @@ async function timeZone() {
   try {
     try { Store.kick(); await refreshDevices(true); } catch (e) {}
     await new Promise(r => setTimeout(r, 1800));
-    await loadJs("./js/lib/html2canvas.min.js?v=1793355652"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793355652"); await loadJs("./js/pdf.js?v=1793355652");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793358741"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793358741"); await loadJs("./js/pdf.js?v=1793358741");
     const D = tzData(), stamp = `${dmy(new Date())} ${hhmm()}`, name = `FIBRACO - Time Zone (${stamp})`;
     const pdf = await window.FibPdf.diaryPdf(tzHtml(D), name);
     const json = new File([JSON.stringify(D, null, 1)], name.replace(/[\\/:*?"<>|]+/g, "-") + ".json", { type: "application/json" });
@@ -842,7 +842,10 @@ function vProjectsTiles() {
         PROJECTS.length ? tile("clock", "Internal\ndelays", () => go("delays"), { cls: "dark", badge: open.length, bc: top < 0 ? "g" : top >= 3 ? "" : "o" }) : null,
         PROJECTS.length ? tile("cart", "Material\norder", frontOrder) : null,
         tile("search", "Site\ninspection", () => { S.project = null; startForm("inspection"); }),
-        tile("key", "PIN and\nfingerprint", pinMenu)),
+        tile("key", "PIN and\nfingerprint", pinMenu),
+        // Wanro 30 Oct: company policies for everybody (read and sign), warnings for the office only
+        POLS().length ? tile("book", "Company\npolicies", () => go("policies"), { badge: polOwed().length || "", bc: "o" }) : null,
+        admin ? tile("warn", "Warnings", () => go("warnings"), { cls: "dark", badge: wCases().filter(c => !c.closed && (!c.decision || !c.signed)).length || "" }) : null),
       h("div", { class: "tfoot", style: "justify-content:center" }, h("span", {}, `App version ${verLabel()}`)),
       h("button", { type: "button", class: "tsos round", "aria-label": "Emergency", onclick: () => { if (!S.project && PROJECTS.length === 1) S.project = PROJECTS[0]; openEmergency(); } }, ticon("sos"), "EMERGENCY"))];
 }
@@ -1556,7 +1559,7 @@ async function recordPdf() {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793355652"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793355652"); await loadJs("./js/pdf.js?v=1793355652");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793358741"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793358741"); await loadJs("./js/pdf.js?v=1793358741");
     const f = S.form, src = [...app.children].filter(k => !k.matches(".bar, .fb-btn, .ro-bar, .psub, .err, .pnav, .addrow"));
     const box = document.createElement("div");
     for (const k of src) {
@@ -1807,7 +1810,7 @@ async function sendOrder(f) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793355652"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793355652"); await loadJs("./js/pdf.js?v=1793355652");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793358741"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793358741"); await loadJs("./js/pdf.js?v=1793358741");
     const { html, title } = orderDoc(f);
     const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
@@ -3084,13 +3087,193 @@ function vLive() {
   return [topbar("BIOSECO", `Poland QC live  |  ${talk ? "You can answer Bioseco here" : "Read only"}`, true),
     h("p", { class: "form-sub" }, talk ? "Exactly what Bioseco in Poland (Dariusz, Jakub and Marcin) sees, live, plus their messages. Only you and Wanro see their messages and answer them. Decide for each one: part of our scope, or extra work for Wanro." : "Exactly what Bioseco in Poland (Dariusz, Jakub and Marcin) sees, live. Nothing to fill in here. It comes straight from the commissioning sheets the moment you work and submit."), box];
 }
+// ---------- Company policies (Wanro 30 Oct) ----------
+// Every employee reads each policy on his phone and signs it with his PIN. A policy marked "director first" can only be
+// signed by the crew once Wanro has signed it as director. The office sees who has signed and who still owes it.
+const POLS = () => (CFG && CFG.policies) || [];
+const dirP = () => PEOPLE.find(p => p.admin) || {};
+const polSigOf = (pol, pid) => Store.get(`pol|${pol.id}|${pid}`) || null;
+const polReady = pol => !pol.dirFirst || !!polSigOf(pol, dirP().id);
+const meId = () => (PEOPLE.find(p => p.name === S.user) || {}).id;
+const polOwed = (name = S.user) => { const pid = (PEOPLE.find(p => p.name === name) || {}).id; return POLS().filter(pol => pol.sign && polReady(pol) && !polSigOf(pol, pid)); };
+const staffList = () => PEOPLE.filter(p => !p.admin && CFG.projects.some(pr => pr.active !== false && (pr.team || {})[p.name]));
+function vPolicies() {
+  const admin = isAdmin(S.user), mine = meId();
+  return [topbar("Company policies", admin ? "Read, sign and see who has signed" : "Read each one and sign it with your PIN", true),
+    h("p", { class: "form-sub" }, admin ? "The crew sign each policy on their own phone with their PIN. The two new ones (zero tolerance and the disciplinary code) open for the crew once you have signed them as director." : "These are Fibraco's rules. Read each one. Tap the page to make it bigger. Then sign at the bottom with your PIN."),
+    ...POLS().map(pol => { const sg = polSigOf(pol, mine), ready = polReady(pol), all = staffList(), n = all.filter(p => polSigOf(pol, p.id)).length;
+      const st = admin ? (pol.dirFirst && !sg ? ["must", "Sign it as director first"] : pol.sign ? [n === all.length ? "ok" : "must", `${n} of ${all.length} signed`] : ["", "For reading"])
+        : !pol.sign ? ["", "For reading"] : sg ? ["ok", `Signed ${dmy(new Date(sg.at))}`] : ready ? ["must", "Read and sign"] : ["", "Not open for signing yet"];
+      return h("button", { type: "button", class: "pol-c " + st[0], onclick: () => { S.pol = pol.id; go("policy"); } },
+        h("b", {}, pol.title), h("small", {}, `${pol.no}${pol.rev ? "  Rev " + pol.rev : ""}  |  ${pol.date}`), h("span", {}, pol.summary), h("em", {}, st[1])); })];
+}
+function vPolicy() {
+  const pol = POLS().find(x => x.id === S.pol); if (!pol) return vPolicies();
+  const admin = isAdmin(S.user), mine = meId(), sg = polSigOf(pol, mine), ready = polReady(pol);
+  const pages = pol.pages.map((pg, i) => h("button", { type: "button", class: "pol-pg", onclick: () => { S.dwg = { img: pg.img, hi: pg.hi, title: `${pol.title} page ${i + 1}`, no: pol.no }; S.zoom = 1; dwgFull(true); go("drawing"); } },
+    encImg(pg.img, { alt: `${pol.title}, page ${i + 1}` })));
+  let okBox;
+  const canSign = pol.sign && !sg && (admin ? true : ready);
+  const sign = () => { if (!admin && !okBox.checked) { showInfo("Tick the box first", "Tick that you have read the policy and understand it, then sign."); return; }
+    mySig(v => { if (!v) return; const now = new Date(); Store.put(`pol|${pol.id}|${mine}`, { pol: pol.id, no: pol.no, rev: pol.rev, by: S.user, role: admin ? "Director" : "Employee", at: now.toISOString(), sig: v }); toast("Signed"); setTimeout(render, 300); }); };
+  return [topbar(pol.no + (pol.rev ? "  Rev " + pol.rev : ""), pol.title, true),
+    h("p", { class: "form-sub" }, pol.summary),
+    h("div", { class: "pol-pages" }, ...pages),
+    pol.sign ? sheet("pol-sign", h("div", { class: "band" }, admin && pol.dirFirst ? "Director's signature" : "Your signature"),
+      sg ? h("div", { class: "pol-done" }, h("img", { src: sg.sig, alt: "Signature" }), h("p", {}, `Signed by ${sg.by} on ${dmy(new Date(sg.at))} at ${hhmm(new Date(sg.at))}`))
+        : !canSign ? h("p", { class: "hint", style: "padding:10px" }, "This policy opens for signing once the director has signed it.")
+        : h("div", { style: "padding:10px" }, admin ? null : h("label", { class: "pol-ok" }, okBox = h("input", { type: "checkbox" }), h("span", {}, "I have read this policy, or it was explained to me in a language I understand, and I understand it.")),
+            h("button", { type: "button", class: "submit", onclick: sign }, admin ? "SIGN AS DIRECTOR" : "SIGN WITH MY PIN"))) : null,
+    admin && pol.sign ? sheet("", h("div", { class: "band" }, "Who has signed"), h("table", {}, h("tbody", {}, ...staffList().map(p => { const s = polSigOf(pol, p.id);
+      return h("tr", {}, h("td", { class: "lab" }, p.name), h("td", {}, h("div", { class: "ro", style: s ? "color:#1e6b34;font-weight:700" : "color:#a50e0e;font-weight:700" }, s ? `Signed ${dmy(new Date(s.at))} ${hhmm(new Date(s.at))}` : ready ? "Not yet" : "Waits for your signature"))); })))) : null];
+}
+// ---------- Warnings (Wanro 30 Oct, the office only) ----------
+// One case per incident: the facts (with the alcohol test record when it is alcohol), the notice, his side, the decision
+// and the signatures. The register shows each man's valid warnings and when they expire, so the next step is always clear.
+// Records "warn|..." carry only the office's tag, so nobody else's phone ever gets them.
+const W_LEVELS = { counsel: ["Counselling", 0], verbal: ["Verbal warning (recorded)", 3], written: ["Written warning", 6], final: ["Final written warning", 12], enquiry: ["Disciplinary enquiry", 0], dismissed: ["Dismissed after an enquiry", 0], none: ["Not proved, no action", 0] };
+const W_CATS = [
+  ["alc_gate", "Positive alcohol or drug test, or refusal, at the client's gate or before work", ["enquiry"], true],
+  ["alc_work", "Under the influence of alcohol or drugs while working", ["enquiry"], true],
+  ["accom", "Alcohol at company-arranged accommodation on a work night", ["written", "final", "enquiry"], false],
+  ["late", "Late, absent without notice, or leaving early without permission", ["verbal", "written", "final", "enquiry"], false],
+  ["paper", "Daily paperwork in the app not done (register, diary, DSTI, checks)", ["verbal", "written", "final", "enquiry"], false],
+  ["instr", "Not following a reasonable instruction", ["written", "final", "enquiry"], false],
+  ["safety", "Safety rule broken, no injury (PPE, permit, barricading, height)", ["written", "final", "enquiry"], false],
+  ["safety_life", "Serious safety breach that puts a life at risk", ["enquiry"], false],
+  ["honest", "Dishonesty, theft or falsifying records", ["enquiry"], false],
+  ["assault", "Assault, threats or gross insubordination", ["enquiry"], false],
+  ["damage", "Damage to equipment through negligence", ["written", "final", "enquiry"], false],
+  ["other", "Other", ["verbal", "written", "final", "enquiry"], false]];
+const wCat = k => W_CATS.find(c => c[0] === k) || W_CATS[W_CATS.length - 1];
+const wCases = () => Store.list("warn|").map(([, o]) => o).filter(o => o && o.id).sort((a, b) => String(b.date).localeCompare(String(a.date)));
+const wValidUntil = c => { const d = c.decision; if (!d || !W_LEVELS[d.level] || !W_LEVELS[d.level][1]) return null; const x = new Date(d.on + "T12:00:00"); x.setMonth(x.getMonth() + W_LEVELS[d.level][1]); return ymd(x); };
+const wActive = (who, cat) => wCases().filter(c => c.who === who && c.decision && (!cat || c.cat === cat) && wValidUntil(c) && wValidUntil(c) >= ymd(today()));
+function wSuggest(c) {
+  const [, , ladder] = wCat(c.cat), prev = wActive(c.who, c.cat).filter(x => x.id !== c.id);
+  const top = prev.reduce((m, x) => Math.max(m, ladder.indexOf(x.decision.level)), -1);
+  return ladder[Math.min(ladder.length - 1, top + 1)];
+}
+const wSave = c => { c.upd = new Date().toISOString(); Store.put("warn|" + c.id, JSON.parse(JSON.stringify(c))); };
+function vWarnings() {
+  const all = wCases(), people = staffList();
+  const open = all.filter(c => !c.decision || (c.decision && !c.signed));
+  return [topbar("Warnings", "Only you see this", true),
+    h("button", { type: "button", class: "mbtn", onclick: () => { const c = { id: Date.now().toString(36) + rid(), who: "", pid: (PROJECTS[0] || {}).id || "", date: ymd(today()), cat: "", what: "", test: {}, photos: [], by: S.user, at: new Date().toISOString() }; wSave(c); S.warn = c.id; go("warncase"); } }, "+ NEW CASE", h("small", {}, "Record what happened, give the notice, hear his side, decide")),
+    open.length ? h("h3", { class: "bps-h" }, `Open cases (${open.length})`) : null,
+    ...open.map(c => wCard(c)),
+    h("h3", { class: "bps-h" }, "Register"),
+    h("p", { class: "hint" }, "Valid warnings per person and the date each one expires. A warning only counts for the same kind of offence."),
+    ...people.map(p => { const act = wActive(p.name), hist = all.filter(c => c.who === p.name);
+      return sheet("", h("div", { class: "band" }, p.name, h("small", {}, `  |  ${p.role}`)),
+        act.length ? h("table", {}, h("tbody", {}, ...act.map(c => h("tr", { onclick: () => { S.warn = c.id; go("warncase"); } }, h("td", { class: "lab" }, W_LEVELS[c.decision.level][0]), h("td", {}, h("div", { class: "ro" }, `${wCat(c.cat)[1]}. Valid until ${dmy(new Date(wValidUntil(c) + "T12:00:00"))}`))))))
+          : h("p", { class: "hint", style: "padding:8px 10px" }, hist.length ? `No valid warnings. ${hist.length} older case${hist.length === 1 ? "" : "s"} on file.` : "Clean record."),
+        hist.filter(c => !act.includes(c)).length ? h("div", { style: "padding:0 10px 8px" }, ...hist.filter(c => !act.includes(c)).map(c => h("button", { type: "button", class: "btn-g", style: "margin:4px 4px 0 0;font-size:12px", onclick: () => { S.warn = c.id; go("warncase"); } }, `${dmy(new Date(c.date + "T12:00:00"))}: ${(W_LEVELS[(c.decision || {}).level] || ["Open"])[0]}`))) : null); })];
+}
+function wCard(c) {
+  const step = !c.who || !c.cat ? "Facts not complete" : !c.notice ? "Give him the notice" : !c.response ? `Waiting for his side (due ${c.notice.due ? dmy(new Date(c.notice.due + "T12:00:00")) : "-"})` : !c.decision ? "Decide" : "Record his signature";
+  return h("button", { type: "button", class: "pol-c must", onclick: () => { S.warn = c.id; go("warncase"); } }, h("b", {}, c.who || "Who?"), h("small", {}, `${dmy(new Date(c.date + "T12:00:00"))}  |  ${c.cat ? wCat(c.cat)[1] : "No offence chosen"}`), h("em", {}, step));
+}
+function vWarnCase() {
+  const c = (Store.get("warn|" + S.warn) || null); if (!c) return vWarnings();
+  const save = () => { wSave(c); }, re = () => { save(); render(); };
+  const row = (lab, el) => h("tr", {}, h("td", { class: "lab" }, lab), h("td", {}, el));
+  const txt = (k, ph, o = c) => growTxt(o[k], v => { o[k] = v; save(); }, ph, 56);
+  const field = (k, ph, o = c, type) => inp(type || "text", o[k], v => { o[k] = v; save(); }, ph);
+  const [, catLab, ladder, alc] = wCat(c.cat); c.test = c.test || {}; c.photos = c.photos || [];
+  const prev = c.who ? wActive(c.who).filter(x => x.id !== c.id) : [];
+  const sug = c.cat ? wSuggest(c) : null;
+  const out = [topbar("Warning case", c.who || "New case", true)];
+  out.push(h("h3", { class: "bps-h" }, "1. What happened"),
+    sheet("", h("table", {}, h("tbody", {},
+      row("Employee", sel(staffList().map(p => p.name), c.who, v => { c.who = v; re(); }, "Choose the employee")),
+      row("Project", sel(CFG.projects.map(p => p.short), (CFG.projects.find(p => p.id === c.pid) || {}).short, v => { c.pid = (CFG.projects.find(p => p.short === v) || {}).id; re(); }, "Choose the project")),
+      row("Date", field("date", "", c, "date")),
+      row("Offence", sel(W_CATS.map(x => x[1]), c.cat ? catLab : "", v => { c.cat = (W_CATS.find(x => x[1] === v) || [])[0] || ""; re(); }, "Choose the offence")),
+      row("What happened", txt("what", "Who, what, when, where, and the effect on the work and the client")),
+      row("Rule broken", txt("rule", "e.g. FIB-POL-002 items 1, 2 and 4"))))),
+    prev.length ? h("p", { class: "hint", style: "color:#a50e0e;font-weight:700" }, `Valid warnings on file: ${prev.map(x => `${W_LEVELS[x.decision.level][0]} (${wCat(x.cat)[1]}, until ${dmy(new Date(wValidUntil(x) + "T12:00:00"))})`).join("; ")}`) : null);
+  if (alc) out.push(h("h3", { class: "bps-h" }, "Alcohol test record (FIB-HR-002)"),
+    sheet("", h("table", {}, h("tbody", {},
+      row("First test: reading", field("r1", "e.g. 0.05", c.test)), row("Time", field("t1", "e.g. 06h40", c.test)), row("Device and who tested", field("d1", "e.g. Red Rocket gate, security officer", c.test)),
+      row("Witness", field("wit", "Name", c.test)),
+      row("Second test (15 to 20 min later)", field("r2", "Reading", c.test)), row("Time", field("t2", "e.g. 07h00", c.test)), row("Device", field("d2", "e.g. Fibraco breathalyser", c.test)),
+      row("Gate device calibration certificate", seg([["Obtained", "Copy obtained"], ["Asked", "Asked, not received"]], c.test.calib, v => { c.test.calib = v; re(); })),
+      row("Told he may arrange his own blood test at his own cost", seg([["Yes, he will", "Yes, he will"], ["Declined", "Declined"]], c.test.blood, v => { c.test.blood = v; re(); })),
+      row("Signs observed", field("signs", "Smell, speech, eyes, balance", c.test)),
+      row("What he said", txt("said", "In his words, e.g. drank the night before", c.test)),
+      row("Client ban", seg([["Banned", "Banned from site"], ["Not banned", "Not banned"], ["Unknown", "Not known yet"]], c.test.ban, v => { c.test.ban = v; re(); }))))));
+  out.push(sheet("", h("div", { class: "band" }, "Evidence photos (reading, gate slip, messages)"), photoBlock(c.photos)));
+  // 2. notice
+  out.push(h("h3", { class: "bps-h" }, "2. Notice of allegation (FIB-HR-003)"));
+  if (!c.notice) out.push(h("button", { type: "button", class: "submit", onclick: () => { if (!c.who || !c.cat || !String(c.what || "").trim()) { showInfo("Not complete", "Choose the employee and the offence, and write what happened first."); return; }
+      const due = new Date(today()); due.setDate(due.getDate() + (due.getDay() === 5 ? 3 : due.getDay() === 6 ? 2 : 1)); c.notice = { on: ymd(today()), due: ymd(due), by: S.user }; re(); } }, "NOTICE GIVEN TODAY"),
+    h("p", { class: "hint" }, "He gets at least 1 full working day to answer, with a fellow employee to help him if he wants."));
+  else out.push(sheet("", h("table", {}, h("tbody", {}, row("Given on", h("div", { class: "ro" }, dmy(new Date(c.notice.on + "T12:00:00")))), row("His answer due", field("due", "", c.notice, "date"))))),
+    h("button", { type: "button", class: "mbtn", onclick: () => warnPdf(c, "notice") }, "NOTICE (PDF)", h("small", {}, "Print it or send it to him")));
+  // 3. his side
+  if (c.notice) out.push(h("h3", { class: "bps-h" }, "3. His side"), sheet("", growTxt((c.response || {}).txt, v => { c.response = { txt: v, at: new Date().toISOString() }; save(); }, "What he said, in his own words. If he did not answer by the due date, write that.", 80)));
+  // 4. decision
+  if (c.notice && c.response && String(c.response.txt || "").trim()) {
+    out.push(h("h3", { class: "bps-h" }, "4. Decision"));
+    if (sug) out.push(h("p", { class: "hint", style: "font-weight:700" }, `FIB-POL-003 says: ${W_LEVELS[sug][0]}${prev.some(x => x.cat === c.cat) ? ", because of his valid warning for the same offence" : ""}.${alc ? " An enquiry needs 48 hours written notice and a chairperson who was not involved." : ""}`));
+    if (!c.decision) out.push(sheet("", h("div", { style: "padding:10px" }, seg(Object.entries(W_LEVELS).map(([k, v]) => [k, v[0]]), c.pick || sug, v => { c.pick = v; re(); }),
+      h("div", { style: "margin-top:8px" }, txt("improve", "What must change, and by when")),
+      h("button", { type: "button", class: "submit", style: "margin-top:10px", onclick: () => { const lv = c.pick || sug; if (!lv) return; mySig(v => { if (!v) return; c.decision = { level: lv, on: ymd(today()), by: S.user, sig: v }; re(); }); } }, "DECIDE AND SIGN"))));
+    else out.push(sheet("", h("table", {}, h("tbody", {}, row("Decision", h("div", { class: "ro", style: "font-weight:800" }, W_LEVELS[c.decision.level][0])), row("Decided", h("div", { class: "ro" }, `${dmy(new Date(c.decision.on + "T12:00:00"))} by ${c.decision.by}`)),
+      wValidUntil(c) ? row("Valid until", h("div", { class: "ro" }, dmy(new Date(wValidUntil(c) + "T12:00:00")))) : null))),
+      ["verbal", "written", "final"].includes(c.decision.level) ? h("button", { type: "button", class: "mbtn", onclick: () => warnPdf(c, "warning") }, "WARNING (PDF)", h("small", {}, "FIB-HR-001, for him to sign")) : null);
+  }
+  // 5. signatures
+  if (c.decision && ["verbal", "written", "final"].includes(c.decision.level)) out.push(h("h3", { class: "bps-h" }, "5. Signed"),
+    sheet("", h("table", {}, h("tbody", {},
+      row("Employee", seg([["signed", "Signed"], ["refused", "Refused to sign"]], (c.signed || {}).emp, v => { c.signed = Object.assign(c.signed || {}, { emp: v, on: ymd(today()) }); re(); })),
+      (c.signed || {}).emp === "refused" ? row("Witness", field("wit", "Witness name", c.signed)) : null,
+      row("Appeal (within 3 working days)", txt("appeal", "Leave blank if he did not appeal"))))));
+  out.push(h("button", { type: "button", class: "btn-g", style: "width:100%;margin-top:14px", onclick: () => askYesNo("Close this case?", "Closed cases stay in the register and on his file. Nothing is deleted.", "Close", () => { c.closed = new Date().toISOString(); re(); go("warnings"); }) }, c.closed ? "Case closed" : "Close this case"));
+  return out;
+}
+async function warnPdf(c, kind) {
+  if (sending) return; sending = true;
+  const ov = h("div", { class: "overlay", role: "dialog" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
+  document.body.append(ov);
+  try {
+    await loadJs("./js/lib/html2canvas.min.js?v=1793358741"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793358741"); await loadJs("./js/pdf.js?v=1793358741");
+    const esc = x => String(x == null ? "" : x).replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[ch]);
+    const p = PEOPLE.find(x => x.name === c.who) || {}, pr = CFG.projects.find(x => x.id === c.pid) || {}, t = c.test || {}, [, catLab, , alc] = wCat(c.cat);
+    const head = `<table style="width:100%;border-collapse:collapse;margin-bottom:12px"><tr><td rowspan="3" style="border:0.6pt solid #888;width:38%;text-align:center"><img src="${LOGO}" style="width:180px"></td><td style="border:0.6pt solid #888;font-size:8.5pt"><u>E-mail #</u></td><td style="border:0.6pt solid #888;font-size:8.5pt">info@fibraco.co.za &amp; wanro@fibraco.co.za</td></tr><tr><td style="border:0.6pt solid #888;font-size:8.5pt"><u>Reg #</u></td><td style="border:0.6pt solid #888;font-size:8.5pt">2021 / 770505 / 07</td></tr><tr><td style="border:0.6pt solid #888;font-size:8.5pt"><u>Address #</u></td><td style="border:0.6pt solid #888;font-size:8.5pt">Section 5A, SS Don Dias, Beach Indaba Building, 22 Dias Rd, Jeffreys Bay, South Africa, 6330</td></tr></table>`;
+    const kv = rows => `<table class="g">${rows.filter(r => r).map(([k, v]) => `<tr><td style="width:34%;font-weight:700">${esc(k)}</td><td>${esc(v)}</td></tr>`).join("")}</table>`;
+    const sigs = rows => `<table class="g"><tr><th></th><th>Name</th><th>Signature</th><th>Date</th></tr>${rows.map(([r, n, s]) => `<tr><td>${esc(r)}</td><td>${esc(n)}</td><td style="height:44px">${s ? `<img src="${s}" style="height:40px">` : ""}</td><td></td></tr>`).join("")}</table>`;
+    let html, title;
+    if (kind === "notice") {
+      title = `FIBRACO - Notice of Allegation - ${c.who} (${dmy(new Date(c.notice.on + "T12:00:00"))})`;
+      html = head + `<h1>NOTICE OF ALLEGATION</h1><p style="color:#555">FIB-HR-003  |  Issued under FIB-POL-003 Disciplinary Code and Procedure. Confidential.</p>` +
+        kv([["Employee", c.who], ["Position", p.role || ""], ["Project", pr.name || ""], ["Date of this notice", dmy(new Date(c.notice.on + "T12:00:00"))], ["From", "Wanro Hayes, Director"]]) +
+        `<h2>WHAT YOU ARE ACCUSED OF</h2><p>${esc(c.what)}</p>${alc && t.r1 ? `<p>Test reading ${esc(t.r1)} at ${esc(t.t1)}${t.r2 ? `, second test ${esc(t.r2)} at ${esc(t.t2)}` : ""}.</p>` : ""}<h2>THE RULE</h2><p>${esc(c.rule || catLab)}</p>` +
+        `<h2>YOUR CHANCE TO RESPOND</h2><p>You may answer in writing, or in a meeting with your manager, on or before ${esc(dmy(new Date(c.notice.due + "T12:00:00")))}. You may bring a fellow employee to help you, and any evidence or witnesses. If you do not respond by then, a decision will be made on the facts available.</p>` +
+        `<h2>WHAT CAN HAPPEN</h2><p>After hearing your side, the manager decides whether the allegation is proved and, if so, the level of discipline under FIB-POL-003. No decision has been made yet.</p>` + sigs([["Employee (received)", c.who, ""], ["Issued by", "Wanro Hayes", ""]]);
+    } else {
+      const lv = W_LEVELS[c.decision.level][0];
+      title = `FIBRACO - ${lv} - ${c.who} (${dmy(new Date(c.decision.on + "T12:00:00"))})`;
+      html = head + `<h1>DISCIPLINARY WARNING</h1><p style="color:#555">FIB-HR-001  |  Issued under FIB-POL-003 Disciplinary Code and Procedure. Confidential.</p>` +
+        kv([["Employee", c.who], ["Position", p.role || ""], ["Project", pr.name || ""], ["Level", lv], ["Valid until", wValidUntil(c) ? dmy(new Date(wValidUntil(c) + "T12:00:00")) : ""], ["Date issued", dmy(new Date(c.decision.on + "T12:00:00"))]]) +
+        `<h2>THE OFFENCE</h2>` + kv([["Date", dmy(new Date(c.date + "T12:00:00"))], ["What happened", c.what], ["Rule broken", c.rule || catLab], alc && t.r1 ? ["Test", `${t.r1} at ${t.t1}${t.r2 ? `, second test ${t.r2} at ${t.t2}` : ""}`] : null]) +
+        `<h2>YOUR SIDE</h2><p>You were told of the allegation in writing on ${esc(dmy(new Date(c.notice.on + "T12:00:00")))}. Your response: ${esc((c.response || {}).txt || "")}</p>` +
+        `<h2>WHAT MUST CHANGE</h2><p>${esc(c.improve || "")}</p><p><b>Consequence.</b> If you commit the same or a similar offence while this warning is valid, the next level of discipline under FIB-POL-003 will follow. After a final written warning the next step is a disciplinary enquiry, which can lead to dismissal.</p><p><b>Your rights.</b> You may appeal in writing to the director within 3 working days. Signing means you received this warning and it was explained to you. It does not mean you agree.</p>` +
+        sigs([["Employee", c.who, ""], ["Manager", c.decision.by, c.decision.sig], ["Witness (if he refuses to sign)", "", ""]]);
+    }
+    const file = await window.FibPdf.diaryPdf(html, title);
+    ov.remove(); await window.FibPdf.shareFile(file, title);
+  } catch (e) { ov.remove(); showInfo("Could not make the PDF", String(e && e.message || e)); }
+  finally { sending = false; }
+}
 // ---------- the report, in Bioseco's layout ----------
 async function bpsReport(email, day = ymd(today())) {
   if (sending) return; sending = true;
   const ov = h("div", { class: "overlay", role: "dialog" }, h("div", { class: "modal" }, h("h2", {}, email ? "Approving and emailing" : "Making the report"), h("p", {}, "Fetching the photos and building the PDF. Keep the app open on this screen.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793355652"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793355652"); await loadJs("./js/pdf.js?v=1793355652");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793358741"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793358741"); await loadJs("./js/pdf.js?v=1793358741");
     const ws = ["SUBSTATION", ...bpsWtgs()], phs = ws.flatMap(w => Object.values(bpsOf(w).ph).flat());
     await Promise.all(phs.map(p => p.ph && !PHOTO_CACHE.has(p.ph) && !(p.url || "").startsWith("data:") ? Store.photo(p.ph).then(d => { if (d) PHOTO_CACHE.set(p.ph, d); }).catch(() => {}) : 0));
     const d = bpsDoc(S.project, day);
@@ -3796,6 +3979,8 @@ function outstanding(force) {
           if (!Object.entries(bio).some(([w, B]) => w !== "REPORT" && bpsDayActive(B && B.pc, ds))) continue;
           if (!(daily[ds] || {}).sm) add(sm, p, ds, "Bioseco daily report: not checked and submitted to the Project Manager"); else add(pm, p, ds, "Bioseco daily report: waiting for the Project Manager's final review"); }
       }
+      // company policies not signed yet (once the director has signed the ones that need it)
+      if (p === PROJECTS[0]) for (const pr of staffList()) for (const pol of POLS()) if (pol.sign && polReady(pol) && !polSigOf(pol, pr.id)) add(pr.name, { id: "company", short: "Company" }, "", `Policy not signed: ${pol.no} ${pol.title}`);
       // QC sheets that were worked on but not signed
       if (p.qcSpots) for (const sh of Object.keys(QC_SHEETS)) for (const sp of qcSpots(sh)) { const c = qcCount(sh, sp); if (c.done && !c.signed) add(sm, p, "", `QC sheet ${QC_SHEETS[sh].title} ${sp}: ${c.done} of ${c.total} checked, not signed`); }
     }
@@ -3922,7 +4107,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793355652"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793355652"); await loadJs("./js/pdf.js?v=1793355652");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793358741"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793358741"); await loadJs("./js/pdf.js?v=1793358741");
     await fetchDayPhotos(k);
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
@@ -4037,7 +4222,7 @@ async function processMailQ1() {
   let wl = null;
   try {
     wl = await wakeOn();
-    await loadJs("./js/lib/html2canvas.min.js?v=1793355652"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793355652"); await loadJs("./js/pdf.js?v=1793355652");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793358741"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793358741"); await loadJs("./js/pdf.js?v=1793358741");
     for (const j of go) {
       const p = CFG.projects.find(x => x.id === j.pid); if (!p) { j.done = true; continue; }
       if (!j.flash) { const m0 = Store.get(`mail|${j.pid}|${j.ds}`); if (m0 && m0.jobAt && m0.jobAt >= j.at) { j.done = true; continue; } } // another phone already sent it
@@ -4411,7 +4596,7 @@ function vDelays() {
 // ---------- render ----------
 let render = function () {
   const v = S.view;
-  const views = { users: vUsers, projects: vProjects, calendar: vCalendar, menu: vMenu, inspections: vInspections, client: vClient, tests: vTests, link: vLink, logtest: vLogTest, biocheck: vBioCheck, allocate: vAllocate, mysection: vMySection, review: vReview, kpi: vKpi, rams: vRams, ramsdoc: vRamsDoc, drawings: vDrawings, drawing: vDrawing, diary: vDiary, dsti: vDsti, dstilist: vDstiList, dstiopen: vDstiOpen, bps: vBps, bpswtg: vBpsWtg, bpssub: vBpsSub, iqc: vIqc, inspection: vInspection, check: vCheck, toolbox: vToolbox, incident: vIncident, si: vSI, order: vOrder, done: vDone, feedback: vFeedback, devices: vDevices, dash: vDash, qc: vQc, qcspot: vQcSpot, tsheets: vTsheets, tsheet: vTsheet, treport: vTreport, attendance: vAttendance, claude: vClaude, delays: vDelays, nearmiss: vNearMiss, jobobs: vJobObs, adhoc: vAdhoc, adhocjob: vAdhocJob, mychecks: vMyChecks, invest: vInvest, today: vToday, records: vRecords, imgdiary: vImgDiary, outst: vOutst, live: vLive };
+  const views = { users: vUsers, projects: vProjects, calendar: vCalendar, menu: vMenu, inspections: vInspections, client: vClient, tests: vTests, link: vLink, logtest: vLogTest, biocheck: vBioCheck, allocate: vAllocate, mysection: vMySection, review: vReview, kpi: vKpi, rams: vRams, ramsdoc: vRamsDoc, drawings: vDrawings, drawing: vDrawing, diary: vDiary, dsti: vDsti, dstilist: vDstiList, dstiopen: vDstiOpen, bps: vBps, bpswtg: vBpsWtg, bpssub: vBpsSub, iqc: vIqc, inspection: vInspection, check: vCheck, toolbox: vToolbox, incident: vIncident, si: vSI, order: vOrder, done: vDone, feedback: vFeedback, devices: vDevices, dash: vDash, qc: vQc, qcspot: vQcSpot, tsheets: vTsheets, tsheet: vTsheet, treport: vTreport, attendance: vAttendance, claude: vClaude, delays: vDelays, nearmiss: vNearMiss, jobobs: vJobObs, adhoc: vAdhoc, adhocjob: vAdhocJob, mychecks: vMyChecks, invest: vInvest, today: vToday, records: vRecords, imgdiary: vImgDiary, outst: vOutst, live: vLive, policies: vPolicies, policy: vPolicy, warnings: vWarnings, warncase: vWarnCase };
   document.body.classList.toggle("qcro", !!S.qcRO && ["iqc", "biocheck", "bps", "bpswtg", "bpssub"].includes(v));
   document.body.classList.toggle("vmenu", v === "menu" && TILES());
   document.body.classList.toggle("vgrid", v === "bps" || v === "iqc");
@@ -4606,6 +4791,8 @@ Store.metaFor = (id, obj) => {
   const x = id.split("|"), kind = x[0], pid = x[1], me = (Store.me() || {}).member;
   const idOf = name => (PEOPLE.find(p => p.name === name) || {}).id;
   if (kind === "sig") return { tags: [`user:${pid}`] };
+  // the director's signature on a company policy is seen by everybody, so the policy opens for the crew
+  if (kind === "pol" && (PEOPLE.find(p => p.id === x[2]) || {}).admin) return { tags: ((CFG && CFG.projects) || []).map(p => `proj:${p.id}`) };
   if (kind === "alloc" || kind === "prog") return { tags: [`proj:${pid}`] };
   if (kind === "sec") return { tags: [`user:${idOf(x.slice(3).join("|")) || me}`, `mgr:${pid}`] };
   if (kind === "help") return { tags: [`proj:${pid}`] };
@@ -5248,7 +5435,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793355652"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793355652"); await loadJs("./js/pdf.js?v=1793355652");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793358741"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793358741"); await loadJs("./js/pdf.js?v=1793358741");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
