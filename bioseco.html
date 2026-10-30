@@ -68,7 +68,7 @@ body.away main{filter:blur(18px)}
 <body>
 <div class="top"><img src="icons/bps/logo.jpg" alt="Bioseco"><div><b>BIOSECO</b><small>Poland QC live  |  Wolf Wind Farm  |  read only</small></div></div>
 <main id="m"></main>
-<script src="js/live.js?v=1793347622"></script>
+<script src="js/live.js?v=1793349344"></script>
 <script>
 "use strict";
 (() => {
@@ -110,7 +110,7 @@ body.away main{filter:blur(18px)}
     });
   }
   function wm() {
-    const txt = `${ST.n}  ${ST.c}  ${ST.p}  ${new Date().toLocaleDateString("en-GB")}`;
+    const txt = [ST.n, ST.c, ST.p, new Date().toLocaleDateString("en-GB")].filter(Boolean).join("  ");
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180"><text x="10" y="100" transform="rotate(-24 160 90)" font-family="Arial" font-size="15" fill="#000">${txt.replace(/[<&]/g, "")}</text></svg>`;
     let w = document.getElementById("wm"); if (!w) { w = el("div", { id: "wm" }); document.body.append(w); }
     w.style.background = `url("data:image/svg+xml;utf8,${encodeURIComponent(svg)}")`;
