@@ -14,12 +14,17 @@ const LiveUI = (() => {
   const PIOTR = [[3, "WEA03", "WTG 03"], [4, "WEA04", "WTG 04"], [5, "WEA05", "WTG 05"], [6, "WEA06", "WTG 06"], [7, "WEA07", "WTG 07"], [8, "WEA08", "WTG 08"], [9, "WEA09", "WTG 09"], [10, "WEA10", "WTG 10"],
     [11, "O&M building / substation", "SUBSTATION"], [12, "WEA17", "WTG 17"], [13, "WEA19", "WTG 19"], [14, "WEA21", "WTG 21"], [15, "WEA22", "WTG 22"], [16, "WEA23", "WTG 23"], [17, "WEA24", "WTG 24"], [18, "WEA25", "WTG 25"], [19, "WEA27", "WTG 27"], [20, "WEA28", "WTG 28"]];
   const PCOLS = [["en", "energized [Y/N]"], ["fo", "Fiber optics"], ["mod", "modules check"], ["jb", "Junction box check"], ["bps", "BPS box check"], ["risk", "risk"], ["xw", "extra works"], ["d", "Description"]];
-  // rowOf(w) gives { en, fo, mod, jb, bps, risk, xw, d }. cell(w, key, value) can return an element to put in place of a value (the office's extra works button).
+  // rowOf(w) gives { en, fo, mod, jb, bps, risk, xw, d }. cell(w, key, value) can return an element in place of a value (the office's extra works button).
+  // Wanro 31 Oct: never sideways. One card per turbine, in Piotr's order, the answers in a grid that fits the phone, the description underneath.
+  const PSHORT = { en: "Energized", fo: "Fiber optics", mod: "Modules check", jb: "Junction box check", bps: "BPS box check", risk: "Risk", xw: "Extra works" };
   function ptable(rowOf, o = {}) {
-    const yn = v => h("td", { class: "pt-" + (v === "Y" ? "y" : v === "N" ? "n" : "na") }, v || "");
-    return h("div", { class: "lv-pt" }, h("table", {}, h("thead", {}, h("tr", {}, h("th", {}, ""), ...PCOLS.map(([, lab]) => h("th", {}, lab)))),
-      h("tbody", {}, ...PIOTR.map(([, lab, w]) => { const r = rowOf(w) || {};
-        return h("tr", { onclick: o.open ? () => o.open(w) : null }, h("th", {}, lab), ...PCOLS.map(([k]) => { const c = o.cell && o.cell(w, k, r[k]); return c || (k === "d" ? h("td", { class: "pt-d" }, r.d || "") : yn(r[k])); })); }))));
+    const val = (k, v) => h("b", { class: "pt-v " + (v === "Y" ? (k === "risk" || k === "xw" ? "pt-n" : "pt-y") : v === "N" ? (k === "risk" || k === "xw" ? "pt-y" : "pt-n") : "pt-na") }, v || "-");
+    return h("div", { class: "lv-pt" }, ...PIOTR.map(([, lab, w]) => { const r = rowOf(w) || {};
+      return h("div", { class: "pt-card", onclick: o.open ? () => o.open(w) : null },
+        h("div", { class: "pt-h" }, h("b", {}, lab), r.risk === "Y" ? h("span", { class: "pt-flag" }, "RISK") : null),
+        ...[["en", "fo", "mod", "jb", "bps"], ["risk", "xw"]].map(ks => h("div", { class: "pt-g pt-g" + ks.length }, ...ks.map(k => { const c = o.cell && o.cell(w, k, r[k]);
+          return h("div", { class: "pt-c" }, h("small", {}, PSHORT[k]), c || val(k, r[k])); }))),
+        r.d ? h("p", { class: "pt-d" }, r.d) : null); }));
   }
   function boards(recs) { return Object.values(recs).filter(o => o && o.t === "board" && o.v === 2).sort((a, b) => (a.order || 0) - (b.order || 0)); }
   function detOf(recs, w) { return Object.values(recs).find(o => o && o.t === "det" && o.v === 2 && o.w === w); }

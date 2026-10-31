@@ -52,15 +52,18 @@ button.go{width:100%;margin-top:12px;font:inherit;font-weight:800;font-size:16px
 .lv-line{margin:6px 0}.lv-sub{color:var(--mut);font-size:12.5px;margin:0 0 6px}
 .lv-kv{width:100%;border-collapse:collapse;background:#fff;border-radius:10px;overflow:hidden;margin:4px 0}
 .lv-kv th,.lv-kv td{text-align:left;padding:7px 10px;border-top:1px solid var(--line);font-size:13.5px;vertical-align:top}.lv-kv th{width:45%;color:var(--mut);font-weight:600}
-.lv-pt{overflow-x:auto;background:#fff;border-radius:10px;margin:6px 0;-webkit-overflow-scrolling:touch}
-.lv-pt table{border-collapse:collapse;font-size:12px;min-width:760px}
-.lv-pt th,.lv-pt td{padding:6px 5px;border:1px solid #d5dbe2;text-align:center;vertical-align:middle}
-.lv-pt thead th{background:#eef2f6;font-size:11px;font-weight:700}
-.lv-pt tbody th{text-align:left;white-space:nowrap;font-weight:700;background:#f7f9fb;position:sticky;left:0;z-index:1}
-.lv-pt tbody tr{cursor:pointer}
-.lv-pt .pt-y{background:#d6f5e2;color:#1e6b34;font-weight:800}.lv-pt .pt-n{background:#fde2e2;color:#8a1020;font-weight:800}.lv-pt .pt-na{color:#6b7480}
-.lv-pt .pt-d{text-align:left;min-width:260px;font-size:11px;line-height:1.35}
-.lv-mx{overflow-x:auto;background:#fff;border-radius:10px;margin:6px 0}
+.lv-pt{display:grid;gap:8px;margin:6px 0}
+.lv-pt .pt-card{background:#fff;border:1px solid #d5dbe2;border-radius:10px;padding:8px 10px;cursor:pointer}
+.lv-pt .pt-h{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}
+.lv-pt .pt-h b{font-size:14px}
+.lv-pt .pt-flag{background:#c8102e;color:#fff;font-size:11px;font-weight:800;border-radius:6px;padding:2px 8px}
+.lv-pt .pt-g{display:grid;gap:5px;margin-top:5px}.lv-pt .pt-g5{grid-template-columns:repeat(5,minmax(0,1fr))}.lv-pt .pt-g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.lv-pt .pt-c{display:flex;flex-direction:column;align-items:center;gap:2px;background:#f7f9fb;border-radius:8px;padding:5px 2px;min-width:0}
+.lv-pt .pt-c small{font-size:10px;line-height:1.15;text-align:center;color:#4a525c;min-height:2.3em;display:flex;align-items:center;overflow-wrap:anywhere}
+.lv-pt .pt-v{display:block;width:100%;text-align:center;font-size:15px;font-weight:800;border-radius:6px;padding:2px 0}
+.lv-pt .pt-y{background:#d6f5e2;color:#1e6b34}.lv-pt .pt-n{background:#fde2e2;color:#8a1020}.lv-pt .pt-na{color:#6b7480}
+.lv-pt .pt-d{margin:6px 0 0;font-size:12px;line-height:1.35;color:#2b3036}
+.lv-mx{background:#fff;border-radius:10px;margin:6px 0}.lv-mx table{width:100%;table-layout:fixed;min-width:0!important}.lv-mx th,.lv-mx td{padding:4px 1px!important;font-size:11px;white-space:normal!important}.lv-mx thead th:first-child,.lv-mx tbody th{width:34%;min-width:0!important;font-size:10px!important}
 .lv-mx table{border-collapse:collapse;font-size:12px;min-width:100%}.lv-mx th,.lv-mx td{padding:5px 4px;border-top:1px solid var(--line);text-align:center;white-space:nowrap}.lv-mx tbody th{text-align:left;font-weight:600;white-space:normal;min-width:118px;font-size:11px}
 .c-ok{background:#d6f5e2;color:#1e6b34;font-weight:800}.c-bad{background:#c8102e;color:#fff;font-weight:800}.c-fix{background:#f6d365;font-weight:800}.c-na{color:#777}
 .lv-find{background:#fff;border-left:4px solid #c8102e;border-radius:8px;padding:9px 12px;margin:6px 0;font-size:14px}
@@ -89,7 +92,7 @@ body.away main{filter:blur(18px)}
 <body>
 <div class="top"><img src="icons/bps/logo.jpg" alt="Bioseco"><div><b>BIOSECO</b><small>Poland QC live  |  Wolf Wind Farm  |  with Fibraco</small></div></div>
 <main id="m"></main>
-<script src="js/live.js?v=1793430677"></script>
+<script src="js/live.js?v=1793431661"></script>
 <script>
 "use strict";
 (() => {

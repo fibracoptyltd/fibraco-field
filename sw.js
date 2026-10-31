@@ -1,6 +1,6 @@
 // Fibraco Field: keeps the app on the phone so it opens with no signal.
-const CACHE = "fibraco-field-1793430677";
-const SHELL = ["./", "./index.html", "./app.css?v=1793430677", "./js/store.js?v=1793430677", "./js/app.js?v=1793430677", "./js/live.js?v=1793430677", "./js/pdf.js?v=1793430677", "./js/lib/html2canvas.min.js?v=1793430677", "./js/lib/jspdf.umd.min.js?v=1793430677", "./manifest.webmanifest", "./setup.bin", "./icons/logo.png", "./icons/icon-192.png", "./icons/icon-512.png"];
+const CACHE = "fibraco-field-1793431661";
+const SHELL = ["./", "./index.html", "./app.css?v=1793431661", "./js/store.js?v=1793431661", "./js/app.js?v=1793431661", "./js/live.js?v=1793431661", "./js/pdf.js?v=1793431661", "./js/lib/html2canvas.min.js?v=1793431661", "./js/lib/jspdf.umd.min.js?v=1793431661", "./manifest.webmanifest", "./setup.bin", "./icons/logo.png", "./icons/icon-192.png", "./icons/icon-512.png"];
 // Wanro 29 Oct: Bioseco's example photos and report pictures are kept on the phone too, so they show at a turbine with no signal
 const BPS_PICS = ["cover", "drawA", "drawB", "logo", "wiring", "ex-p1", "ex-p6", "ex-p7", "ex-p8", "ex-p11", "ex-p12", "ex-p15", "ex-p16", "ex-pc", "ex-s1", "ex-s2", "ex-s3", "ex-s4", "ex-s14"].map(n => `./icons/bps/${n}.jpg`);
 self.addEventListener("install", e => e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL).then(() => Promise.all(BPS_PICS.map(u => c.add(u).catch(() => {}))))).then(() => self.skipWaiting())));
