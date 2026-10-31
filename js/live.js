@@ -15,16 +15,18 @@ const LiveUI = (() => {
     [11, "O&M building / substation", "SUBSTATION"], [12, "WEA17", "WTG 17"], [13, "WEA19", "WTG 19"], [14, "WEA21", "WTG 21"], [15, "WEA22", "WTG 22"], [16, "WEA23", "WTG 23"], [17, "WEA24", "WTG 24"], [18, "WEA25", "WTG 25"], [19, "WEA27", "WTG 27"], [20, "WEA28", "WTG 28"]];
   const PCOLS = [["en", "energized [Y/N]"], ["fo", "Fiber optics"], ["mod", "modules check"], ["jb", "Junction box check"], ["bps", "BPS box check"], ["risk", "risk"], ["xw", "extra works"], ["d", "Description"]];
   // rowOf(w) gives { en, fo, mod, jb, bps, risk, xw, d }. cell(w, key, value) can return an element in place of a value (the office's extra works button).
-  // Wanro 31 Oct: never sideways. One card per turbine, in Piotr's order, the answers in a grid that fits the phone, the description underneath.
-  const PSHORT = { en: "Energized", fo: "Fiber optics", mod: "Modules check", jb: "Junction box check", bps: "BPS box check", risk: "Risk", xw: "Extra works" };
+  // Wanro 31 Oct: the headings once at the top (they stay there while you scroll down), one line per turbine that fits the phone, the
+  // description in small print under its line. Never sideways.
+  const PSHORT = { en: "Energized", fo: "Fiber optics", mod: "Modules check", jb: "Junction box", bps: "BPS box", risk: "Risk", xw: "Extra works" };
   function ptable(rowOf, o = {}) {
-    const val = (k, v) => h("b", { class: "pt-v " + (v === "Y" ? (k === "risk" || k === "xw" ? "pt-n" : "pt-y") : v === "N" ? (k === "risk" || k === "xw" ? "pt-y" : "pt-n") : "pt-na") }, v || "-");
-    return h("div", { class: "lv-pt" }, ...PIOTR.map(([, lab, w]) => { const r = rowOf(w) || {};
-      return h("div", { class: "pt-card", onclick: o.open ? () => o.open(w) : null },
-        h("div", { class: "pt-h" }, h("b", {}, lab), r.risk === "Y" ? h("span", { class: "pt-flag" }, "RISK") : null),
-        ...[["en", "fo", "mod", "jb", "bps"], ["risk", "xw"]].map(ks => h("div", { class: "pt-g pt-g" + ks.length }, ...ks.map(k => { const c = o.cell && o.cell(w, k, r[k]);
-          return h("div", { class: "pt-c" }, h("small", {}, PSHORT[k]), c || val(k, r[k])); }))),
-        r.d ? h("p", { class: "pt-d" }, r.d) : null); }));
+    const ks = ["en", "fo", "mod", "jb", "bps", "risk", "xw"];
+    const cls = (k, v) => "pt-v " + (v === "Y" ? (k === "risk" || k === "xw" ? "pt-n" : "pt-y") : v === "N" ? (k === "risk" || k === "xw" ? "pt-y" : "pt-n") : "pt-na");
+    return h("div", { class: "lv-pt" },
+      h("div", { class: "pt-row pt-head" }, h("span", {}, ""), ...ks.map(k => h("span", { class: "pt-hl" }, h("i", {}, PSHORT[k])))),
+      ...PIOTR.map(([, lab, w]) => { const r = rowOf(w) || {};
+        return h("div", { class: "pt-line" + (r.risk === "Y" ? " risk" : ""), onclick: o.open ? () => o.open(w) : null },
+          h("div", { class: "pt-row" }, h("b", { class: "pt-name" }, lab), ...ks.map(k => { const c = o.cell && o.cell(w, k, r[k]); return c || h("span", { class: cls(k, r[k]) }, r[k] || "-"); })),
+          r.d ? h("div", { class: "pt-d" }, r.d) : null); }));
   }
   function boards(recs) { return Object.values(recs).filter(o => o && o.t === "board" && o.v === 2).sort((a, b) => (a.order || 0) - (b.order || 0)); }
   function detOf(recs, w) { return Object.values(recs).find(o => o && o.t === "det" && o.v === 2 && o.w === w); }
