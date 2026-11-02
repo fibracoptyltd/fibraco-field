@@ -1024,3 +1024,7 @@ body.vhome .tile.tpj.outred .tpj-n{font-size:calc(9px*var(--kf,1));letter-spacin
 .att-mid b{font-size:17px}.att-mid span{font-size:12.5px;font-weight:800}
 .att-pick{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer}
 .att-today{border:0;background:#0069aa;color:#fff;border-radius:10px;padding:0 12px;font-weight:800}
+
+/* Wanro 2 Nov: red round X on every photo, top right, to take off a photo added by mistake */
+.photos figure.ph-fig { position: relative; }
+.ph-x { position: absolute; top: 6px; right: 6px; z-index: 2; width: 34px; height: 34px; border-radius: 50%; border: 2px solid #fff; background: #c8102e; color: #fff; font-size: 24px; font-weight: 800; line-height: 1; padding: 0; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 4px rgba(0,0,0,.35); cursor: pointer; }
