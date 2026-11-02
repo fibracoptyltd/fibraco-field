@@ -9,7 +9,7 @@ const LiveUI = (() => {
   const dt = (iso, tz) => { try { return new Date(iso).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: tz }); } catch (e) { return ""; } };
   const both = iso => { const a = tm(iso, SA), mine = Intl.DateTimeFormat().resolvedOptions().timeZone, b = tm(iso, mine); return a === b || mine === SA ? `${a} SA time` : `${a} SA time (${b} your time)`; };
   const dayOf = (iso, tz = SA) => { try { return new Date(iso).toLocaleDateString("en-CA", { timeZone: tz }); } catch (e) { return ""; } };
-  const ST = { todo: ["Not started", "#e6e9ed", "#4a525c"], busy: ["Team working", "#fff3c4", "#6b4e00"], check: ["Please check now", "#0069aa", "#fff"], ok: ["Chain confirmed", "#d6f5e2", "#1e6b34"], done: ["Both parts done", "#34e27c", "#08311a"], hold: ["On hold", "#e4defa", "#4b3f85"], vpn: ["VPN check needed", "#ffd8a8", "#7a3d00"], nok: ["Not OK, team on it", "#c8102e", "#fff"] };
+  const ST = { todo: ["Not started", "#e6e9ed", "#4a525c"], busy: ["Team working", "#fff3c4", "#6b4e00"], check: ["Please check now", "#0069aa", "#fff"], ok: ["Chain confirmed", "#d6f5e2", "#1e6b34"], done: ["Both parts done", "#34e27c", "#08311a"], hold: ["On hold", "#e4defa", "#4b3f85"], vpn: ["Fibraco done, Bioseco to check", "#a8ecc2", "#0b4a26"], nok: ["Not OK, team on it", "#c8102e", "#fff"] };
   // Piotr's status table (Bioseco_Wolf_Fibraco_status.xlsx): his row labels and order, his column headings, row numbers in his sheet
   const PIOTR = [[3, "WEA03", "WTG 03"], [4, "WEA04", "WTG 04"], [5, "WEA05", "WTG 05"], [6, "WEA06", "WTG 06"], [7, "WEA07", "WTG 07"], [8, "WEA08", "WTG 08"], [9, "WEA09", "WTG 09"], [10, "WEA10", "WTG 10"],
     [11, "O&M building / substation", "SUBSTATION"], [12, "WEA17", "WTG 17"], [13, "WEA19", "WTG 19"], [14, "WEA21", "WTG 21"], [15, "WEA22", "WTG 22"], [16, "WEA23", "WTG 23"], [17, "WEA24", "WTG 24"], [18, "WEA25", "WTG 25"], [19, "WEA27", "WTG 27"], [20, "WEA28", "WTG 28"]];
@@ -38,7 +38,7 @@ const LiveUI = (() => {
     if (opts.sel) { const d = detOf(recs, opts.sel), b = bs.find(x => x.w === opts.sel); root.replaceChildren(detail(b, d, opts)); return; }
     const asks = bs.filter(b => b.st === "check"), tdy = dayOf(new Date().toISOString());
     // where the team is now: the sheet with the latest work today, within the last three hours
-    const here = bs.filter(b => b.last && dayOf(b.last) === tdy && now - new Date(b.last).getTime() < 3 * 3600e3 && b.st !== "done").sort((a, b) => String(b.last).localeCompare(String(a.last)))[0];
+    const here = bs.filter(b => b.last && dayOf(b.last) === tdy && now - new Date(b.last).getTime() < 3 * 3600e3 && b.st !== "done" && b.st !== "vpn").sort((a, b) => String(b.last).localeCompare(String(a.last)))[0];
     bs.forEach(b => { b.here = !!here && b.w === here.w; });
     const vpn = bs.filter(b => b.st === "vpn");
     const evs = Object.values(recs).filter(o => o && o.t === "ev" && o.v === 2 && o.at).sort((a, b) => String(b.at).localeCompare(String(a.at)));
@@ -50,7 +50,7 @@ const LiveUI = (() => {
       vpn.length ? h("div", { class: "lv-vpn" }, h("b", {}, "Still to check in your system through the VPN:"), h("div", {}, ...vpn.map(b => h("button", { type: "button", onclick: () => opts.open && opts.open(b.w) }, b.w === "SUBSTATION" ? "Substation" : b.w)))) : null,
       opts.top ? opts.top() : null,
       here ? h("div", { class: "lv-here" }, `Team now at ${here.w === "SUBSTATION" ? "the substation" : here.w}, since ${tm(here.first, SA)} SA time`) : h("div", { class: "lv-here off" }, "No work on the BPS recorded yet today"),
-      h("div", { class: "lv-sum" }, `${done} of ${bs.length} complete`),
+      h("div", { class: "lv-sum" }, `${done + vpn.length} of ${bs.length} complete`, vpn.length ? h("small", { style: "display:block;font-weight:600;opacity:.75" }, `${vpn.length} of them still to check through the VPN`) : null),
       h("div", { class: "lv-grid" }, ...bs.map((b, i) => { const [lab, bg, fg] = ST[b.st] || ST.todo;
         return h("button", { type: "button", class: "lv-t" + (b.here ? " here" : "") + (b.w === "SUBSTATION" ? " sub" : ""), style: `background:${bg};color:${fg}`, onclick: () => opts.open && opts.open(b.w) },
           b.w === "SUBSTATION" ? null : h("i", {}, String(i)), b.here ? h("span", { class: "lv-now", title: "Team working here now" }, "\u2692 NOW") : null,
