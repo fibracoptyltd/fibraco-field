@@ -387,7 +387,7 @@ function vProjects() {
         bioSetup(); } }, "Fingerprint")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1793604113";
+const APPV = "1793609014";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -470,7 +470,7 @@ async function sendRegister(p, d, days) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793604113"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793604113"); await loadJs("./js/pdf.js?v=1793604113");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793609014"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793609014"); await loadJs("./js/pdf.js?v=1793609014");
     const { html, title } = attDoc(p, d, days); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
@@ -587,7 +587,7 @@ async function timeZone() {
   try {
     try { Store.kick(); await refreshDevices(true); } catch (e) {}
     await new Promise(r => setTimeout(r, 1800));
-    await loadJs("./js/lib/html2canvas.min.js?v=1793604113"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793604113"); await loadJs("./js/pdf.js?v=1793604113");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793609014"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793609014"); await loadJs("./js/pdf.js?v=1793609014");
     const D = tzData(), stamp = `${dmy(new Date())} ${hhmm()}`, name = `FIBRACO - Time Zone (${stamp})`;
     const pdf = await window.FibPdf.diaryPdf(tzHtml(D), name);
     const json = new File([JSON.stringify(D, null, 1)], name.replace(/[\\/:*?"<>|]+/g, "-") + ".json", { type: "application/json" });
@@ -1023,6 +1023,17 @@ function startForm(type, key) {
   if (restoreDraft(S.form)) toast("Carried on where you stopped");
   go(type);
 }
+// Wanro 2 Nov: anyone who worked on site can go on the diary team, also someone who is not on the app (inducted, not on the original scope)
+const SOMEONE = "Someone else (type the name)";
+function teamName(r) {
+  const box = h("div");
+  const draw = () => { const typed = r.other || (r.name && !STAFF.includes(r.name));
+    box.replaceChildren(typed ? h("div", { style: "display:flex;gap:6px;align-items:center" },
+      inp("text", r.name || "", v => { r.name = v.trim(); r.other = true; }, "Type the full name"),
+      h("button", { type: "button", class: "btn-g", style: "padding:6px 10px;white-space:nowrap", onclick: () => { r.name = ""; delete r.other; draw(); } }, "List"))
+      : sel([...STAFF, SOMEONE], r.name, v => { if (v === SOMEONE) { r.name = ""; r.other = true; draw(); setTimeout(() => { const t = box.querySelector("input"); if (t) t.focus(); }); } else r.name = v; }, "Choose name")); };
+  draw(); return box;
+}
 function formHead(title, docNote) {
   const f = S.form;
   return [topbar(title, f.project ? `${f.project.short}  |  ${dmy(f.date)}` : `New site  |  ${dmy(f.date)}`, true),
@@ -1043,7 +1054,7 @@ function vDiary() {
   const hrsOpts = []; for (let x = 0.5; x <= 14; x += 0.5) hrsOpts.push(String(x));
   const numOpts = n => Array.from({ length: n + 1 }, (_, i) => String(i));
   const team = rowsTable("team", [h("th", {}, "No"), h("th", { class: "l" }, "Project team"), h("th", {}, "Hrs")], f.team,
-    (r, i) => h("tr", {}, h("td", { class: "no" }, i + 1), h("td", {}, sel(STAFF, r.name, v => r.name = v, "Choose name")), h("td", { style: "width:86px" }, sel(!r.hrs || hrsOpts.includes(String(r.hrs)) ? hrsOpts : [String(r.hrs), ...hrsOpts], String(r.hrs || ""), v => { r.hrs = v; recalc(); }, "Hrs"))),
+    (r, i) => h("tr", {}, h("td", { class: "no" }, i + 1), h("td", {}, teamName(r)), h("td", { style: "width:86px" }, sel(!r.hrs || hrsOpts.includes(String(r.hrs)) ? hrsOpts : [String(r.hrs), ...hrsOpts], String(r.hrs || ""), v => { r.hrs = v; recalc(); }, "Hrs"))),
     "+ Add person", () => ({}));
   team.querySelector("table").append(h("tfoot", {}, h("tr", { class: "tot" }, h("td", { colspan: 2, style: "text-align:right" }, "Total hrs"), tot)));
   setTimeout(recalc);
@@ -1588,7 +1599,7 @@ async function recordPdf() {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793604113"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793604113"); await loadJs("./js/pdf.js?v=1793604113");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793609014"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793609014"); await loadJs("./js/pdf.js?v=1793609014");
     const f = S.form, src = [...app.children].filter(k => !k.matches(".bar, .fb-btn, .ro-bar, .psub, .err, .pnav, .addrow"));
     const box = document.createElement("div");
     for (const k of src) {
@@ -1839,7 +1850,7 @@ async function sendOrder(f) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793604113"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793604113"); await loadJs("./js/pdf.js?v=1793604113");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793609014"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793609014"); await loadJs("./js/pdf.js?v=1793609014");
     const { html, title } = orderDoc(f);
     const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
@@ -2587,7 +2598,7 @@ async function bpsMailsFor(p, day) {
   await Promise.all(pre.phs.map(q => q && q.ph && !PHOTO_CACHE.has(q.ph) && !(q.url || "").startsWith("data:") ? Store.photo(q.ph).then(d => { if (d) PHOTO_CACHE.set(q.ph, d); }).catch(() => {}) : 0));
   const d = bpsBorrow(p, () => bpsDoc(p, day)), allDone = bpsBorrow(p, () => bpsAllDone());
   const files = await window.FibPdf.diaryPdf(d.html, d.title, { scale: 1.6, quality: 0.72, maxBytes: 5e6 }), list = Array.isArray(files) ? files : [files];
-  const xl = pre.rows ? await loadJs("./js/piotr.js?v=1793604113").then(() => { const b = window.PiotrXlsx.build(pre.rows); return new File([b], `Bioseco_Wolf_Fibraco_status (${dmy(today())}).xlsx`, { type: b.type }); }).catch(() => null) : null;
+  const xl = pre.rows ? await loadJs("./js/piotr.js?v=1793609014").then(() => { const b = window.PiotrXlsx.build(pre.rows); return new File([b], `Bioseco_Wolf_Fibraco_status (${dmy(today())}).xlsx`, { type: b.type }); }).catch(() => null) : null;
   const dTxt = nice(new Date(day + "T12:00:00")), mails = [];
   for (let i = 0; i < list.length; i++) {
     const f = list[i], part = list.length > 1 ? ` (part ${i + 1} of ${list.length})` : "";
@@ -2696,9 +2707,13 @@ function bpsDailyBox(ready) {
   return [h("h3", { class: "bps-h" }, "Daily report to Bioseco"),
     days.length > 1 ? h("div", { class: "bps-days" }, ...days.slice(0, 7).map(x => { const st = D[x] || {}; return h("button", { type: "button", class: "bps-day" + (x === ds ? " on" : "") + (st.sent ? " sent" : bpsDayLog(x).length ? " due" : ""), onclick: () => { S.bpsDay = x; render(); } }, bpsDayLab(x)); })) : null,
     dr.sent ? h("div", { class: "rep-st ok" }, `${lab}: approved by ${dr.approved.by} and emailed at ${dr.sent.at} on ${dr.sent.date}.`, h("small", {}, `To ${dr.sent.to.join(", ")}`)) :
-    n ? h("div", { class: "rep-st wait" }, `${lab}: ${sheets}.`, h("small", {}, dr.err ? `Not emailed yet. Last try: ${dr.err}. It tries again by itself.` : `It goes to Bioseco by itself when ${adminName().split(" ")[0]} approves the daily diary for this day. Nothing else to approve.`)) :
+    n ? h("div", { class: "rep-st wait" }, `${lab}: ${sheets}.`, h("small", {}, dr.err ? `Not emailed yet. Last try: ${dr.err}. It tries again by itself.` : (isAdmin(S.user) ? `It goes to Bioseco by itself when you approve the daily diary for this day. Nothing else to approve.` : "Complete the sheets for the day, then press DONE. You can still correct them until the daily diary is signed off."))) :
     h("div", { class: "rep-st" }, `${lab}: nothing done on the sheets yet.`),
     (sm || isSM(S.user)) && n && open.length ? h("p", { class: "hint", style: "color:#8a4b00" }, `Not submitted yet: ${open.join(", ")}.`) : null,
+    // Wanro 2 Nov: the site manager still completes the report every day and presses DONE. It sends nothing by itself.
+    // He can still add or correct the sheets afterwards, until the day's diary is approved.
+    dr.sm && !dr.sent ? h("div", { class: "rep-st ok" }, `Done for ${lab}, by ${dr.sm.by} at ${dr.sm.at}.`, h("small", {}, "You can still go back and correct the sheets until the daily diary is approved.")) : null,
+    sm && n && !dr.sm && !dr.sent ? h("button", { class: "submit", type: "button", onclick: () => bpsSmSubmit(ds) }, `DONE FOR ${lab.toUpperCase()}`, h("small", { style: "display:block;font-weight:600" }, "Press when the sheets for the day are filled in")) : null,
     ready ? h("p", { class: "hint" }, "All sheets are signed. This report is also the final report.") : null,
     h("button", { class: "mbtn", type: "button", onclick: () => bpsReport(false, ds) }, `SEE THE REPORT FOR ${lab.toUpperCase()} (PDF)`, h("small", {}, "That day's work on the first page, then the full report so far")),
     admin && n && (dr.sent || dr.err) ? h("button", { class: "btn-g", type: "button", style: "width:100%;margin-top:8px", onclick: () => bpsApprove(ds) }, "Send this day again") : null,
@@ -2706,7 +2721,7 @@ function bpsDailyBox(ready) {
 }
 const bpsTo = () => { const pm = pmPerson() || {}; return [{ name: pm.name || "Wanro Hayes", email: pm.email || CFG.office || "" }, ...((S.project.reports || {}).qc || [])]; };
 function bpsSmSubmit(ds) {
-  mySig(v => { if (!v) return; const D = bpsDaily(), dr = D[ds] || (D[ds] = {}), now = new Date(); dr.sm = { by: S.user, at: hhmm(now), date: dmy(now), sig: v }; persist(); render(); toast(`Report for ${bpsDayLab(ds)} sent to ${adminName().split(" ")[0]} for final review`); });
+  const D = bpsDaily(), dr = D[ds] || (D[ds] = {}), now = new Date(); dr.sm = { by: S.user, at: hhmm(now), date: dmy(now) }; persist(); render(); toast(`Daily report for ${bpsDayLab(ds)} marked done. You can still correct it.`);
 }
 function bpsApprove(ds) {
   mySig(async v => { if (!v) return; const D = bpsDaily(), dr = D[ds] || (D[ds] = {}), now = new Date(); dr.approved = { by: S.user, at: hhmm(now), date: dmy(now), sig: v }; persist(); render(); await bpsReport(true, ds); });
@@ -3186,7 +3201,7 @@ function liveExtra(pid) {
 }
 // Wanro 30 Oct: Piotr's table, filled in by itself. The office marks extra works. Download his Excel or email it to him.
 const piotrRows = () => { const o = {}; for (const [r, , w] of LiveUI.PIOTR) { const y = liveBoard(w, 0).y; o[r] = LiveUI.PCOLS.map(([k]) => y[k]); } return o; };
-async function piotrFile() { await loadJs("./js/piotr.js?v=1793604113"); const b = window.PiotrXlsx.build(piotrRows()); return new File([b], `Bioseco_Wolf_Fibraco_status (${dmy(today())}).xlsx`, { type: b.type }); }
+async function piotrFile() { await loadJs("./js/piotr.js?v=1793609014"); const b = window.PiotrXlsx.build(piotrRows()); return new File([b], `Bioseco_Wolf_Fibraco_status (${dmy(today())}).xlsx`, { type: b.type }); }
 function vPiotr() {
   const p = S.project, admin = isAdmin(S.user), box = h("div", { class: "lv" });
   const cell = (w, k, v) => { if (k !== "xw" || !admin) return null; const c = bpsOf(w);
@@ -3207,7 +3222,7 @@ function vPiotr() {
     admin && xw.length ? sheet("", h("div", { class: "band" }, "Extra works, a short note each (Bioseco see it)"), h("table", {}, h("tbody", {}, ...xw.map(([, lab, w]) => { const c = bpsOf(w);
       return h("tr", {}, h("td", { class: "lab" }, lab), h("td", {}, inp("text", c.xw.note, v => { c.xw.note = v; persistSoon(); shareSoon(1500); }, "e.g. module replaced on Bioseco's request"))); })))) : null,
     h("div", { class: "row", style: "gap:8px;flex-wrap:wrap" },
-      h("button", { type: "button", class: "btn-w", onclick: async () => { try { const f = await piotrFile(); await loadJs("./js/pdf.js?v=1793604113"); await window.FibPdf.shareFile(f, f.name); } catch (e) { showInfo("Could not make the Excel", `${e.message || e}.`); } } }, "Download the Excel"),
+      h("button", { type: "button", class: "btn-w", onclick: async () => { try { const f = await piotrFile(); await loadJs("./js/pdf.js?v=1793609014"); await window.FibPdf.shareFile(f, f.name); } catch (e) { showInfo("Could not make the Excel", `${e.message || e}.`); } } }, "Download the Excel"),
       admin ? h("button", { type: "button", class: "submit", onclick: send }, "Email it to Piotr now") : null)];
 }
 function vLive() {
@@ -3388,7 +3403,7 @@ async function warnPdf(c, kind) {
   const ov = h("div", { class: "overlay", role: "dialog" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793604113"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793604113"); await loadJs("./js/pdf.js?v=1793604113");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793609014"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793609014"); await loadJs("./js/pdf.js?v=1793609014");
     const esc = x => String(x == null ? "" : x).replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[ch]);
     const p = PEOPLE.find(x => x.name === c.who) || {}, pr = CFG.projects.find(x => x.id === c.pid) || {}, t = c.test || {}, [, catLab, , alc] = wCat(c.cat);
     const head = `<table style="width:100%;border-collapse:collapse;margin-bottom:12px"><tr><td rowspan="3" style="border:0.6pt solid #888;width:38%;text-align:center"><img src="${LOGO}" style="width:180px"></td><td style="border:0.6pt solid #888;font-size:8.5pt"><u>E-mail #</u></td><td style="border:0.6pt solid #888;font-size:8.5pt">info@fibraco.co.za &amp; wanro@fibraco.co.za</td></tr><tr><td style="border:0.6pt solid #888;font-size:8.5pt"><u>Reg #</u></td><td style="border:0.6pt solid #888;font-size:8.5pt">2021 / 770505 / 07</td></tr><tr><td style="border:0.6pt solid #888;font-size:8.5pt"><u>Address #</u></td><td style="border:0.6pt solid #888;font-size:8.5pt">Section 5A, SS Don Dias, Beach Indaba Building, 22 Dias Rd, Jeffreys Bay, South Africa, 6330</td></tr></table>`;
@@ -3423,7 +3438,7 @@ async function bpsReport(email, day = ymd(today())) {
   const ov = h("div", { class: "overlay", role: "dialog" }, h("div", { class: "modal" }, h("h2", {}, email ? "Approving and emailing" : "Making the report"), h("p", {}, "Fetching the photos and building the PDF. Keep the app open on this screen.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793604113"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793604113"); await loadJs("./js/pdf.js?v=1793604113");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793609014"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793609014"); await loadJs("./js/pdf.js?v=1793609014");
     const ws = ["SUBSTATION", ...bpsWtgs()], phs = ws.flatMap(w => Object.values(bpsOf(w).ph).flat());
     await Promise.all(phs.map(p => p.ph && !PHOTO_CACHE.has(p.ph) && !(p.url || "").startsWith("data:") ? Store.photo(p.ph).then(d => { if (d) PHOTO_CACHE.set(p.ph, d); }).catch(() => {}) : 0));
     const d = bpsDoc(S.project, day);
@@ -3908,7 +3923,10 @@ function vMySection() {
     locked ? h("div", { style: "text-align:center;margin:10px 0" }, statusPill(sec.status),
       canReopen(sec) ? h("div", { style: "margin-top:12px" },
         h("button", { class: "mbtn", type: "button", onclick: () => askYesNo("Change my section?", `You can change your section until ${editUntil()} today. Then sign and submit it again.${sec.status === "approved" ? " The site manager approves it again after." : ""}`, "Change it", () => { sec.status = "draft"; sec.sig = ""; delete sec.at; persist(); render(); window.scrollTo(0, 0); }) }, "Change my section", h("small", {}, `Open until ${editUntil()} today, then it locks`))) : null) :
-      submitBtn(() => { const e = []; if (tasks.some((t, i) => (sec.rows[i] || {}).done === undefined || (sec.rows[i] || {}).done === "")) e.push("Fill in what you did for every task, even if it is 0."); if (tasks.some((t, i) => /SPLICE|DOME JOINT/.test(t.act) && +((sec.rows[i] || {}).done || 0) > 0 && !(sec.rows[i] || {}).eq)) e.push("Choose the splice machine you used."); if (behind() && !sec.delays.some(d => d.cause && d.hrs)) e.push("You are behind the target. Add the delay cause and the hours lost."); if ((sec.other || []).some(o => (o.act || o.loc || o.what) && (!o.act || !o.loc))) e.push("Other work: choose what you did and write where. Remove a line you do not need."); tasks.forEach((t, i) => { const r = sec.rows[i] || {}; if (r.done !== undefined && r.done !== "" && +r.done === 0 && !(r.note || "").trim()) e.push(`${nice2(t.act)} is 0. Write in its note why it was not done.`); });
+      submitBtn(() => { const e = [];
+        // Wanro 2 Nov: an empty section left the diary with no work on it
+        if (!tasks.length && !(sec.other || []).some(o => o.act)) e.push("You have no task from the site manager today. Add what you did under Other work, with + Add other work.");
+        if (tasks.some((t, i) => (sec.rows[i] || {}).done === undefined || (sec.rows[i] || {}).done === "")) e.push("Fill in what you did for every task, even if it is 0."); if (tasks.some((t, i) => /SPLICE|DOME JOINT/.test(t.act) && +((sec.rows[i] || {}).done || 0) > 0 && !(sec.rows[i] || {}).eq)) e.push("Choose the splice machine you used."); if (behind() && !sec.delays.some(d => d.cause && d.hrs)) e.push("You are behind the target. Add the delay cause and the hours lost."); if ((sec.other || []).some(o => (o.act || o.loc || o.what) && (!o.act || !o.loc))) e.push("Other work: choose what you did and write where. Remove a line you do not need."); tasks.forEach((t, i) => { const r = sec.rows[i] || {}; if (r.done !== undefined && r.done !== "" && +r.done === 0 && !(r.note || "").trim()) e.push(`${nice2(t.act)} is 0. Write in its note why it was not done.`); });
         if (sec.delays.some(d => d.cause && !(+d.hrs > 0))) e.push("Every delay needs its hours lost.");
         if (sec.delays.some(d => d.cause === OTHER_FIB && !(d.other || "").trim())) e.push("Delay Other: type the reason.");
         if (sec.delays.some(d => (isInternal(d.cause) || d.cause === OTHER_FIB) && !d.react)) e.push("Internal delay: choose who must react.");
@@ -4003,11 +4021,13 @@ function vReview() {
     projectBar(),
     ...people.map(personBlock), totals,
     final ? after : h("div", {},
-      h("button", { class: "mbtn", style: `margin-bottom:12px;${s1 ? "" : "opacity:.45"}`, onclick: () => { if (s1) openCombined(); else showInfo("Not yet", `First check and approve every crew section above. Still waiting: ${pending.join(", ")}.`); } }, s2 ? "✓ My part of the diary (open again)" : "2. My part of the diary", h("small", {}, "Weather, plant, site instructions and materials. Team and work fill in by themselves.")),
+      h("button", { class: "mbtn", style: `margin-bottom:12px;${s1 ? "" : "opacity:.45"}`, onclick: () => { if (s1) openCombined(); else showInfo("Not yet", `First check and approve every crew section above. Still waiting: ${pending.join(", ")}.`); } }, s2 ? "✓ My part of the diary (open again)" : "2. My part of the diary", h("small", {}, "Team and work come in from the crew sections. Check the work lines and add any work that is missing.")),
       h("button", { class: "submit", type: "button", style: s1 && s2 ? "" : "opacity:.45", onclick: () => {
         if (S.project.start && ymd(S.date) < S.project.start) return showInfo("Not a working day on this project", `${S.project.short} only started on ${dmy(new Date(S.project.start + "T12:00:00"))}. There is no diary to sign for ${dmy(S.date)}.`);
         if (blank) return showInfo("Nothing to sign", "No work was given out to the crew on this day, so there is no diary to sign. Give out the work first, or leave this day empty.");
         if (!(s1 && s2)) return showInfo("Not yet", !s1 ? `First approve every crew section. Still waiting: ${pending.join(", ")}.` : "First fill in your part of the diary (button 2 above), then sign.");
+        // Wanro 2 Nov: no diary is signed without the work that was done
+        if (!((Store.get("site|" + k) || {}).acts || []).some(r => r && r.act)) return showInfo("No work on this diary", "The diary has no line of work. Open 2. My part of the diary and add what was done with + Add a line of work, then sign.");
         const noQty = people.flatMap(pn => (((S.sections[k] || {})[pn] || {}).other || []).filter(o => o.act && (o.qty === undefined || o.qty === "")).map(o => `${pn}: ${nice2(o.act)}, ${o.loc || ""}`));
         if (noQty.length) return showInfo("Quantities missing", "Put the quantity on every Other work line before you sign (0 if two men wrote the same job, so it counts once): " + noQty.join("  |  "));
         const yd = new Date(today()); yd.setDate(yd.getDate() - 1); const old = ymd(S.date) !== ymd(today()) && ymd(S.date) !== ymd(yd);
@@ -4321,7 +4341,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793604113"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793604113"); await loadJs("./js/pdf.js?v=1793604113");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793609014"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793609014"); await loadJs("./js/pdf.js?v=1793609014");
     await fetchDayPhotos(k);
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
@@ -4436,7 +4456,7 @@ async function processMailQ1() {
   let wl = null;
   try {
     wl = await wakeOn();
-    await loadJs("./js/lib/html2canvas.min.js?v=1793604113"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793604113"); await loadJs("./js/pdf.js?v=1793604113");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793609014"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793609014"); await loadJs("./js/pdf.js?v=1793609014");
     for (const j of go) {
       const p = CFG.projects.find(x => x.id === j.pid); if (!p) { j.done = true; continue; }
       if (!j.flash && !j.bpsOnly) { const m0 = Store.get(`mail|${j.pid}|${j.ds}`); if (m0 && m0.jobAt && m0.jobAt >= j.at) { j.done = true; continue; } } // another phone already sent it
@@ -4529,6 +4549,7 @@ function waitingBar() {
     `Diary waiting for you: ${x.p.short}, ${dmy(new Date(x.ds + "T12:00:00"))}`, h("small", {}, `Signed by ${x.o.by} at ${x.o.at}. Check it, then approve or correct it. Nothing goes to the client before you do.`))));
 }
 function approveDiary(k) {
+  if (!((Store.get("site|" + k) || {}).acts || []).some(r => r && r.act)) return showInfo("No work on this diary", "This diary has no line of work. Press Correct it first, add the work that was done, then sign the correction.");
   mySig(v => { if (!v) return;
     const fin = Store.get("final|" + k) || {}, now = new Date();
     Store.put("final|" + k, Object.assign({}, fin, { pmOk: true, pmBy: S.user, pmSig: v, pmAt: hhmm(now), pmDate: dmy(now) }));
@@ -5662,7 +5683,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793604113"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793604113"); await loadJs("./js/pdf.js?v=1793604113");
+    await loadJs("./js/lib/html2canvas.min.js?v=1793609014"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793609014"); await loadJs("./js/pdf.js?v=1793609014");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
