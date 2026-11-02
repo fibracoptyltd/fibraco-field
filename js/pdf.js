@@ -39,6 +39,14 @@
     try {
       await Promise.all([...root.querySelectorAll("img")].map(i => i.complete ? 1 : new Promise(r => { i.onload = i.onerror = r; })));
       if (document.fonts && document.fonts.ready) await document.fonts.ready;
+      // Wanro 2 Nov: html2canvas does not know object-fit, so every photo was stretched into its box. Size each photo
+      // ourselves, keeping its own shape (portrait stays portrait), centred in the same box.
+      for (const img of [...root.querySelectorAll(".pgrid img")]) {
+        const bw = img.clientWidth, bh = img.clientHeight, nw = img.naturalWidth, nh = img.naturalHeight; if (!bw || !bh || !nw || !nh) continue;
+        const k = Math.min(bw / nw, bh / nh), w = Math.round(nw * k), h = Math.round(nh * k);
+        const box = document.createElement("div"); box.style.cssText = `width:${bw}px;height:${bh}px;display:flex;align-items:center;justify-content:center;background:#f4f6f8;overflow:hidden`;
+        img.replaceWith(box); img.style.cssText = `width:${w}px;height:${h}px;max-width:none;display:block`; box.append(img);
+      }
       const total = Math.ceil(root.scrollHeight);
       const pts = cutPoints(root), top0 = root.getBoundingClientRect().top;
       const forced = [...root.querySelectorAll(".pbreak")].map(el => Math.floor(el.getBoundingClientRect().top - top0));
