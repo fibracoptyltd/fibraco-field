@@ -372,6 +372,7 @@ function vProjects() {
     isAdmin(S.user) ? h("button", { class: "mbtn", style: `background:${CH.bg};color:#fff;border-color:${CH.bg};margin-bottom:12px`, onclick: () => go("dash") }, "MY DASHBOARD", h("small", { style: "color:#c9d0d8" }, "Who is in, who is behind, colour first")) : null,
     isAdmin(S.user) ? h("button", { class: "mbtn tz-btn", onclick: timeZone }, "TIME ZONE", h("small", {}, "Snapshot of everything right now, for Claude to review")) : null,
     isAdmin(S.user) ? h("button", { class: "mbtn cl-btn", onclick: () => go("claude") }, "CLAUDE", h("small", {}, "Ask Claude anything about the app and the sites")) : null,
+    isAdmin(S.user) ? h("button", { class: "mbtn", style: "background:#fff8e1;border-color:#d9b44a", onclick: () => go("gallery") }, "IMAGE GALLERY", h("small", {}, "Every photo from every project, one folder per project")) : null,
     ...(alertsBanner() || []),
     h("h1", { class: "big" }, "Projects"),
     h("div", { class: "stack" },
@@ -387,7 +388,7 @@ function vProjects() {
         bioSetup(); } }, "Fingerprint")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1794061577";
+const APPV = "1794089733";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -481,7 +482,7 @@ async function sendRegister(p, d, days) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794061577"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794061577"); await loadJs("./js/pdf.js?v=1794061577");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794089733"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794089733"); await loadJs("./js/pdf.js?v=1794089733");
     const { html, title } = attDoc(p, d, days); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
@@ -598,7 +599,7 @@ async function timeZone() {
   try {
     try { Store.kick(); await refreshDevices(true); } catch (e) {}
     await new Promise(r => setTimeout(r, 1800));
-    await loadJs("./js/lib/html2canvas.min.js?v=1794061577"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794061577"); await loadJs("./js/pdf.js?v=1794061577");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794089733"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794089733"); await loadJs("./js/pdf.js?v=1794089733");
     const D = tzData(), stamp = `${dmy(new Date())} ${hhmm()}`, name = `FIBRACO - Time Zone (${stamp})`;
     const pdf = await window.FibPdf.diaryPdf(tzHtml(D), name);
     const json = new File([JSON.stringify(D, null, 1)], name.replace(/[\\/:*?"<>|]+/g, "-") + ".json", { type: "application/json" });
@@ -758,6 +759,8 @@ const TI = {
   cart: '<path d="M3 4h2l2 12h11l2-8H6"/><circle cx="9" cy="20" r="1.5"/><circle cx="17" cy="20" r="1.5"/>',
   dash: '<rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="5" rx="1.5"/><rect x="13" y="10" width="8" height="11" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/>',
   cam: '<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
+  img: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/>',
+  folder: '<path d="M3 6.5A1.5 1.5 0 0 1 4.5 5H9l2 2.5h8.5A1.5 1.5 0 0 1 21 9v9.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5z"/>',
   chat: '<path d="M4 5h16v11H9l-5 4z"/><path d="M8 10h8M8 13h5"/>',
   key: '<circle cx="8" cy="14" r="4"/><path d="M11 11l9-9M17 5l2 2M15 7l2 2"/>',
   obs: '<circle cx="10" cy="10" r="6"/><path d="M20 20l-5.5-5.5"/><path d="M7.5 10l2 2 3.5-3.5"/>',
@@ -847,10 +850,12 @@ function vProjectsTiles() {
           tile("list", "Diary\naudit", () => { S.audF = null; go("audit"); }, { badge: auditRows().filter(r => r.issues.length).length || "", cls: "slim" }),
           tile("fb", "Feedback\nfrom the team", () => go("feedback"), { badge: fb || "", cls: "slim" }),
           tile("dev", "Devices\nand access", () => go("devices"), { badge: waiting || "", bc: "o", cls: "slim" })); })() : null,
-      admin ? h("div", { class: "tgrid" },
+      admin ? h("div", { class: "tgrid g4" },
         tile("dash", "My\ndashboard", () => go("dash"), { cls: "dark" }),
         tile("cam", "Time\nzone", timeZone, { cls: "dark" }),
-        tile("chat", "Claude", () => go("claude"), { cls: "dark" })) : null,
+        tile("chat", "Claude", () => go("claude"), { cls: "dark" }),
+        // Wanro 8 Nov: every photo from every project, one folder per project. The office only.
+        tile("img", "Image\ngallery", () => go("gallery"), { cls: "dark" })) : null,
       // Wanro: projects as tiles, three to a row. The crew keep the project cards.
       admin ? h("div", { class: "tgrid g4 tprojs" }, ...PROJECTS.filter(p => !p.hideFrontAdmin).map(p => { const [line] = projStatus(p), [col, bg] = PJ_COL[projPhase(p)];
         return h("button", { type: "button", class: "tile tpj", style: `border-top:7px solid ${col};background:${bg};border-color:${col}${projPhase(p) === "live" ? ";box-shadow:0 0 12px rgba(57,255,20,.65)" : ""}`, "aria-label": `${p.name}. ${line}`, onclick: () => { S.project = p; S.date = today(); S.month = today(); go("menu"); } },
@@ -1613,7 +1618,7 @@ async function recordPdf() {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794061577"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794061577"); await loadJs("./js/pdf.js?v=1794061577");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794089733"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794089733"); await loadJs("./js/pdf.js?v=1794089733");
     const f = S.form, src = [...app.children].filter(k => !k.matches(".bar, .fb-btn, .ro-bar, .psub, .err, .pnav, .addrow"));
     const box = document.createElement("div");
     for (const k of src) {
@@ -1864,7 +1869,7 @@ async function sendOrder(f) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794061577"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794061577"); await loadJs("./js/pdf.js?v=1794061577");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794089733"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794089733"); await loadJs("./js/pdf.js?v=1794089733");
     const { html, title } = orderDoc(f);
     const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
@@ -2710,7 +2715,7 @@ async function bpsMailsFor(p, day) {
   await Promise.all(pre.phs.map(q => q && q.ph && !PHOTO_CACHE.has(q.ph) && !(q.url || "").startsWith("data:") ? Store.photo(q.ph).then(d => { if (d) PHOTO_CACHE.set(q.ph, d); }).catch(() => {}) : 0));
   const d = bpsBorrow(p, () => bpsDoc(p, day)), allDone = bpsBorrow(p, () => bpsAllDone());
   const files = await window.FibPdf.diaryPdf(d.html, d.title, { scale: 1.6, quality: 0.72, maxBytes: 5e6 }), list = Array.isArray(files) ? files : [files];
-  const xl = pre.rows ? await loadJs("./js/piotr.js?v=1794061577").then(() => { const b = window.PiotrXlsx.build(pre.rows); return new File([b], `Bioseco_Wolf_Fibraco_status (${dmy(today())}).xlsx`, { type: b.type }); }).catch(() => null) : null;
+  const xl = pre.rows ? await loadJs("./js/piotr.js?v=1794089733").then(() => { const b = window.PiotrXlsx.build(pre.rows); return new File([b], `Bioseco_Wolf_Fibraco_status (${dmy(today())}).xlsx`, { type: b.type }); }).catch(() => null) : null;
   const dTxt = nice(new Date(day + "T12:00:00")), mails = [];
   for (let i = 0; i < list.length; i++) {
     const f = list[i], part = list.length > 1 ? ` (part ${i + 1} of ${list.length})` : "";
@@ -3319,7 +3324,7 @@ function liveExtra(pid) {
 }
 // Wanro 30 Oct: Piotr's table, filled in by itself. The office marks extra works. Download his Excel or email it to him.
 const piotrRows = () => { const o = {}; for (const [r, , w] of LiveUI.PIOTR) { const y = liveBoard(w, 0).y; o[r] = LiveUI.PCOLS.map(([k]) => y[k]); } return o; };
-async function piotrFile() { await loadJs("./js/piotr.js?v=1794061577"); const b = window.PiotrXlsx.build(piotrRows()); return new File([b], `Bioseco_Wolf_Fibraco_status (${dmy(today())}).xlsx`, { type: b.type }); }
+async function piotrFile() { await loadJs("./js/piotr.js?v=1794089733"); const b = window.PiotrXlsx.build(piotrRows()); return new File([b], `Bioseco_Wolf_Fibraco_status (${dmy(today())}).xlsx`, { type: b.type }); }
 function vPiotr() {
   const p = S.project, admin = isAdmin(S.user), box = h("div", { class: "lv" });
   const cell = (w, k, v) => { if (k !== "xw" || !admin) return null; const c = bpsOf(w);
@@ -3340,7 +3345,7 @@ function vPiotr() {
     admin && xw.length ? sheet("", h("div", { class: "band" }, "Extra works, a short note each (Bioseco see it)"), h("table", {}, h("tbody", {}, ...xw.map(([, lab, w]) => { const c = bpsOf(w);
       return h("tr", {}, h("td", { class: "lab" }, lab), h("td", {}, inp("text", c.xw.note, v => { c.xw.note = v; persistSoon(); shareSoon(1500); }, "e.g. module replaced on Bioseco's request"))); })))) : null,
     h("div", { class: "row", style: "gap:8px;flex-wrap:wrap" },
-      h("button", { type: "button", class: "btn-w", onclick: async () => { try { const f = await piotrFile(); await loadJs("./js/pdf.js?v=1794061577"); await window.FibPdf.shareFile(f, f.name); } catch (e) { showInfo("Could not make the Excel", `${e.message || e}.`); } } }, "Download the Excel"),
+      h("button", { type: "button", class: "btn-w", onclick: async () => { try { const f = await piotrFile(); await loadJs("./js/pdf.js?v=1794089733"); await window.FibPdf.shareFile(f, f.name); } catch (e) { showInfo("Could not make the Excel", `${e.message || e}.`); } } }, "Download the Excel"),
       admin ? h("button", { type: "button", class: "submit", onclick: send }, "Email it to Piotr now") : null)];
 }
 function vLive() {
@@ -3521,7 +3526,7 @@ async function warnPdf(c, kind) {
   const ov = h("div", { class: "overlay", role: "dialog" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794061577"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794061577"); await loadJs("./js/pdf.js?v=1794061577");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794089733"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794089733"); await loadJs("./js/pdf.js?v=1794089733");
     const esc = x => String(x == null ? "" : x).replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[ch]);
     const p = PEOPLE.find(x => x.name === c.who) || {}, pr = CFG.projects.find(x => x.id === c.pid) || {}, t = c.test || {}, [, catLab, , alc] = wCat(c.cat);
     const head = `<table style="width:100%;border-collapse:collapse;margin-bottom:12px"><tr><td rowspan="3" style="border:0.6pt solid #888;width:38%;text-align:center"><img src="${LOGO}" style="width:180px"></td><td style="border:0.6pt solid #888;font-size:8.5pt"><u>E-mail #</u></td><td style="border:0.6pt solid #888;font-size:8.5pt">info@fibraco.co.za &amp; wanro@fibraco.co.za</td></tr><tr><td style="border:0.6pt solid #888;font-size:8.5pt"><u>Reg #</u></td><td style="border:0.6pt solid #888;font-size:8.5pt">2021 / 770505 / 07</td></tr><tr><td style="border:0.6pt solid #888;font-size:8.5pt"><u>Address #</u></td><td style="border:0.6pt solid #888;font-size:8.5pt">Section 5A, SS Don Dias, Beach Indaba Building, 22 Dias Rd, Jeffreys Bay, South Africa, 6330</td></tr></table>`;
@@ -3556,7 +3561,7 @@ async function bpsReport(email, day = ymd(today())) {
   const ov = h("div", { class: "overlay", role: "dialog" }, h("div", { class: "modal" }, h("h2", {}, email ? "Approving and emailing" : "Making the report"), h("p", {}, "Fetching the photos and building the PDF. Keep the app open on this screen.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794061577"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794061577"); await loadJs("./js/pdf.js?v=1794061577");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794089733"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794089733"); await loadJs("./js/pdf.js?v=1794089733");
     const ws = ["SUBSTATION", ...bpsWtgs()], phs = ws.flatMap(w => Object.values(bpsOf(w).ph).flat());
     await Promise.all(phs.map(p => p.ph && !PHOTO_CACHE.has(p.ph) && !(p.url || "").startsWith("data:") ? Store.photo(p.ph).then(d => { if (d) PHOTO_CACHE.set(p.ph, d); }).catch(() => {}) : 0));
     const d = bpsDoc(S.project, day);
@@ -4250,6 +4255,99 @@ function vImgDiary() {
         isAdmin(S.user) ? h("button", { type: "button", class: "btn-g", style: "padding:4px 10px;font-size:12px", onclick: () => imgDownload(list, `${p.short} ${S.imgWho}`) }, "Download") : null),
         h("div", { class: "img-grid" }, ...list.map(x => h("button", { type: "button", class: "img-t", onclick: () => imgView(x, list) }, lazyImg(x), h("small", {}, `${x.p.time || ""} ${x.where.replace(" commissioning sheet", "")}`.trim()))))); })];
 }
+// ---------- image gallery (Wanro 8 Nov) ----------
+// Office only, from the front page. One folder per project. Each folder holds every photo anybody loaded on that project,
+// from every form and sheet, newest first. Open a photo, swipe left or right (or tap the arrows) to move, Download to save it.
+const GAL_KIND = { site: "Daily diary", final: "Daily diary", sec: "Diary section", bio: "Bioseco commissioning sheet", qc: "QC sheet", link: "Fibre test", issue: "Fault",
+  tsr: "Test sheet", tsd: "Test sheet", scope: "Scope and progress", prog: "Progress", att: "Register", alloc: "Daily tasks", idel: "Internal delay", dcause: "Internal delay",
+  bmsg: "Message to Bioseco", board: "Bioseco", det: "Bioseco", mail: "Report to the client" };
+const galTime = x => x.p.time || (() => { const i = phIso(x.p.ph); if (!i) return ""; const d = new Date(i); return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`; })();
+const galForm = t => { const n = FORM_NAMES[t]; return n ? n.replace(/^(an?|the) /, "").replace(/^./, c => c.toUpperCase()) : "Form"; };
+const GAL_CACHE = new Map();
+function galPhotos(p) {
+  const c = GAL_CACHE.get(p.id); if (c && Date.now() - c.at < 20e3) return c.items;
+  const out = [], seen = new Set();
+  // voice notes are kept as "ph|v..." and are not photos
+  const push = (q, who, ds, where) => { if (!q || typeof q.ph !== "string" || !/^ph\|(?!v)/.test(q.ph) || seen.has(q.ph)) return; seen.add(q.ph);
+    out.push({ p: q, who: (typeof q.by === "string" && q.by) || who || "Unknown", ds: phDay(q.ph) || ds || "", where }); };
+  // the image diary's own list first (it also holds photos still open on this phone), then every other record of the project
+  try { for (const x of projPhotos(p)) push(x.p, x.who, x.ds, x.where); } catch (e) {}
+  const walk = (o, by, ds, where, depth) => {
+    if (!o || typeof o !== "object" || depth > 14) return;
+    if (Array.isArray(o)) { for (const v of o) walk(v, by, ds, where, depth + 1); return; }
+    if (typeof o.by === "string" && o.by) by = o.by;
+    if (typeof o.ph === "string") { push(o, by, ds, where); return; }
+    for (const k in o) { const v = o[k]; if (v && typeof v === "object") walk(v, by, ds, where, depth + 1); }
+  };
+  for (const [id, o] of Store.list("")) {
+    const x = id.split("|"); if (x[1] !== p.id || x[0] === "ph" || x[0] === "sig" || !o || typeof o !== "object") continue;
+    const ds = /^\d{4}-\d\d-\d\d$/.test(x[2] || "") ? x[2] : typeof o.date === "string" && /^\d{4}-\d\d-\d\d/.test(o.date) ? o.date.slice(0, 10) : "";
+    const w = x.slice(2).join("|");
+    const where = x[0] === "form" ? galForm(o.type || x[3]) : x[0] === "bio" ? `${w === "SUBSTATION" ? "Substation" : w} commissioning sheet` : GAL_KIND[x[0]] || "Other";
+    walk(o, x[0] === "sec" ? x.slice(3).join("|") : (typeof o.by === "string" && o.by) || "", ds, where, 0);
+  }
+  const when = x => phIso(x.p.ph) || (x.ds ? x.ds + "T12:00:00" : "");
+  out.sort((a, b) => when(b).localeCompare(when(a)));
+  GAL_CACHE.set(p.id, { at: Date.now(), items: out }); return out;
+}
+function vGallery() {
+  if (!isAdmin(S.user)) { S.view = "projects"; return vProjects(); }
+  return [topbar("Image gallery", "Every project", true),
+    h("p", { class: "form-sub" }, "One folder per project. Each folder holds every photo anybody loaded on that project, newest first."),
+    PROJECTS.length ? h("div", { class: "gal-fold" }, ...PROJECTS.map(p => { const n = galPhotos(p).length;
+      return h("button", { type: "button", class: "gal-f", "aria-label": `${p.name}, ${n} photos`, onclick: () => { S.galPid = p.id; go("galproj"); } },
+        ticon("folder"), h("b", {}, p.name), h("small", {}, `${n} photo${n === 1 ? "" : "s"}`)); }))
+      : h("p", { class: "note" }, "No projects yet.")];
+}
+function vGalProj() {
+  const p = PROJECTS.find(x => x.id === S.galPid);
+  if (!isAdmin(S.user) || !p) { S.view = "gallery"; return vGallery(); }
+  const all = galPhotos(p), days = [...new Set(all.map(x => x.ds))], people = new Set(all.map(x => x.who)).size;
+  return [topbar("Image gallery", p.name, true),
+    all.length ? h("p", { class: "form-sub" }, `${all.length} photo${all.length === 1 ? "" : "s"} from ${people} ${people === 1 ? "person" : "people"}. Tap a photo to open it, then swipe left or right to go to the next one.`)
+      : h("p", { class: "note" }, "No photos on this project yet."),
+    all.length ? h("button", { class: "mbtn", type: "button", onclick: () => imgDownload(all, p.short) }, `Download all ${all.length} photos`, h("small", {}, "Every person, every day")) : null,
+    ...days.map(ds => { const list = all.filter(x => x.ds === ds);
+      return h("div", { class: "sheet" }, h("div", { class: "band", style: "display:flex;justify-content:space-between;align-items:center;gap:8px" },
+        h("span", {}, `${ds ? nice(new Date(ds + "T12:00:00")) : "Date unknown"}  |  ${list.length}`),
+        h("button", { type: "button", class: "btn-g", style: "padding:4px 10px;font-size:12px", onclick: () => imgDownload(list, p.short) }, "Download")),
+        h("div", { class: "img-grid" }, ...list.map(x => h("button", { type: "button", class: "img-t", onclick: () => galView(all, all.indexOf(x), p) }, lazyImg(x),
+          h("small", {}, `${x.who.split(" ")[0]} ${galTime(x)}`.trim()))))); })];
+}
+// the photo viewer: swipe left for the next photo, right for the one before, or tap the arrows (arrow keys on a laptop)
+function galView(list, i, p) {
+  if (!list.length) return;
+  let at = Math.max(0, Math.min(i, list.length - 1)), tok = 0;
+  const img = h("img", { alt: "Site photo", draggable: "false" }), cnt = h("span", { class: "galv-n" }), cap = h("p", { class: "galv-cap" }), meta = h("p", { class: "galv-meta" }), wait = h("p", { class: "galv-wait" });
+  const src = x => { const d = phSrc(x.p); if (d) return Promise.resolve(d); return Store.photo(x.p.ph).then(d => { if (d) PHOTO_CACHE.set(x.p.ph, d); return d; }).catch(() => null); };
+  const move = d => { const j = at + d; if (j < 0 || j >= list.length) return; at = j; show(); };
+  const prev = h("button", { type: "button", class: "galv-go l", "aria-label": "Previous photo", onclick: () => move(-1) }, "‹");
+  const next = h("button", { type: "button", class: "galv-go r", "aria-label": "Next photo", onclick: () => move(1) }, "›");
+  const show = () => {
+    const x = list[at], t = ++tok;
+    cnt.textContent = `${at + 1} of ${list.length}`;
+    cap.textContent = x.p.caption || "Site photo";
+    meta.textContent = `${x.who}  |  ${x.ds ? dmy(new Date(x.ds + "T12:00:00")) : "Date unknown"}${galTime(x) ? " " + String(galTime(x)).replace(":", "h") : ""}  |  ${x.where}`;
+    prev.disabled = at === 0; next.disabled = at === list.length - 1;
+    img.removeAttribute("src"); img.hidden = true; wait.textContent = "Loading the photo..."; wait.hidden = false;
+    src(x).then(d => { if (t !== tok) return; if (d) { img.src = d; img.hidden = false; wait.hidden = true; } else wait.textContent = "This photo loads when there is signal."; });
+    for (const j of [at + 1, at - 1]) if (list[j]) src(list[j]); // the next ones are ready before you swipe
+  };
+  const stage = h("div", { class: "galv-stage" }, img, wait, prev, next);
+  let sx = 0, sy = 0, one = false;
+  stage.addEventListener("touchstart", e => { one = e.touches.length === 1; if (one) { sx = e.touches[0].clientX; sy = e.touches[0].clientY; } }, { passive: true });
+  stage.addEventListener("touchmove", e => { if (e.touches.length > 1) one = false; }, { passive: true });
+  stage.addEventListener("touchend", e => { if (!one) return; one = false; const t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy;
+    if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.3) move(dx < 0 ? 1 : -1); }, { passive: true });
+  const key = e => { if (e.key === "ArrowLeft") move(-1); else if (e.key === "ArrowRight") move(1); else if (e.key === "Escape") close(); };
+  const close = () => { document.removeEventListener("keydown", key); ov.remove(); };
+  const ov = h("div", { class: "overlay galv", role: "dialog", "aria-label": "Photo" },
+    h("div", { class: "galv-top" }, cnt, h("button", { type: "button", class: "galv-x", "aria-label": "Close", onclick: close }, "×")),
+    stage,
+    h("div", { class: "galv-info" }, cap, meta,
+      h("button", { type: "button", class: "btn-w galv-dl", onclick: () => { const x = list[at]; imgDownload([x], `${p.short} ${x.who}`); } }, "Download this photo")));
+  document.addEventListener("keydown", key); document.body.append(ov); show();
+}
 // ---------- outstanding documents (Wanro 29 Oct) ----------
 // What each man still owes, per project and day: the register, his diary section, the site manager's approvals and
 // signature, the DSTI, his daily checks, unsigned Bioseco commissioning parts and unsigned QC sheets.
@@ -4461,7 +4559,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794061577"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794061577"); await loadJs("./js/pdf.js?v=1794061577");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794089733"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794089733"); await loadJs("./js/pdf.js?v=1794089733");
     await fetchDayPhotos(k);
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
@@ -4576,7 +4674,7 @@ async function processMailQ1() {
   let wl = null;
   try {
     wl = await wakeOn();
-    await loadJs("./js/lib/html2canvas.min.js?v=1794061577"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794061577"); await loadJs("./js/pdf.js?v=1794061577");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794089733"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794089733"); await loadJs("./js/pdf.js?v=1794089733");
     for (const j of go) {
       const p = CFG.projects.find(x => x.id === j.pid); if (!p) { j.done = true; continue; }
       if (!j.flash && !j.bpsOnly) { const m0 = Store.get(`mail|${j.pid}|${j.ds}`); if (m0 && m0.jobAt && m0.jobAt >= j.at) { j.done = true; continue; } } // another phone already sent it
@@ -5038,7 +5136,7 @@ function vDelays() {
 // ---------- render ----------
 let render = function () {
   const v = S.view;
-  const views = { users: vUsers, projects: vProjects, calendar: vCalendar, menu: vMenu, inspections: vInspections, client: vClient, tests: vTests, link: vLink, logtest: vLogTest, biocheck: vBioCheck, allocate: vAllocate, mysection: vMySection, review: vReview, kpi: vKpi, rams: vRams, ramsdoc: vRamsDoc, drawings: vDrawings, drawing: vDrawing, diary: vDiary, dsti: vDsti, dstilist: vDstiList, dstiopen: vDstiOpen, bps: vBps, bpswtg: vBpsWtg, bpssub: vBpsSub, iqc: vIqc, inspection: vInspection, check: vCheck, toolbox: vToolbox, incident: vIncident, si: vSI, order: vOrder, done: vDone, feedback: vFeedback, devices: vDevices, dash: vDash, qc: vQc, qcspot: vQcSpot, tsheets: vTsheets, tsheet: vTsheet, treport: vTreport, attendance: vAttendance, claude: vClaude, delays: vDelays, nearmiss: vNearMiss, jobobs: vJobObs, adhoc: vAdhoc, adhocjob: vAdhocJob, mychecks: vMyChecks, invest: vInvest, today: vToday, records: vRecords, audit: vAudit, scope: vScope, imgdiary: vImgDiary, outst: vOutst, live: vLive, piotr: vPiotr, policies: vPolicies, policy: vPolicy, warnings: vWarnings, warncase: vWarnCase };
+  const views = { users: vUsers, projects: vProjects, calendar: vCalendar, menu: vMenu, inspections: vInspections, client: vClient, tests: vTests, link: vLink, logtest: vLogTest, biocheck: vBioCheck, allocate: vAllocate, mysection: vMySection, review: vReview, kpi: vKpi, rams: vRams, ramsdoc: vRamsDoc, drawings: vDrawings, drawing: vDrawing, diary: vDiary, dsti: vDsti, dstilist: vDstiList, dstiopen: vDstiOpen, bps: vBps, bpswtg: vBpsWtg, bpssub: vBpsSub, iqc: vIqc, inspection: vInspection, check: vCheck, toolbox: vToolbox, incident: vIncident, si: vSI, order: vOrder, done: vDone, feedback: vFeedback, devices: vDevices, dash: vDash, qc: vQc, qcspot: vQcSpot, tsheets: vTsheets, tsheet: vTsheet, treport: vTreport, attendance: vAttendance, claude: vClaude, delays: vDelays, nearmiss: vNearMiss, jobobs: vJobObs, adhoc: vAdhoc, adhocjob: vAdhocJob, mychecks: vMyChecks, invest: vInvest, today: vToday, records: vRecords, audit: vAudit, scope: vScope, imgdiary: vImgDiary, gallery: vGallery, galproj: vGalProj, outst: vOutst, live: vLive, piotr: vPiotr, policies: vPolicies, policy: vPolicy, warnings: vWarnings, warncase: vWarnCase };
   document.body.classList.toggle("qcro", !!S.qcRO && ["iqc", "biocheck", "bps", "bpswtg", "bpssub"].includes(v));
   document.body.classList.toggle("vmenu", v === "menu" && TILES());
   document.body.classList.toggle("vgrid", v === "bps" || v === "iqc");
@@ -5880,7 +5978,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794061577"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794061577"); await loadJs("./js/pdf.js?v=1794061577");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794089733"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794089733"); await loadJs("./js/pdf.js?v=1794089733");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),

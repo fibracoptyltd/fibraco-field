@@ -1038,3 +1038,25 @@ body.vhome .tile.tpj.outred .tpj-n{font-size:calc(9px*var(--kf,1));letter-spacin
 .aud-card.ok{border-left-color:#1e8e3e}.aud-card.wait{border-left-color:#f29900}.aud-card.bad{border-left-color:#c8102e}.aud-card.void{opacity:.75}
 .aud-t{font-family:var(--display);font-weight:800;font-size:15px;text-transform:uppercase}.aud-st{font-weight:700;margin:2px 0 4px}
 .aud-x{color:#a00d25;font-weight:700}.aud-x::before{content:"\26A0  "}.aud-i{color:#444}
+/* image gallery (Wanro 8 Nov): one folder per project, full screen viewer with swipe */
+.gal-fold{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.gal-f{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:118px;padding:12px 8px;border-radius:12px;border:1px solid #d9b44a;background:#fff8e1;color:#15191e;font:inherit;text-align:center}
+.gal-f:active{transform:scale(.97)}
+.gal-f .ti-ic svg{width:42px;height:42px;stroke:#b8860b;fill:#ffe08a}
+.gal-f b{font-size:13.5px;line-height:1.2;text-transform:uppercase}
+.gal-f small{font-size:12px;color:#5b6470}
+.overlay.galv{display:flex;flex-direction:column;place-items:normal;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px);background:#0b0d10;color:#fff;overflow:hidden}
+.galv-top{display:flex;align-items:center;justify-content:space-between;padding:10px 12px}
+.galv-n{font-weight:800;font-size:16px}
+.galv-x{width:46px;height:46px;border-radius:50%;border:0;background:rgba(255,255,255,.16);color:#fff;font-size:30px;line-height:1}
+.galv-stage{position:relative;flex:1;min-height:0;touch-action:pan-y;user-select:none;-webkit-user-select:none}
+.galv-stage img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+.galv-wait{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;margin:0;color:#c9d0d8;font-size:14px}
+.galv-wait[hidden],.galv-stage img[hidden]{display:none}
+.galv-go{position:absolute;top:50%;transform:translateY(-50%);width:54px;height:54px;border-radius:50%;border:0;background:rgba(0,0,0,.5);color:#fff;font-size:36px;line-height:1;display:flex;align-items:center;justify-content:center;padding:0 0 4px}
+.galv-go.l{left:8px}.galv-go.r{right:8px}
+.galv-go:disabled{opacity:.15}
+.galv-info{padding:10px 14px 16px}
+.galv-cap{margin:0 0 2px;font-weight:700;font-size:14px;color:#fff}
+.galv-meta{margin:0 0 10px;font-size:12.5px;color:#aab3bd}
+.galv-dl{width:100%;padding:14px;border-radius:8px;border:0;font-weight:800;font-size:15px}
