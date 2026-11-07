@@ -387,7 +387,7 @@ function vProjects() {
         bioSetup(); } }, "Fingerprint")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1793905575";
+const APPV = "1794061577";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -436,11 +436,22 @@ function regHours(p, d, who) {
   const m = Math.max(0, o - i - 60), hrs = m > 480 && m <= 540 ? 9 : Math.round(m / 30) / 2;
   return { hrs: String(hrs), txt: `${a.in} to ${a.out}, less 1 hour lunch: ${hrs} hours` };
 }
-function attButton() {
+// Wanro 7 Nov: Hendrik signed in, then tapped "sign out" by mistake when he went to give out the work.
+// Signing out now asks first, there is an undo for the rest of the day, and while he is on site the button sits at the bottom.
+function attButton(where) {
   if (!S.project || !roleIn(S.user) || roleIn(S.user) === "pm") return null;
+  const a0 = attGet(S.project, S.date, S.user) || {}, onSite = a0.in && !a0.out;
+  if (where === "top" && onSite) return null;
+  if (where === "bottom" && !onSite) return null;
   const now0 = new Date(), [ch, cm] = (S.project.editUntil || "23:00").split(":").map(Number);
   const isToday = ymd(S.date) === ymd(now0) && now0.getHours() * 60 + now0.getMinutes() < ch * 60 + cm, a = attGet(S.project, S.date, S.user) || {};
-  if (a.in && a.out) return h("button", { class: "mbtn att-done", type: "button", onclick: () => showInfo("Attendance register", `You signed in at ${a.in} and out at ${a.out}.`) }, `REGISTER SIGNED  |  IN ${a.in}  |  OUT ${a.out}`);
+  const undoOut = () => askYesNo("Signed out by mistake?", `You signed out at ${a.out}. Undo it and you are back on the register from ${a.in}, as if you never signed out. Sign out again when you really leave site.`, "Undo the sign out",
+    () => mySig(v => { if (!v) return; const rec = Object.assign({}, attGet(S.project, S.date, S.user) || {}), was = { out: rec.out, outAt: rec.outAt };
+      delete rec.out; delete rec.outAt; delete rec.outSig; delete rec.outGps; rec.undone = (rec.undone || []).concat([Object.assign(was, { undoneAt: new Date().toISOString() })]);
+      Store.put(attId(S.project, S.date, S.user), rec); render(); showInfo("Back on the register", `You are signed in from ${rec.in}. Sign out at the bottom of this screen when you leave site.`); }));
+  if (a.in && a.out) { const td = ymd(S.date) === ymd(today());
+    return h("div", { class: "stack" }, h("button", { class: "mbtn att-done", type: "button", onclick: () => showInfo("Attendance register", `You signed in at ${a.in} and out at ${a.out}.`) }, `REGISTER SIGNED  |  IN ${a.in}  |  OUT ${a.out}`),
+      td ? h("button", { class: "btn-g", type: "button", style: "width:100%", onclick: undoOut }, "Signed out by mistake? Undo it") : null); }
   if (!isToday) return a.in ? h("button", { class: "mbtn att-done", type: "button" }, `REGISTER  |  IN ${a.in}`) : null;
   const sign = out => mySig(async v => { if (!v) return;
     toast("Saving..."); const gps = await gpsNow(), now = new Date();
@@ -450,7 +461,7 @@ function attButton() {
     Store.put(attId(S.project, S.date, S.user), rec); render(); showInfo(out ? "Signed out" : "Signed in", out ? `You signed out at ${rec.out}. Safe travels.` : `You are on the register at ${rec.in}. Sign out here when you leave site.`); });
   const unsent = a.in && Store.isDirty && Store.isDirty(attId(S.project, S.date, S.user));
   return a.in
-    ? h("button", { class: "mbtn att-out", type: "button", onclick: () => sign(true) }, `SIGNED IN ${a.in}. TAP TO SIGN OUT`, h("small", {}, unsent ? "NOT SENT YET. Switch on your mobile data so the site manager gets it." : "Sent to the site manager. Sign out here when you leave site."))
+    ? h("button", { class: "mbtn att-out", type: "button", onclick: () => askYesNo("Leaving site now?", `You are signing out at ${hhmm(new Date())}. Your hours for today stop here. Only carry on if you are leaving site.`, "Yes, sign me out", () => sign(true)) }, `SIGNED IN ${a.in}. TAP TO SIGN OUT`, h("small", {}, unsent ? "NOT SENT YET. Switch on your mobile data so the site manager gets it." : "Sent to the site manager. Sign out here when you leave site."))
     : h("button", { class: "mbtn att-in", type: "button", onclick: () => sign(false) }, "SIGN THE ATTENDANCE REGISTER", h("small", {}, "Tap when you get to site and type your PIN. Time and place are recorded."));
 }
 function attDoc(p, d, days) {
@@ -470,7 +481,7 @@ async function sendRegister(p, d, days) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793905575"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793905575"); await loadJs("./js/pdf.js?v=1793905575");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794061577"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794061577"); await loadJs("./js/pdf.js?v=1794061577");
     const { html, title } = attDoc(p, d, days); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
@@ -587,7 +598,7 @@ async function timeZone() {
   try {
     try { Store.kick(); await refreshDevices(true); } catch (e) {}
     await new Promise(r => setTimeout(r, 1800));
-    await loadJs("./js/lib/html2canvas.min.js?v=1793905575"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793905575"); await loadJs("./js/pdf.js?v=1793905575");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794061577"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794061577"); await loadJs("./js/pdf.js?v=1794061577");
     const D = tzData(), stamp = `${dmy(new Date())} ${hhmm()}`, name = `FIBRACO - Time Zone (${stamp})`;
     const pdf = await window.FibPdf.diaryPdf(tzHtml(D), name);
     const json = new File([JSON.stringify(D, null, 1)], name.replace(/[\\/:*?"<>|]+/g, "-") + ".json", { type: "application/json" });
@@ -920,7 +931,7 @@ function vMenuTiles() {
         tile("near", "Near\nmiss", () => startForm("nearmiss"), { cls: "nm" }),
         tile("rams", "RAMS", () => go("rams"))]],
       ["qc", "Quality control", [(sm || (p.qcBy || []).includes(S.user)) && p.qcSpots ? tile("check", "QC\nsheets", () => go("qc"), { cls: "qc" }) : null, tests, ...(comm || [])]],
-      ["pj", "Project", [tile("doc", "Site\ninstruction", () => startForm("si")),
+      ["pj", "Project", [(p.scope || []).length ? tile("list", "Scope and\nprogress", () => go("scope"), { badge: scopeState(p).filter(x => x.st === "late").length || "" }) : null, tile("doc", "Site\ninstruction", () => startForm("si")),
         tile("cart", "Material\norder", () => startForm("order")),
         tile("map", "Drawings and\nschedule", () => go("drawings")),
         tile("clock", "Internal\ndelays", () => go("delays"), dl),
@@ -954,10 +965,11 @@ function vMenuTiles() {
   return [tb,
     h("div", { class: "tw" },
       isTodayD ? null : h("button", { type: "button", class: "tday", onclick: () => { S.date = today(); render(); } }, `You are looking at ${nice(d)}. Tap to go back to today.`),
-      h("div", { class: "treg" }, attButton()),
+      h("div", { class: "treg" }, attButton("top")),
       rp.length ? red(`${rp.every(x => /^Splice failed/.test(x.title || "")) ? "SPLICE FAILED" : rp.every(x => /^QC failed/.test(x.title || "")) ? "QC FAILED" : "REPAIRS"}: ${rp.length} TO FIX`, "Fix it, then tap Repaired", () => go("mysection")) : null,
       idle.length ? red(`NO WORK FOR ${idle.map(n => n.split(" ")[0].toUpperCase()).join(" AND ")} TODAY`, "Tap, give him tasks and tap Send to crew", () => go("allocate")) : null,
       work, grid,
+      (() => { const b = attButton("bottom"); return b ? h("div", { class: "treg", style: "margin-top:12px" }, b) : null; })(),
       h("button", { type: "button", class: "tsos round", "aria-label": "Emergency", onclick: openEmergency }, ticon("sos"), "EMERGENCY"))];
 }
 
@@ -1601,7 +1613,7 @@ async function recordPdf() {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793905575"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793905575"); await loadJs("./js/pdf.js?v=1793905575");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794061577"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794061577"); await loadJs("./js/pdf.js?v=1794061577");
     const f = S.form, src = [...app.children].filter(k => !k.matches(".bar, .fb-btn, .ro-bar, .psub, .err, .pnav, .addrow"));
     const box = document.createElement("div");
     for (const k of src) {
@@ -1852,7 +1864,7 @@ async function sendOrder(f) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793905575"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793905575"); await loadJs("./js/pdf.js?v=1793905575");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794061577"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794061577"); await loadJs("./js/pdf.js?v=1794061577");
     const { html, title } = orderDoc(f);
     const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
@@ -2048,7 +2060,7 @@ function nice2(s) { const t = String(s == null ? "" : s).toLowerCase().split(" "
 // The week's work comes from the programme, so nobody has to type it on site.
 // A day the site manager has changed and sent is used instead of the programme.
 function planBase(p, ds) {
-  const rows = p && p.plan && p.plan[ds]; if (!rows) return null;
+  const rows = p && p.plan && p.plan[ds]; if (!rows) return p && (p.scope || []).length ? scopeTasks(p, ds) : null;
   const acts = p.acts || [];
   return rows.map(r => ({ who: r.who, act: r.act, loc: r.loc, target: String(r.target), unit: (acts.find(a => a[1] === r.act) || [])[0] || "ea", crit: !!r.crit, area: p.area, key: r.key }));
 }
@@ -2059,6 +2071,7 @@ const NOCARRY = /done before|al+ready|al+redy|previous|not needed|not required|c
 function prevDays(ds, n) { const out = [], x = new Date(ds + "T12:00:00"); while (out.length < n) { x.setDate(x.getDate() - 1); if (x.getDay() !== 0) out.push(ymd(x)); } return out; }
 function carryFor(p, ds, today) {
   if (ds < AUTO_FROM) return [];
+  if ((p.scope || []).length && !(p.plan && p.plan[ds])) return [];
   const days = prevDays(ds, 5).filter(d => d >= "2026-10-19"), groups = {};
   for (const d of days) {
     const base = (Store.get(`alloc|${p.id}|${d}`) || planBase(p, d) || []);
@@ -2092,22 +2105,117 @@ function planFor(k) {
 }
 // who on the project has nothing to do today (the site manager and office are told)
 function idleMen(p, ds) {
-  const d = new Date(ds + "T12:00:00"); if (d.getDay() === 0 || !(p.plan && Object.keys(p.plan).some(x => x <= ds)) || ds > Object.keys(p.plan).sort().slice(-1)[0]) return [];
+  const d = new Date(ds + "T12:00:00"), sc = (p.scope || []).length;
+  if (d.getDay() === 0 || (sc ? !workDay(p, ds) : (!(p.plan && Object.keys(p.plan).some(x => x <= ds)) || ds > Object.keys(p.plan).sort().slice(-1)[0]))) return [];
+  // a project whose whole scope is done or waiting has nobody idle: there is nothing in the quote to give out that day
+  if (sc && !(p.plan && p.plan[ds]) && !scopeState(p, ds).some(x => ["open", "late"].includes(x.st))) return [];
   const list = Store.get(`alloc|${p.id}|${ds}`) || planFor(`${p.id}|${ds}`) || [];
   return Object.keys(p.team || {}).filter(n => ["worker", "sup"].includes(p.team[n]) && !list.some(t => t.who === n));
 }
 const allocOf = k => Store.get("alloc|" + k) || planFor(k);
+// ---------- Wanro 7 Nov: the work is bound to the quote and the programme ----------
+// p.scope is the full scope from the accepted quote and the VOs that are loaded, every item with its quantity,
+// the man who does it and the days the programme gives it. Every working day each man gets his open items,
+// spread over the days left in their window. What is not done stays on his list every day, past the planned date,
+// until it is done or the office strikes it off. There is no end date. Nothing is handed out that the quote does not hold.
+const scopeAdj = (p, it) => Store.get(`scope|${p.id}|${it.id}`) || {};
+const workDay = (p, ds) => new Date(ds + "T12:00:00").getDay() !== 0 && !((p && p.off) || []).includes(ds);
+function wdBetween(p, a, b) { let n = 0; const x = new Date(a + "T12:00:00"), e = new Date(b + "T12:00:00"); while (x <= e) { if (workDay(p, ymd(x))) n++; x.setDate(x.getDate() + 1); } return n; }
+const scopeKey = it => it.key || `${it.act}|${it.loc || "Site"}`;
+function scopeItems(p) {
+  const out = [];
+  for (const it of (p && p.scope) || []) {
+    // one line in the config for "every commissioning sheet, both parts": one item per sheet and part, done from the QC sheets
+    if (it.kind === "bpsAll") { const ws = (() => { try { return bpsBorrow(p, () => ["SUBSTATION", ...bpsWtgs()]); } catch (e) { return []; } })();
+      for (const w of ws) for (const part of ["el", "tc"]) out.push(Object.assign({}, it, { id: `${it.id}-${w}-${part}`, kind: "qty", bps: [w, part], act: it.act, loc: `${w === "SUBSTATION" ? "Substation" : w}, ${part === "el" ? "electrical and mechanical" : "telecoms"}`, qty: 1, unit: "sheet", who: it.who || bpsOwner(part, p), key: `${it.act}|${w}|${part}` }));
+      continue; }
+    out.push(Object.assign({}, it, { key: scopeKey(it) }));
+  }
+  return out;
+}
+const scopeBase = (p, key) => { let n = 0; for (const it of scopeItems(p)) if (it.key === key) n += (+it.before || 0) + (+scopeAdj(p, it).plus || 0); return n; };
+function scopeState(p, ds) {
+  ds = ds || ymd(today());
+  const before = {}, upto = {};
+  for (const [id, o] of Store.list(`prog|${p.id}|`)) { const d = id.split("|")[2]; for (const [k, v] of Object.entries((o && o.k) || {})) { if (d < ds) before[k] = (before[k] || 0) + (+v || 0); if (d <= ds) upto[k] = (upto[k] || 0) + (+v || 0); } }
+  return scopeItems(p).map(it => {
+    const a = scopeAdj(p, it), daily = it.kind === "daily", from = a.from || it.from || "", to = a.to || it.to || from, qty = daily ? null : (+it.qty || 1);
+    let doneB, doneT;
+    if (it.done || a.done) doneB = doneT = qty || 0;
+    else if (it.bps) { const ok = (() => { try { return bpsBorrow(p, () => bpsPartDone(it.bps[0], it.bps[1])); } catch (e) { return false; } })(); doneB = doneT = ok ? 1 : 0; }
+    else { const base = (+it.before || 0) + (+a.plus || 0); doneB = base + (before[it.key] || 0); doneT = base + (upto[it.key] || 0); }
+    const st = a.struck ? "struck" : it.future ? "later" : (it.done || a.done || a.closed || (qty != null && doneT >= qty)) ? "done" : !from ? "wait" : from > ds ? "future" : to && ds > to ? "late" : "open";
+    return Object.assign({}, it, { from, to, qty, doneB, doneT, st, adj: a, daily });
+  });
+}
+function scopeWho(p, it) {
+  const team = p.team || {}, list = it.who === "*" ? Object.keys(team).filter(n => ["sm", "worker"].includes(team[n])) : [].concat(it.who || []);
+  const ok = list.filter(n => team[n]); return ok.length ? ok : [smName(p)];
+}
+function scopeTasks(p, ds) {
+  if (!workDay(p, ds)) return [];
+  const out = [];
+  for (const it of scopeState(p, ds)) {
+    if (!["open", "late"].includes(it.st)) continue;
+    const men = scopeWho(p, it), late = it.st === "late", lab = late ? ` (late, planned by ${dmy(new Date(it.to + "T12:00:00")).slice(0, 5)})` : "";
+    if (it.daily) { men.forEach(w => out.push({ who: w, act: it.act, loc: (it.loc || "Site") + lab, target: "1", unit: it.unit || "day", crit: !!it.crit, area: p.area, key: it.key, scope: it.id })); continue; }
+    const left = Math.max(0, it.qty - it.doneB); if (!left) continue;
+    const days = late ? 1 : Math.max(1, wdBetween(p, ds, it.to || ds)), share = Math.ceil(Math.ceil(left / days) / men.length);
+    men.forEach(w => out.push({ who: w, act: it.act, loc: (it.loc || "Site") + lab, target: String(share), unit: it.unit || "ea", crit: !!it.crit || late, area: p.area, key: it.key, scope: it.id }));
+  }
+  return out;
+}
+// progress against the full scope: each item counts by its weight in the quote (no rand values on the phones)
+function scopePct(items) {
+  const xs = items.filter(x => !x.daily && !["struck", "later"].includes(x.st)); let w = 0, d = 0;
+  for (const x of xs) { const ww = x.w == null ? 1 : +x.w; if (!ww) continue; w += ww; d += ww * Math.min(1, (x.doneT || 0) / (x.qty || 1)); }
+  return w ? Math.round(d / w * 1000) / 10 : null;
+}
+const SCOPE_ST = { late: ["Late", "bad"], open: ["Busy", "wait"], wait: ["Waiting", "void"], future: ["Not started", "void"], done: ["Done", "ok"], struck: ["Struck off", "void"], later: ["Later, not quoted", "void"] };
+function vScope() {
+  const p = S.project, items = scopeState(p), admin = isAdmin(S.user);
+  if (!items.length) return [topbar("Scope and progress", p.short, true), h("p", { class: "note" }, "The scope for this project is not loaded yet.")];
+  const groups = [...new Set(items.map(x => x.grp || "Scope"))], orig = items.filter(x => !x.vo), vo = items.filter(x => x.vo);
+  const po = scopePct(orig), pv = scopePct(vo), n = st => items.filter(x => x.st === st).length;
+  const sum = h("div", { class: "aud-sum" }, ...[["Original scope done", po == null ? "-" : po + "%", po != null && po < 100 ? "" : ""], ["VO work done", pv == null ? "-" : pv + "%"], ["Late", n("late"), n("late") ? "bad" : ""], ["Busy", n("open")], ["Waiting", n("wait")], ["Done", n("done")]]
+    .map(([l, v, c]) => h("div", { class: "aud-n" + (c ? " " + c : "") }, h("b", {}, String(v)), h("span", {}, l))));
+  const edit = it => { const a = Object.assign({}, it.adj), why = h("input", { type: "text", placeholder: "Reason, for the record", value: a.why || "", style: "width:100%;margin:6px 0" });
+    const fromI = h("input", { type: "date", value: it.from || "" }), toI = h("input", { type: "date", value: it.to || "" }), plusI = h("input", { type: "number", inputmode: "decimal", value: a.plus || "", placeholder: "0", style: "width:90px" });
+    const save = ch => { const v = Object.assign(a, ch, { by: S.user, at: new Date().toISOString(), why: why.value.trim() }); Store.put(`scope|${p.id}|${it.id}`, v); persist(); ov.remove(); delete totCache[p.id]; render(); };
+    const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Change this item" }, h("div", { class: "modal" }, h("h2", {}, `${it.act}`), h("p", {}, `${it.loc || "Site"}. ${it.src || ""}`),
+      h("label", { class: "lbl" }, "Planned days"), h("div", { style: "display:flex;gap:6px;flex-wrap:wrap" }, fromI, toI),
+      !it.daily && !it.bps ? h("div", { style: "margin-top:8px" }, h("label", { class: "lbl" }, `Done before the app, ${it.unit || "ea"}`), plusI) : null, why,
+      h("div", { class: "stack", style: "margin-top:8px" },
+        h("button", { class: "btn-w", type: "button", onclick: () => save({ from: fromI.value || "", to: toI.value || fromI.value || "", plus: +plusI.value || 0 }) }, "Save the days"),
+        it.daily ? h("button", { class: "btn-g", type: "button", onclick: () => save({ closed: !a.closed }) }, a.closed ? "Open it again" : "Close it, no more days") : h("button", { class: "btn-g", type: "button", onclick: () => save({ done: !a.done }) }, a.done ? "Not done after all" : "Mark it done"),
+        h("button", { class: "btn-g", type: "button", style: "color:#a00d25", onclick: () => save({ struck: !a.struck }) }, a.struck ? "Put it back on the list" : "Strike it off, not needed"),
+        h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Cancel")))); document.body.append(ov); };
+  const card = it => { const [lab, cls] = SCOPE_ST[it.st] || ["", ""], d = (x) => x ? dmy(new Date(x + "T12:00:00")).slice(0, 5) : "";
+    return h(admin ? "button" : "div", { type: admin ? "button" : undefined, class: "aud-card " + cls, onclick: admin ? () => edit(it) : null },
+      h("div", { class: "aud-t", style: "font-size:13.5px" }, `${it.act}`), h("div", { class: "aud-st" }, `${lab}${it.st === "wait" && it.wait ? ": " + it.wait : ""}`),
+      h("div", { class: "aud-i" }, `${it.loc || "Site"}${it.who ? "  |  " + scopeWho(p, it).join(", ") : ["open", "late", "wait"].includes(it.st) ? "  |  " + smName(p) + " (site manager)" : ""}`),
+      h("div", { class: "aud-i" }, it.daily ? `${it.doneT} day${it.doneT === 1 ? "" : "s"} booked so far` : `${Math.min(it.doneT, it.qty)} of ${it.qty} ${it.unit || "ea"} done`),
+      it.from ? h("div", { class: "aud-i" }, `Planned ${d(it.from)}${it.to && it.to !== it.from ? " to " + d(it.to) : ""}`) : null,
+      it.done ? h("div", { class: "aud-i" }, `Done: ${it.done}`) : null, it.src ? h("div", { class: "aud-i" }, `From ${it.src}`) : null,
+      it.adj && it.adj.why ? h("div", { class: "aud-i" }, `Office: ${it.adj.why}`) : null); };
+  return [topbar("Scope and progress", p.short, true),
+    h("p", { class: "form-sub" }, `Everything in the quote${vo.length ? " and the VOs" : ""}, item by item. Each man gets his open items every working day until they are done.${admin ? " Tap an item to change its days, mark it done or strike it off." : ""}`),
+    sum, ...groups.map(g => h("div", { class: "stack" }, h("h3", { class: "bps-h" }, g), ...items.filter(x => (x.grp || "Scope") === g).map(card)))];
+}
 // ---------- the four blocks: Today, To date, Remaining, G Total ----------
 // G Total = work done before the programme started + everything the programme plans for that activity at that spot.
 // To date = work done before + what everyone on the project has submitted, plus what he is typing today.
 const keyOf = t => t.key || (t.act + "|Site");
 const totCache = {};
 function grandTotal(p, key) {
-  if (!totCache[p.id]) { const m = {}; for (const rows of Object.values(p.plan || {})) for (const r of rows) if (!r.carry) m[r.key] = (m[r.key] || 0) + (+r.target || 0); for (const [kk, n] of Object.entries(p.before || {})) m[kk] = (m[kk] || 0) + n; totCache[p.id] = m; }
+  if (!totCache[p.id]) { const m = {}; for (const rows of Object.values(p.plan || {})) for (const r of rows) if (!r.carry) m[r.key] = (m[r.key] || 0) + (+r.target || 0); for (const [kk, n] of Object.entries(p.before || {})) m[kk] = (m[kk] || 0) + n;
+    // Wanro 7 Nov: the quoted quantity is the total for an item in the scope
+    for (const it of scopeItems(p)) if (it.kind !== "daily" && !it.bps) m[it.key] = (m[it.key] || 0) + (+it.qty || 0);
+    totCache[p.id] = m; }
   return totCache[p.id][key];
 }
 function doneToDate(p, key, ds, me, live) {
-  let n = ((p.before || {})[key] || 0) + ((p.adjust || {})[key] || 0);
+  let n = ((p.before || {})[key] || 0) + ((p.adjust || {})[key] || 0) + scopeBase(p, key);
   for (const [id, o] of Store.list(`prog|${p.id}|`)) { const x = id.split("|"); if (x[2] > ds || (x[2] === ds && x[3] === me)) continue; n += +((o.k || {})[key] || 0); }
   return Math.max(0, n + (+live || 0));
 }
@@ -2187,6 +2295,8 @@ function schedFor(p) {
   let plan = 0, done = 0;
   const ids = new Map(Store.list("alloc|" + S.project.id + "|"));
   for (const ds of Object.keys(S.project.plan || {})) if (!ids.has(`alloc|${S.project.id}|${ds}`)) ids.set(`alloc|${S.project.id}|${ds}`, planFor(S.project.id + "|" + ds));
+  if ((S.project.scope || []).length) { const fr = scopeItems(S.project).map(x => x.from).filter(Boolean).sort()[0];
+    if (fr) for (const x = new Date(fr + "T12:00:00"); x <= S.date; x.setDate(x.getDate() + 1)) { const ds = ymd(x), id = `alloc|${S.project.id}|${ds}`; if (!ids.has(id) && workDay(S.project, ds)) ids.set(id, planFor(S.project.id + "|" + ds)); } }
   for (const [id, alloc] of ids) {
     const ds = id.split("|")[2]; if (ds > ymd(S.date)) continue;
     if (ds === ymd(S.date)) { plan += t.target; done += t.done; continue; }
@@ -2600,7 +2710,7 @@ async function bpsMailsFor(p, day) {
   await Promise.all(pre.phs.map(q => q && q.ph && !PHOTO_CACHE.has(q.ph) && !(q.url || "").startsWith("data:") ? Store.photo(q.ph).then(d => { if (d) PHOTO_CACHE.set(q.ph, d); }).catch(() => {}) : 0));
   const d = bpsBorrow(p, () => bpsDoc(p, day)), allDone = bpsBorrow(p, () => bpsAllDone());
   const files = await window.FibPdf.diaryPdf(d.html, d.title, { scale: 1.6, quality: 0.72, maxBytes: 5e6 }), list = Array.isArray(files) ? files : [files];
-  const xl = pre.rows ? await loadJs("./js/piotr.js?v=1793905575").then(() => { const b = window.PiotrXlsx.build(pre.rows); return new File([b], `Bioseco_Wolf_Fibraco_status (${dmy(today())}).xlsx`, { type: b.type }); }).catch(() => null) : null;
+  const xl = pre.rows ? await loadJs("./js/piotr.js?v=1794061577").then(() => { const b = window.PiotrXlsx.build(pre.rows); return new File([b], `Bioseco_Wolf_Fibraco_status (${dmy(today())}).xlsx`, { type: b.type }); }).catch(() => null) : null;
   const dTxt = nice(new Date(day + "T12:00:00")), mails = [];
   for (let i = 0; i < list.length; i++) {
     const f = list[i], part = list.length > 1 ? ` (part ${i + 1} of ${list.length})` : "";
@@ -2713,7 +2823,7 @@ function bpsDailyBox(ready) {
   const open = log.flatMap(x => ["el", "tc"].filter(pt => !x.c.parts[pt]).map(pt => `${x.w === "SUBSTATION" ? "substation" : x.w} ${pt === "el" ? "electrical" : "telecoms"} (${bpsOwner(pt).split(" ")[0]})`));
   return [h("h3", { class: "bps-h" }, "Daily report to Bioseco"),
     days.length > 1 ? h("div", { class: "bps-days" }, ...days.slice(0, 7).map(x => { const st = D[x] || {}; return h("button", { type: "button", class: "bps-day" + (x === ds ? " on" : "") + (st.sent ? " sent" : bpsDayLog(x).length ? " due" : ""), onclick: () => { S.bpsDay = x; render(); } }, bpsDayLab(x)); })) : null,
-    dr.sent ? h("div", { class: "rep-st ok" }, `${lab}: approved by ${dr.approved.by} and emailed at ${dr.sent.at} on ${dr.sent.date}.`, h("small", {}, `To ${dr.sent.to.join(", ")}`)) :
+    dr.sent ? h("div", { class: "rep-st ok" }, `${lab}: ${dr.approved ? `approved by ${dr.approved.by} and ` : "went with the approved diary, "}emailed at ${dr.sent.at} on ${dr.sent.date}.`, h("small", {}, `To ${dr.sent.to.join(", ")}`)) :
     n ? h("div", { class: "rep-st wait" }, `${lab}: ${sheets}.`, h("small", {}, dr.err ? `Not emailed yet. Last try: ${dr.err}. It tries again by itself.` : (isAdmin(S.user) ? `It goes to Bioseco by itself when you approve the daily diary for this day. Nothing else to approve.` : "Complete the sheets for the day, then press DONE. You can still correct them until the daily diary is signed off."))) :
     h("div", { class: "rep-st" }, `${lab}: nothing done on the sheets yet.`),
     (sm || isSM(S.user)) && n && open.length ? h("p", { class: "hint", style: "color:#8a4b00" }, `Not submitted yet: ${open.join(", ")}.`) : null,
@@ -3145,7 +3255,8 @@ function liveTags() { const c = SHARE(), p = CFG.projects.find(x => x.id === c.p
   return [...c.tags, ...ids.map(i => "user:" + i)]; }
 async function shareSync() {
   const c = SHARE(); if (!c || shareBusy || !shareMine() || !navigator.onLine) return;
-  shareBusy = true; const keep = S.project;
+  // Wanro 7 Nov: if the man opened a project while this ran in the background, leave him there (it used to put him back on nothing)
+  shareBusy = true; const keep = S.project, view0 = S.view, hist0 = S.hist.length;
   try {
     S.project = PROJECTS.find(x => x.id === c.pid); const pid = S.project.id; seedLinks(); if (S.project.design) DESIGN = S.project.design;
     const ws = ["SUBSTATION", ...liveOrder(bpsWtgs())], out = [], now = new Date().toISOString();
@@ -3185,7 +3296,7 @@ async function shareSync() {
       for (const x of batch) { SH.pub[x.id] = x.j; SH.recs[x.id] = x.obj; }
     }
     if (out.length) { shareSave(); if (S.view === "live") render(); }
-  } finally { S.project = keep; shareBusy = false; }
+  } finally { if (S.view === view0 && S.hist.length === hist0) S.project = keep; shareBusy = false; }
 }
 // the office and the site manager see exactly what Bioseco sees
 async function livePhoto(id) { return Store.sharePhoto(id); }
@@ -3208,7 +3319,7 @@ function liveExtra(pid) {
 }
 // Wanro 30 Oct: Piotr's table, filled in by itself. The office marks extra works. Download his Excel or email it to him.
 const piotrRows = () => { const o = {}; for (const [r, , w] of LiveUI.PIOTR) { const y = liveBoard(w, 0).y; o[r] = LiveUI.PCOLS.map(([k]) => y[k]); } return o; };
-async function piotrFile() { await loadJs("./js/piotr.js?v=1793905575"); const b = window.PiotrXlsx.build(piotrRows()); return new File([b], `Bioseco_Wolf_Fibraco_status (${dmy(today())}).xlsx`, { type: b.type }); }
+async function piotrFile() { await loadJs("./js/piotr.js?v=1794061577"); const b = window.PiotrXlsx.build(piotrRows()); return new File([b], `Bioseco_Wolf_Fibraco_status (${dmy(today())}).xlsx`, { type: b.type }); }
 function vPiotr() {
   const p = S.project, admin = isAdmin(S.user), box = h("div", { class: "lv" });
   const cell = (w, k, v) => { if (k !== "xw" || !admin) return null; const c = bpsOf(w);
@@ -3229,7 +3340,7 @@ function vPiotr() {
     admin && xw.length ? sheet("", h("div", { class: "band" }, "Extra works, a short note each (Bioseco see it)"), h("table", {}, h("tbody", {}, ...xw.map(([, lab, w]) => { const c = bpsOf(w);
       return h("tr", {}, h("td", { class: "lab" }, lab), h("td", {}, inp("text", c.xw.note, v => { c.xw.note = v; persistSoon(); shareSoon(1500); }, "e.g. module replaced on Bioseco's request"))); })))) : null,
     h("div", { class: "row", style: "gap:8px;flex-wrap:wrap" },
-      h("button", { type: "button", class: "btn-w", onclick: async () => { try { const f = await piotrFile(); await loadJs("./js/pdf.js?v=1793905575"); await window.FibPdf.shareFile(f, f.name); } catch (e) { showInfo("Could not make the Excel", `${e.message || e}.`); } } }, "Download the Excel"),
+      h("button", { type: "button", class: "btn-w", onclick: async () => { try { const f = await piotrFile(); await loadJs("./js/pdf.js?v=1794061577"); await window.FibPdf.shareFile(f, f.name); } catch (e) { showInfo("Could not make the Excel", `${e.message || e}.`); } } }, "Download the Excel"),
       admin ? h("button", { type: "button", class: "submit", onclick: send }, "Email it to Piotr now") : null)];
 }
 function vLive() {
@@ -3410,7 +3521,7 @@ async function warnPdf(c, kind) {
   const ov = h("div", { class: "overlay", role: "dialog" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793905575"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793905575"); await loadJs("./js/pdf.js?v=1793905575");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794061577"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794061577"); await loadJs("./js/pdf.js?v=1794061577");
     const esc = x => String(x == null ? "" : x).replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[ch]);
     const p = PEOPLE.find(x => x.name === c.who) || {}, pr = CFG.projects.find(x => x.id === c.pid) || {}, t = c.test || {}, [, catLab, , alc] = wCat(c.cat);
     const head = `<table style="width:100%;border-collapse:collapse;margin-bottom:12px"><tr><td rowspan="3" style="border:0.6pt solid #888;width:38%;text-align:center"><img src="${LOGO}" style="width:180px"></td><td style="border:0.6pt solid #888;font-size:8.5pt"><u>E-mail #</u></td><td style="border:0.6pt solid #888;font-size:8.5pt">info@fibraco.co.za &amp; wanro@fibraco.co.za</td></tr><tr><td style="border:0.6pt solid #888;font-size:8.5pt"><u>Reg #</u></td><td style="border:0.6pt solid #888;font-size:8.5pt">2021 / 770505 / 07</td></tr><tr><td style="border:0.6pt solid #888;font-size:8.5pt"><u>Address #</u></td><td style="border:0.6pt solid #888;font-size:8.5pt">Section 5A, SS Don Dias, Beach Indaba Building, 22 Dias Rd, Jeffreys Bay, South Africa, 6330</td></tr></table>`;
@@ -3445,7 +3556,7 @@ async function bpsReport(email, day = ymd(today())) {
   const ov = h("div", { class: "overlay", role: "dialog" }, h("div", { class: "modal" }, h("h2", {}, email ? "Approving and emailing" : "Making the report"), h("p", {}, "Fetching the photos and building the PDF. Keep the app open on this screen.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793905575"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793905575"); await loadJs("./js/pdf.js?v=1793905575");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794061577"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794061577"); await loadJs("./js/pdf.js?v=1794061577");
     const ws = ["SUBSTATION", ...bpsWtgs()], phs = ws.flatMap(w => Object.values(bpsOf(w).ph).flat());
     await Promise.all(phs.map(p => p.ph && !PHOTO_CACHE.has(p.ph) && !(p.url || "").startsWith("data:") ? Store.photo(p.ph).then(d => { if (d) PHOTO_CACHE.set(p.ph, d); }).catch(() => {}) : 0));
     const d = bpsDoc(S.project, day);
@@ -4350,7 +4461,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793905575"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793905575"); await loadJs("./js/pdf.js?v=1793905575");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794061577"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794061577"); await loadJs("./js/pdf.js?v=1794061577");
     await fetchDayPhotos(k);
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
@@ -4465,7 +4576,7 @@ async function processMailQ1() {
   let wl = null;
   try {
     wl = await wakeOn();
-    await loadJs("./js/lib/html2canvas.min.js?v=1793905575"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793905575"); await loadJs("./js/pdf.js?v=1793905575");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794061577"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794061577"); await loadJs("./js/pdf.js?v=1794061577");
     for (const j of go) {
       const p = CFG.projects.find(x => x.id === j.pid); if (!p) { j.done = true; continue; }
       if (!j.flash && !j.bpsOnly) { const m0 = Store.get(`mail|${j.pid}|${j.ds}`); if (m0 && m0.jobAt && m0.jobAt >= j.at) { j.done = true; continue; } } // another phone already sent it
@@ -4927,7 +5038,7 @@ function vDelays() {
 // ---------- render ----------
 let render = function () {
   const v = S.view;
-  const views = { users: vUsers, projects: vProjects, calendar: vCalendar, menu: vMenu, inspections: vInspections, client: vClient, tests: vTests, link: vLink, logtest: vLogTest, biocheck: vBioCheck, allocate: vAllocate, mysection: vMySection, review: vReview, kpi: vKpi, rams: vRams, ramsdoc: vRamsDoc, drawings: vDrawings, drawing: vDrawing, diary: vDiary, dsti: vDsti, dstilist: vDstiList, dstiopen: vDstiOpen, bps: vBps, bpswtg: vBpsWtg, bpssub: vBpsSub, iqc: vIqc, inspection: vInspection, check: vCheck, toolbox: vToolbox, incident: vIncident, si: vSI, order: vOrder, done: vDone, feedback: vFeedback, devices: vDevices, dash: vDash, qc: vQc, qcspot: vQcSpot, tsheets: vTsheets, tsheet: vTsheet, treport: vTreport, attendance: vAttendance, claude: vClaude, delays: vDelays, nearmiss: vNearMiss, jobobs: vJobObs, adhoc: vAdhoc, adhocjob: vAdhocJob, mychecks: vMyChecks, invest: vInvest, today: vToday, records: vRecords, audit: vAudit, imgdiary: vImgDiary, outst: vOutst, live: vLive, piotr: vPiotr, policies: vPolicies, policy: vPolicy, warnings: vWarnings, warncase: vWarnCase };
+  const views = { users: vUsers, projects: vProjects, calendar: vCalendar, menu: vMenu, inspections: vInspections, client: vClient, tests: vTests, link: vLink, logtest: vLogTest, biocheck: vBioCheck, allocate: vAllocate, mysection: vMySection, review: vReview, kpi: vKpi, rams: vRams, ramsdoc: vRamsDoc, drawings: vDrawings, drawing: vDrawing, diary: vDiary, dsti: vDsti, dstilist: vDstiList, dstiopen: vDstiOpen, bps: vBps, bpswtg: vBpsWtg, bpssub: vBpsSub, iqc: vIqc, inspection: vInspection, check: vCheck, toolbox: vToolbox, incident: vIncident, si: vSI, order: vOrder, done: vDone, feedback: vFeedback, devices: vDevices, dash: vDash, qc: vQc, qcspot: vQcSpot, tsheets: vTsheets, tsheet: vTsheet, treport: vTreport, attendance: vAttendance, claude: vClaude, delays: vDelays, nearmiss: vNearMiss, jobobs: vJobObs, adhoc: vAdhoc, adhocjob: vAdhocJob, mychecks: vMyChecks, invest: vInvest, today: vToday, records: vRecords, audit: vAudit, scope: vScope, imgdiary: vImgDiary, outst: vOutst, live: vLive, piotr: vPiotr, policies: vPolicies, policy: vPolicy, warnings: vWarnings, warncase: vWarnCase };
   document.body.classList.toggle("qcro", !!S.qcRO && ["iqc", "biocheck", "bps", "bpswtg", "bpssub"].includes(v));
   document.body.classList.toggle("vmenu", v === "menu" && TILES());
   document.body.classList.toggle("vgrid", v === "bps" || v === "iqc");
@@ -5126,7 +5237,7 @@ Store.metaFor = (id, obj) => {
   if (kind === "outsnap") return { tags: ((CFG && CFG.projects) || []).map(p => `proj:${p.id}`) };
   // the director's signature on a company policy is seen by everybody, so the policy opens for the crew
   if (kind === "pol" && (PEOPLE.find(p => p.id === x[2]) || {}).admin) return { tags: ((CFG && CFG.projects) || []).map(p => `proj:${p.id}`) };
-  if (kind === "alloc" || kind === "prog") return { tags: [`proj:${pid}`] };
+  if (kind === "alloc" || kind === "prog" || kind === "scope") return { tags: [`proj:${pid}`] };
   if (kind === "sec") return { tags: [`user:${idOf(x.slice(3).join("|")) || me}`, `mgr:${pid}`] };
   if (kind === "help") return { tags: [`proj:${pid}`] };
   if (kind === "att") return { tags: [`user:${idOf(x.slice(3).join("|")) || me}`, `mgr:${pid}`] };
@@ -5769,7 +5880,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1793905575"); await loadJs("./js/lib/jspdf.umd.min.js?v=1793905575"); await loadJs("./js/pdf.js?v=1793905575");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794061577"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794061577"); await loadJs("./js/pdf.js?v=1794061577");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
@@ -6278,5 +6389,7 @@ if ("serviceWorker" in navigator && location.protocol === "https:") {
   navigator.serviceWorker.addEventListener("controllerchange", () => { if (!hadController) return; updateReady = true; applyUpdate(); });
   setInterval(applyUpdate, 5000);
 }
+// tests only: on a local test server the test scripts can look inside. Never on the live site.
+if (/^(localhost|127\.0\.0\.1)(:|$)/.test(location.host)) window.__T = { ev: src => eval(src), allocOf, scopeItems, scopeState, scopePct, scopeTasks, attGet, ymd, get S() { return S; }, get PROJECTS() { return PROJECTS; } };
 boot();
 })();
