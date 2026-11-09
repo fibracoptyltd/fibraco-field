@@ -242,6 +242,9 @@ const Store = (() => {
       return j;
     },
     setMember: (member, active) => rpc("set_member", { p_member: member, p_active: active }),
+    // Wanro 9 Nov: the office sets who is site manager and crew in the app, the server follows straight away
+    getAccess: () => rpc("get_access", {}),
+    setAccess: (member, tags, supervisor) => rpc("set_access", { p_member: member, p_tags: tags, p_supervisor: !!supervisor }),
     get(id) { const v = mem.get(id); return v ? v.obj : undefined; },
     list(prefix) { const out = []; for (const [id, v] of mem) if (id.startsWith(prefix)) out.push([id, v.obj]); return out; },
     metaFor: null, // set by the app: who may see this record, and whether others may update it
@@ -270,6 +273,10 @@ const Store = (() => {
     pending() { let n = 0; for (const v of mem.values()) if (v.dirty) n++; return n; },
     async unsentLocked() { try { return (await allRecs()).filter(r => r.dirty).length; } catch (e) { return 0; } },
     kick() { clearTimeout(api._t); api._t = setTimeout(() => api.sync().catch(() => {}), 400); },
+    // Wanro 9 Nov: after someone's access changes, records he could not see before are older than his last pull, so they
+    // would never come down. A full pull fetches everything he may see now. Also done once every 12 hours as a safety net.
+    async fullPull() { await metaSet("lastFull", new Date().toISOString()); lastPull = "1970-01-01T00:00:00Z"; await metaSet("lastPull", lastPull); return api.sync(); },
+    async fullPullDue() { const t = await metaGet("lastFull").catch(() => null); return !t || Date.now() - new Date(t).getTime() > 12 * 3600e3; },
     async sync() {
       if (syncing || !CONF || !TOKEN) return;
       if (!navigator.onLine) { online = false; return; }

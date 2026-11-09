@@ -388,7 +388,7 @@ function vProjects() {
         bioSetup(); } }, "Fingerprint")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1794240801";
+const APPV = "1794242242";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -482,7 +482,7 @@ async function sendRegister(p, d, days) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794240801"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794240801"); await loadJs("./js/pdf.js?v=1794240801");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794242242"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794242242"); await loadJs("./js/pdf.js?v=1794242242");
     const { html, title } = attDoc(p, d, days); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
@@ -599,7 +599,7 @@ async function timeZone() {
   try {
     try { Store.kick(); await refreshDevices(true); } catch (e) {}
     await new Promise(r => setTimeout(r, 1800));
-    await loadJs("./js/lib/html2canvas.min.js?v=1794240801"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794240801"); await loadJs("./js/pdf.js?v=1794240801");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794242242"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794242242"); await loadJs("./js/pdf.js?v=1794242242");
     const D = tzData(), stamp = `${dmy(new Date())} ${hhmm()}`, name = `FIBRACO - Time Zone (${stamp})`;
     const pdf = await window.FibPdf.diaryPdf(tzHtml(D), name);
     const json = new File([JSON.stringify(D, null, 1)], name.replace(/[\\/:*?"<>|]+/g, "-") + ".json", { type: "application/json" });
@@ -840,7 +840,7 @@ function vProjectsTiles() {
       h("div", { class: "who", style: "margin:0" }, h("span", {}, "Signed in as ", h("b", {}, S.user), ` (${ROLE[S.user]})`)),
       installCard(),
       alertSheet(),
-      waitingBar(),
+      accessCard(), waitingBar(),
       safetyBanner(),
       (() => { const ds = ymd(today()), n = dueToday().reduce((c, p) => c + checksOpen(p, S.user, ds), 0);
         return n ? h("button", { type: "button", class: "mbtn today-bar", onclick: () => go("today") }, `${n} check${n === 1 ? "" : "s"} to do today`, h("small", {}, "Tap to see them. Clear every mustard one.")) : null; })(),
@@ -936,7 +936,7 @@ function vMenuTiles() {
         tile("near", "Near\nmiss", () => startForm("nearmiss"), { cls: "nm" }),
         tile("rams", "RAMS", () => go("rams"))]],
       ["qc", "Quality control", [(sm || (p.qcBy || []).includes(S.user)) && p.qcSpots ? tile("check", "QC\nsheets", () => go("qc"), { cls: "qc" }) : null, tests, ...(comm || [])]],
-      ["pj", "Project", [(p.scope || []).length ? tile("list", "Scope and\nprogress", () => go("scope"), { badge: scopeState(p).filter(x => x.st === "late").length || "" }) : null, tile("doc", "Site\ninstruction", () => startForm("si")),
+      ["pj", "Project", [isAdmin(S.user) ? tile("user", "Team and\nroles", () => { S.teamDraft = null; checkAccess(false).then(render); go("team"); }) : null, (p.scope || []).length ? tile("list", "Scope and\nprogress", () => go("scope"), { badge: scopeState(p).filter(x => x.st === "late").length || "" }) : null, tile("doc", "Site\ninstruction", () => startForm("si")),
         tile("cart", "Material\norder", () => startForm("order")),
         tile("map", "Drawings and\nschedule", () => go("drawings")),
         tile("clock", "Internal\ndelays", () => go("delays"), dl),
@@ -1618,7 +1618,7 @@ async function recordPdf() {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794240801"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794240801"); await loadJs("./js/pdf.js?v=1794240801");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794242242"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794242242"); await loadJs("./js/pdf.js?v=1794242242");
     const f = S.form, src = [...app.children].filter(k => !k.matches(".bar, .fb-btn, .ro-bar, .psub, .err, .pnav, .addrow"));
     const box = document.createElement("div");
     for (const k of src) {
@@ -1869,7 +1869,7 @@ async function sendOrder(f) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794240801"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794240801"); await loadJs("./js/pdf.js?v=1794240801");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794242242"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794242242"); await loadJs("./js/pdf.js?v=1794242242");
     const { html, title } = orderDoc(f);
     const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
@@ -2118,6 +2118,74 @@ function idleMen(p, ds) {
   return Object.keys(p.team || {}).filter(n => ["worker", "sup"].includes(p.team[n]) && !list.some(t => t.who === n));
 }
 const allocOf = k => Store.get("alloc|" + k) || planFor(k);
+// ---------- Wanro 9 Nov: the office sets the site manager and the crew in the app ----------
+// A role change used to need a separate access file run on the server by hand. It was missed once and Hendrik, new site manager
+// on Belle River, could not see his men's sign-ins or diary sections. Now Wanro changes the team here, every phone follows,
+// and his phone sets the server access to match straight away. The office phone also checks every person's access and shows
+// a red card when anyone is out of step, with one tap to fix it.
+const TEAM_ROLES = [["off", "Not on this project"], ["worker", "Crew"], ["sm", "Site manager"], ["sup", "Quality control and supervisor"]];
+function applyTeams() {
+  for (const p of (CFG && CFG.projects) || []) {
+    if (!p._team0) p._team0 = Object.assign({}, p.team);
+    const o = Store.get(`team|${p.id}`), t = Object.assign({}, p._team0, (o && o.team) || {});
+    for (const n of Object.keys(t)) if (t[n] === "off") delete t[n];
+    p.team = t;
+  }
+}
+// the access each person should have on the server, worked out the same way as the office build does
+async function wantAccess(person) {
+  const roles = {};
+  for (const p of CFG.projects) { const r = p.team[person.name]; if (r || person.admin) roles[p.id] = r; }
+  const names = [`user:${person.id}`, ...Object.keys(roles).map(id => `proj:${id}`), ...Object.entries(roles).filter(([, r]) => ["sm", "sup"].includes(r) || person.admin).map(([id]) => `mgr:${id}`)];
+  return { tags: await Promise.all(names.map(n => Store.tagHash(n))), supervisor: !!person.admin || Object.values(roles).includes("sm") };
+}
+const fullPullSeen = new Set();
+let ACCESS = null; // office only: [{ name, id, ok, want, have }]
+async function checkAccess(fix) {
+  if (!isAdmin(S.user) || !Store.online()) return null;
+  let rows; try { rows = await Store.getAccess(); } catch (e) { ACCESS = { error: /\b404\b|PGRST202|does not exist|Could not find/i.test(String(e.message)) ? "not installed" : String(e.message) }; return ACCESS; }
+  const out = [];
+  for (const person of PEOPLE.filter(x => !x.admin)) {
+    const r = rows.find(x => x.member_id === person.id); if (!r || r.active === false) continue;
+    const w = await wantAccess(person), have = new Set(r.tags || []), want = new Set([r.utag, ...w.tags]);
+    const ok = [...want].every(t => have.has(t)) && [...have].every(t => want.has(t)) && !!r.supervisor === w.supervisor;
+    if (!ok && fix) { try { await Store.setAccess(person.id, w.tags, w.supervisor); await Store.put(`resync|${person.id}`, { at: new Date().toISOString(), by: S.user }, "r", { tags: [`user:${person.id}`] }); persist(); out.push({ name: person.name, id: person.id, ok: true, fixed: true }); continue; } catch (e) { out.push({ name: person.name, id: person.id, ok: false, err: e.message }); continue; } }
+    out.push({ name: person.name, id: person.id, ok });
+  }
+  ACCESS = { rows: out, at: hhmm(new Date()) }; return ACCESS;
+}
+function accessCard() {
+  if (!isAdmin(S.user) || !ACCESS || !ACCESS.rows) return null;
+  const bad = ACCESS.rows.filter(x => !x.ok); if (!bad.length) return null;
+  return h("button", { type: "button", class: "mbtn", style: "background:#c8102e;color:#fff;border-color:#c8102e", onclick: async e => { e.currentTarget.disabled = true; await checkAccess(true); await checkAccess(false); render();
+      const still = (ACCESS.rows || []).filter(x => !x.ok); showInfo(still.length ? "Not fixed yet" : "Access fixed", still.length ? `Still out of step: ${still.map(x => x.name).join(", ")}. Try again with signal.` : "Everyone now sees what their role on each project allows. They must close the app and open it again."); } },
+    `ACCESS OUT OF STEP: ${bad.map(x => x.name).join(", ")}`, h("small", {}, "Their phone cannot see what their role needs. Tap to fix it now."));
+}
+function vTeam() {
+  const p = S.project, base = p._team0 || p.team, cur = Object.assign({}, p.team), people = PEOPLE.filter(x => !x.admin);
+  const draft = S.teamDraft && S.teamDraft.pid === p.id ? S.teamDraft.team : (S.teamDraft = { pid: p.id, team: Object.fromEntries(people.map(x => [x.name, cur[x.name] || "off"])) }).team;
+  const row = x => { const sel = h("select", { class: "rec-sel", style: "max-width:58%", onchange: e => { const v = e.target.value;
+      if (v === "sm") for (const n of Object.keys(draft)) if (draft[n] === "sm" && n !== x.name) draft[n] = "worker";
+      draft[x.name] = v; render(); } }, ...TEAM_ROLES.map(([v, l]) => h("option", { value: v }, l))); sel.value = draft[x.name] || "off";
+    return h("div", { style: "display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 12px;border-top:1px solid var(--line)" }, h("div", { style: "min-width:0" }, h("b", {}, x.name), h("div", { style: "font-size:12px;color:#5b6470" }, x.role || "")), sel); };
+  const changed = Object.keys(draft).filter(n => (draft[n] || "off") !== (cur[n] || "off"));
+  const save = async () => {
+    const sms = Object.keys(draft).filter(n => draft[n] === "sm"); if (sms.length !== 1) return showInfo("One site manager", "Choose exactly one site manager for this project.");
+    const team = {}; for (const n of Object.keys(draft)) { const was = base[n] || "off"; if (draft[n] !== was) team[n] = draft[n]; }
+    const ids = PEOPLE.filter(x => draft[x.name] !== "off" || cur[x.name]).map(x => x.id);
+    await Store.put(`team|${p.id}`, { team, by: S.user, at: new Date().toISOString() }, "r", { tags: [`proj:${p.id}`, `mgr:${p.id}`, ...ids.map(i => `user:${i}`)] });
+    persist(); applyTeams(); S.teamDraft = null;
+    const res = await checkAccess(true); render();
+    const err = res && res.error ? (res.error === "not installed" ? "The team is changed in the app, but the server update for access is not installed yet. Run the one-time server file, then open this page again." : `The server did not take the access change: ${res.error}`) : null;
+    const nf = res && res.rows ? res.rows.filter(x => !x.ok) : [];
+    showInfo(err ? "Team saved, access not set" : nf.length ? "Team saved, access partly set" : "Team saved", err || (nf.length ? `Access could not be set for ${nf.map(x => x.name).join(", ")}. Try again with signal.` : `${smName(p)} is site manager on ${p.short}. Everyone on the project must close the app and open it again.`));
+  };
+  return [topbar("Team and roles", p.short, true),
+    h("p", { class: "form-sub" }, "Choose who is on this project and what each man does. Saving changes every phone and sets the server access straight away. There is always one site manager."),
+    sheet("", h("div", { class: "band" }, `${p.short}: ${Object.values(draft).filter(v => v !== "off").length} people`), ...people.map(row)),
+    h("button", { class: "btn-w", type: "button", disabled: !changed.length, onclick: save, style: "width:100%;margin-top:10px" }, changed.length ? `Save ${changed.length} change${changed.length === 1 ? "" : "s"}` : "No changes"),
+    ACCESS && ACCESS.error === "not installed" ? h("p", { class: "note", style: "color:#a00d25" }, "The one-time server update for access is not installed yet. Role changes save in the app but the server access will not follow until it is.") : null];
+}
 // ---------- Wanro 7 Nov: the work is bound to the quote and the programme ----------
 // p.scope is the full scope from the accepted quote and the VOs that are loaded, every item with its quantity,
 // the man who does it and the days the programme gives it. Every working day each man gets his open items,
@@ -2718,7 +2786,7 @@ async function bpsMailsFor(p, day) {
   await Promise.all(pre.phs.map(q => q && q.ph && !PHOTO_CACHE.has(q.ph) && !(q.url || "").startsWith("data:") ? Store.photo(q.ph).then(d => { if (d) PHOTO_CACHE.set(q.ph, d); }).catch(() => {}) : 0));
   const d = bpsBorrow(p, () => bpsDoc(p, day)), allDone = bpsBorrow(p, () => bpsAllDone());
   const files = await window.FibPdf.diaryPdf(d.html, d.title, { scale: 1.6, quality: 0.72, maxBytes: 5e6 }), list = Array.isArray(files) ? files : [files];
-  const xl = pre.rows ? await loadJs("./js/piotr.js?v=1794240801").then(() => { const b = window.PiotrXlsx.build(pre.rows); return new File([b], `Bioseco_Wolf_Fibraco_status (${dmy(today())}).xlsx`, { type: b.type }); }).catch(() => null) : null;
+  const xl = pre.rows ? await loadJs("./js/piotr.js?v=1794242242").then(() => { const b = window.PiotrXlsx.build(pre.rows); return new File([b], `Bioseco_Wolf_Fibraco_status (${dmy(today())}).xlsx`, { type: b.type }); }).catch(() => null) : null;
   const dTxt = nice(new Date(day + "T12:00:00")), mails = [];
   for (let i = 0; i < list.length; i++) {
     const f = list[i], part = list.length > 1 ? ` (part ${i + 1} of ${list.length})` : "";
@@ -3327,7 +3395,7 @@ function liveExtra(pid) {
 }
 // Wanro 30 Oct: Piotr's table, filled in by itself. The office marks extra works. Download his Excel or email it to him.
 const piotrRows = () => { const o = {}; for (const [r, , w] of LiveUI.PIOTR) { const y = liveBoard(w, 0).y; o[r] = LiveUI.PCOLS.map(([k]) => y[k]); } return o; };
-async function piotrFile() { await loadJs("./js/piotr.js?v=1794240801"); const b = window.PiotrXlsx.build(piotrRows()); return new File([b], `Bioseco_Wolf_Fibraco_status (${dmy(today())}).xlsx`, { type: b.type }); }
+async function piotrFile() { await loadJs("./js/piotr.js?v=1794242242"); const b = window.PiotrXlsx.build(piotrRows()); return new File([b], `Bioseco_Wolf_Fibraco_status (${dmy(today())}).xlsx`, { type: b.type }); }
 function vPiotr() {
   const p = S.project, admin = isAdmin(S.user), box = h("div", { class: "lv" });
   const cell = (w, k, v) => { if (k !== "xw" || !admin) return null; const c = bpsOf(w);
@@ -3348,7 +3416,7 @@ function vPiotr() {
     admin && xw.length ? sheet("", h("div", { class: "band" }, "Extra works, a short note each (Bioseco see it)"), h("table", {}, h("tbody", {}, ...xw.map(([, lab, w]) => { const c = bpsOf(w);
       return h("tr", {}, h("td", { class: "lab" }, lab), h("td", {}, inp("text", c.xw.note, v => { c.xw.note = v; persistSoon(); shareSoon(1500); }, "e.g. module replaced on Bioseco's request"))); })))) : null,
     h("div", { class: "row", style: "gap:8px;flex-wrap:wrap" },
-      h("button", { type: "button", class: "btn-w", onclick: async () => { try { const f = await piotrFile(); await loadJs("./js/pdf.js?v=1794240801"); await window.FibPdf.shareFile(f, f.name); } catch (e) { showInfo("Could not make the Excel", `${e.message || e}.`); } } }, "Download the Excel"),
+      h("button", { type: "button", class: "btn-w", onclick: async () => { try { const f = await piotrFile(); await loadJs("./js/pdf.js?v=1794242242"); await window.FibPdf.shareFile(f, f.name); } catch (e) { showInfo("Could not make the Excel", `${e.message || e}.`); } } }, "Download the Excel"),
       admin ? h("button", { type: "button", class: "submit", onclick: send }, "Email it to Piotr now") : null)];
 }
 function vLive() {
@@ -3529,7 +3597,7 @@ async function warnPdf(c, kind) {
   const ov = h("div", { class: "overlay", role: "dialog" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794240801"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794240801"); await loadJs("./js/pdf.js?v=1794240801");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794242242"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794242242"); await loadJs("./js/pdf.js?v=1794242242");
     const esc = x => String(x == null ? "" : x).replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[ch]);
     const p = PEOPLE.find(x => x.name === c.who) || {}, pr = CFG.projects.find(x => x.id === c.pid) || {}, t = c.test || {}, [, catLab, , alc] = wCat(c.cat);
     const head = `<table style="width:100%;border-collapse:collapse;margin-bottom:12px"><tr><td rowspan="3" style="border:0.6pt solid #888;width:38%;text-align:center"><img src="${LOGO}" style="width:180px"></td><td style="border:0.6pt solid #888;font-size:8.5pt"><u>E-mail #</u></td><td style="border:0.6pt solid #888;font-size:8.5pt">info@fibraco.co.za &amp; wanro@fibraco.co.za</td></tr><tr><td style="border:0.6pt solid #888;font-size:8.5pt"><u>Reg #</u></td><td style="border:0.6pt solid #888;font-size:8.5pt">2021 / 770505 / 07</td></tr><tr><td style="border:0.6pt solid #888;font-size:8.5pt"><u>Address #</u></td><td style="border:0.6pt solid #888;font-size:8.5pt">Section 5A, SS Don Dias, Beach Indaba Building, 22 Dias Rd, Jeffreys Bay, South Africa, 6330</td></tr></table>`;
@@ -3564,7 +3632,7 @@ async function bpsReport(email, day = ymd(today())) {
   const ov = h("div", { class: "overlay", role: "dialog" }, h("div", { class: "modal" }, h("h2", {}, email ? "Approving and emailing" : "Making the report"), h("p", {}, "Fetching the photos and building the PDF. Keep the app open on this screen.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794240801"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794240801"); await loadJs("./js/pdf.js?v=1794240801");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794242242"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794242242"); await loadJs("./js/pdf.js?v=1794242242");
     const ws = ["SUBSTATION", ...bpsWtgs()], phs = ws.flatMap(w => Object.values(bpsOf(w).ph).flat());
     await Promise.all(phs.map(p => p.ph && !PHOTO_CACHE.has(p.ph) && !(p.url || "").startsWith("data:") ? Store.photo(p.ph).then(d => { if (d) PHOTO_CACHE.set(p.ph, d); }).catch(() => {}) : 0));
     const d = bpsDoc(S.project, day);
@@ -4572,7 +4640,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794240801"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794240801"); await loadJs("./js/pdf.js?v=1794240801");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794242242"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794242242"); await loadJs("./js/pdf.js?v=1794242242");
     await fetchDayPhotos(k);
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
@@ -4687,7 +4755,7 @@ async function processMailQ1() {
   let wl = null;
   try {
     wl = await wakeOn();
-    await loadJs("./js/lib/html2canvas.min.js?v=1794240801"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794240801"); await loadJs("./js/pdf.js?v=1794240801");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794242242"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794242242"); await loadJs("./js/pdf.js?v=1794242242");
     for (const j of go) {
       const p = CFG.projects.find(x => x.id === j.pid); if (!p) { j.done = true; continue; }
       if (!j.flash && !j.bpsOnly) { const m0 = Store.get(`mail|${j.pid}|${j.ds}`); if (m0 && m0.jobAt && m0.jobAt >= j.at) { j.done = true; continue; } } // another phone already sent it
@@ -5149,7 +5217,7 @@ function vDelays() {
 // ---------- render ----------
 let render = function () {
   const v = S.view;
-  const views = { users: vUsers, projects: vProjects, calendar: vCalendar, menu: vMenu, inspections: vInspections, client: vClient, tests: vTests, link: vLink, logtest: vLogTest, biocheck: vBioCheck, allocate: vAllocate, mysection: vMySection, review: vReview, kpi: vKpi, rams: vRams, ramsdoc: vRamsDoc, drawings: vDrawings, drawing: vDrawing, diary: vDiary, dsti: vDsti, dstilist: vDstiList, dstiopen: vDstiOpen, bps: vBps, bpswtg: vBpsWtg, bpssub: vBpsSub, iqc: vIqc, inspection: vInspection, check: vCheck, toolbox: vToolbox, incident: vIncident, si: vSI, order: vOrder, done: vDone, feedback: vFeedback, devices: vDevices, dash: vDash, qc: vQc, qcspot: vQcSpot, tsheets: vTsheets, tsheet: vTsheet, treport: vTreport, attendance: vAttendance, claude: vClaude, delays: vDelays, nearmiss: vNearMiss, jobobs: vJobObs, adhoc: vAdhoc, adhocjob: vAdhocJob, mychecks: vMyChecks, invest: vInvest, today: vToday, records: vRecords, audit: vAudit, scope: vScope, imgdiary: vImgDiary, gallery: vGallery, galproj: vGalProj, outst: vOutst, live: vLive, piotr: vPiotr, policies: vPolicies, policy: vPolicy, warnings: vWarnings, warncase: vWarnCase };
+  const views = { users: vUsers, projects: vProjects, calendar: vCalendar, menu: vMenu, inspections: vInspections, client: vClient, tests: vTests, link: vLink, logtest: vLogTest, biocheck: vBioCheck, allocate: vAllocate, mysection: vMySection, review: vReview, kpi: vKpi, rams: vRams, ramsdoc: vRamsDoc, drawings: vDrawings, drawing: vDrawing, diary: vDiary, dsti: vDsti, dstilist: vDstiList, dstiopen: vDstiOpen, bps: vBps, bpswtg: vBpsWtg, bpssub: vBpsSub, iqc: vIqc, inspection: vInspection, check: vCheck, toolbox: vToolbox, incident: vIncident, si: vSI, order: vOrder, done: vDone, feedback: vFeedback, devices: vDevices, dash: vDash, qc: vQc, qcspot: vQcSpot, tsheets: vTsheets, tsheet: vTsheet, treport: vTreport, attendance: vAttendance, claude: vClaude, delays: vDelays, nearmiss: vNearMiss, jobobs: vJobObs, adhoc: vAdhoc, adhocjob: vAdhocJob, mychecks: vMyChecks, invest: vInvest, today: vToday, records: vRecords, audit: vAudit, scope: vScope, team: vTeam, imgdiary: vImgDiary, gallery: vGallery, galproj: vGalProj, outst: vOutst, live: vLive, piotr: vPiotr, policies: vPolicies, policy: vPolicy, warnings: vWarnings, warncase: vWarnCase };
   document.body.classList.toggle("qcro", !!S.qcRO && ["iqc", "biocheck", "bps", "bpswtg", "bpssub"].includes(v));
   document.body.classList.toggle("vmenu", v === "menu" && TILES());
   document.body.classList.toggle("vgrid", v === "bps" || v === "iqc");
@@ -5361,6 +5429,12 @@ Store.metaFor = (id, obj) => {
   return { tags: [`user:${me}`] };
 };
 let deniedAt = 0, refusedAt = 0;
+Store.on((ids) => {
+  if (CFG && S.user) { const me = PEOPLE.find(x => x.name === S.user) || {};
+    const hits = (ids || []).map(String).filter(i => i.startsWith("team|") || i === `resync|${me.id}`);
+    for (const i of hits) { const k = i + "|" + ((Store.get(i) || {}).at || ""); if (fullPullSeen.has(k)) continue; fullPullSeen.add(k); setTimeout(() => Store.fullPull().catch(() => {}), 800); } }
+  if (CFG && (ids || []).some(i => String(i).startsWith("team|"))) { applyTeams(); const me = PEOPLE.find(x => x.name === S.user) || {};
+  PROJECTS = CFG.projects.filter(p => p.active !== false && (p.team[S.user] || me.admin)); if (S.project) S.project = PROJECTS.find(p => p.id === S.project.id) || S.project; } });
 Store.on((ids, state) => {
   if (state === "denied" && CFG && Date.now() - deniedAt > 60e3) { deniedAt = Date.now(); Store.whoami().then(me => { if (me.status !== "active") location.reload(); }).catch(e => { if (e.status) location.reload(); }); }
   if (state === "refused" && Date.now() - refusedAt > 30e3) { refusedAt = Date.now(); showInfo("Not saved", "That diary is already signed and locked, or it is not yours to change. The app has put back the signed version."); }
@@ -5991,7 +6065,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794240801"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794240801"); await loadJs("./js/pdf.js?v=1794240801");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794242242"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794242242"); await loadJs("./js/pdf.js?v=1794242242");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
@@ -6345,6 +6419,7 @@ async function startApp() {
   if (!person) return screen(h("p", { style: "text-align:center" }, "Your name is not set up yet. Ask the office."));
   CREW = PEOPLE.map(p => [p.name, p.role]); USERS = CREW.map(c => c[0]); ROLE = Object.fromEntries(CREW); STAFF = USERS;
   S.user = person.name;
+  applyTeams();
   PROJECTS = CFG.projects.filter(p => p.active !== false && (p.team[S.user] || person.admin));
   for (const p of PROJECTS) if (p.acts) { ACT[p.area] = p.acts; }
   AREAS = Object.keys(ACT);
@@ -6356,6 +6431,9 @@ async function startApp() {
   await shareInit();
   await warnImport();
   setTimeout(bpsCatchUp, 15e3); addEventListener("online", () => setTimeout(bpsCatchUp, 5e3));
+  Store.fullPullDue().then(due => { if (due && Store.online()) setTimeout(() => Store.fullPull().catch(() => {}), 6e3); }).catch(() => {});
+  // Wanro 9 Nov: the office phone checks everyone's server access once it is open, and shows a red card if anyone is out of step
+  if (isAdmin(S.user)) setTimeout(() => checkAccess(false).then(() => { if (["projects"].includes(S.view)) render(); }).catch(() => {}), 4e3);
   // every person has one saved signature. On a new phone, fetch it first before asking for a new one.
   if (!savedSig() && Store.online()) { screen(centre("Opening...")); await Store.sync(); }
   morningChecks();
@@ -6501,6 +6579,6 @@ if ("serviceWorker" in navigator && location.protocol === "https:") {
   setInterval(applyUpdate, 5000);
 }
 // tests only: on a local test server the test scripts can look inside. Never on the live site.
-if (/^(localhost|127\.0\.0\.1)(:|$)/.test(location.host)) window.__T = { ev: src => eval(src), allocOf, scopeItems, scopeState, scopePct, scopeTasks, attGet, ymd, get S() { return S; }, get PROJECTS() { return PROJECTS; } };
+if (/^(localhost|127\.0\.0\.1)(:|$)/.test(location.host)) window.__T = { ev: src => eval(src), checkAccess, allocOf, scopeItems, scopeState, scopePct, scopeTasks, attGet, ymd, get S() { return S; }, get PROJECTS() { return PROJECTS; } };
 boot();
 })();
