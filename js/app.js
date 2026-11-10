@@ -388,7 +388,7 @@ function vProjects() {
         bioSetup(); } }, "Fingerprint")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1794294866";
+const APPV = "1794330328";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -482,7 +482,7 @@ async function sendRegister(p, d, days) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794294866"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794294866"); await loadJs("./js/pdf.js?v=1794294866");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794330328"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794330328"); await loadJs("./js/pdf.js?v=1794330328");
     const { html, title } = attDoc(p, d, days); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
@@ -599,7 +599,7 @@ async function timeZone() {
   try {
     try { Store.kick(); await refreshDevices(true); } catch (e) {}
     await new Promise(r => setTimeout(r, 1800));
-    await loadJs("./js/lib/html2canvas.min.js?v=1794294866"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794294866"); await loadJs("./js/pdf.js?v=1794294866");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794330328"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794330328"); await loadJs("./js/pdf.js?v=1794330328");
     const D = tzData(), stamp = `${dmy(new Date())} ${hhmm()}`, name = `FIBRACO - Time Zone (${stamp})`;
     const pdf = await window.FibPdf.diaryPdf(tzHtml(D), name);
     const json = new File([JSON.stringify(D, null, 1)], name.replace(/[\\/:*?"<>|]+/g, "-") + ".json", { type: "application/json" });
@@ -1619,7 +1619,7 @@ async function recordPdf() {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794294866"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794294866"); await loadJs("./js/pdf.js?v=1794294866");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794330328"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794330328"); await loadJs("./js/pdf.js?v=1794330328");
     const f = S.form, src = [...app.children].filter(k => !k.matches(".bar, .fb-btn, .ro-bar, .psub, .err, .pnav, .addrow"));
     const box = document.createElement("div");
     for (const k of src) {
@@ -1870,7 +1870,7 @@ async function sendOrder(f) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794294866"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794294866"); await loadJs("./js/pdf.js?v=1794294866");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794330328"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794330328"); await loadJs("./js/pdf.js?v=1794330328");
     const { html, title } = orderDoc(f);
     const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
@@ -2139,7 +2139,7 @@ function kpiDay(p, ds) {
   const secs = {}; for (const [id, o] of Store.list(`sec|${k}|`)) secs[id.slice(`sec|${k}|`.length)] = o || {};
   const inTeam = new Set((site.team || []).map(r => r && r.name).filter(Boolean)), out = {};
   for (const n of team) {
-    const a = att[n], tasks = alloc.filter(t => t.who === n), sec = secs[n] || {}, role = p.team[n];
+    const a = att[n], tasks = alloc.filter(t => t.who === n), sec = secs[n] || {}, role = n === smOn(p, ds) ? "sm" : (p.team[n] === "sm" ? "worker" : p.team[n]);
     if (!(a.in || tasks.length || inTeam.has(n) || ["submitted", "approved"].includes(sec.status))) continue;
     const rep = [], time = [], miss = [];
     const R = (ok, label) => { rep.push(ok); if (!ok) miss.push(label); }, T = (ok, label) => { time.push(ok); if (!ok) miss.push(label); };
@@ -2169,6 +2169,7 @@ function kpiRows(days, pid) {
   try {
     for (const p of PROJECTS.filter(x => !pid || x.id === pid)) for (const ds of days) {
       if (p.start && ds < p.start) continue;
+      if (p.end && ds > p.end) continue;
       S.project = p; S.date = new Date(ds + "T12:00:00");
       const d = kpiDay(p, ds); if (!d) continue;
       for (const [n, r] of Object.entries(d)) { const P = per[n] || (per[n] = { name: n, days: [] }); P.days.push(Object.assign({ ds, p }, r)); }
@@ -2199,6 +2200,14 @@ function vStaffKpi() {
     h("div", { class: "aud-bar" }, sel), spans,
     rows.length ? h("div", { class: "stack" }, ...rows.map(card)) : h("p", { class: "note" }, "No site days in this period.")];
 }
+// Wanro 10 Nov: "I never asked for the old work of Francois to become Hendrik's problem. Francois must take his own hits."
+// Each day belongs to whoever was site manager that day. p.smHist lists the changes ({ from, sm }), from the office build and
+// from every change made on Team and roles. Before the first change the earliest site manager counts.
+function smOn(p, ds) {
+  const h = [...((p && p.smHist) || [])].sort((a, b) => a.from.localeCompare(b.from));
+  let who = null; for (const x of h) if (x.from <= ds) who = x.sm;
+  return who || (h.length ? h[0].sm : smName(p));
+}
 // ---------- Wanro 9 Nov: the office sets the site manager and the crew in the app ----------
 // A role change used to need a separate access file run on the server by hand. It was missed once and Hendrik, new site manager
 // on Belle River, could not see his men's sign-ins or diary sections. Now Wanro changes the team here, every phone follows,
@@ -2209,6 +2218,7 @@ function applyTeams() {
   for (const p of (CFG && CFG.projects) || []) {
     if (!p._team0) p._team0 = Object.assign({}, p.team);
     const o = Store.get(`team|${p.id}`), t = Object.assign({}, p._team0, (o && o.team) || {});
+    if (!p._smHist0) p._smHist0 = (p.smHist || []).slice(); p.smHist = [...p._smHist0, ...((o && o.smHist) || [])];
     for (const n of Object.keys(t)) if (t[n] === "off") delete t[n];
     p.team = t;
   }
@@ -2254,7 +2264,9 @@ function vTeam() {
     const sms = Object.keys(draft).filter(n => draft[n] === "sm"); if (sms.length !== 1) return showInfo("One site manager", "Choose exactly one site manager for this project.");
     const team = {}; for (const n of Object.keys(draft)) { const was = base[n] || "off"; if (draft[n] !== was) team[n] = draft[n]; }
     const ids = PEOPLE.filter(x => draft[x.name] !== "off" || cur[x.name]).map(x => x.id);
-    await Store.put(`team|${p.id}`, { team, by: S.user, at: new Date().toISOString() }, "r", { tags: [`proj:${p.id}`, `mgr:${p.id}`, ...ids.map(i => `user:${i}`)] });
+    const prevO = Store.get(`team|${p.id}`) || {}, newSm = sms[0], smHist = [...(prevO.smHist || [])];
+    if (newSm !== smName(p)) smHist.push({ from: ymd(today()), sm: newSm, by: S.user });
+    await Store.put(`team|${p.id}`, { team, smHist, by: S.user, at: new Date().toISOString() }, "r", { tags: [`proj:${p.id}`, `mgr:${p.id}`, ...ids.map(i => `user:${i}`)] });
     persist(); applyTeams(); S.teamDraft = null;
     const res = await checkAccess(true); render();
     const err = res && res.error ? (res.error === "not installed" ? "The team is changed in the app, but the server update for access is not installed yet. Run the one-time server file, then open this page again." : `The server did not take the access change: ${res.error}`) : null;
@@ -2867,7 +2879,7 @@ async function bpsMailsFor(p, day) {
   await Promise.all(pre.phs.map(q => q && q.ph && !PHOTO_CACHE.has(q.ph) && !(q.url || "").startsWith("data:") ? Store.photo(q.ph).then(d => { if (d) PHOTO_CACHE.set(q.ph, d); }).catch(() => {}) : 0));
   const d = bpsBorrow(p, () => bpsDoc(p, day)), allDone = bpsBorrow(p, () => bpsAllDone());
   const files = await window.FibPdf.diaryPdf(d.html, d.title, { scale: 1.6, quality: 0.72, maxBytes: 5e6, header: d.header }), list = Array.isArray(files) ? files : [files];
-  const xl = pre.rows ? await loadJs("./js/piotr.js?v=1794294866").then(() => { const b = window.PiotrXlsx.build(pre.rows); return new File([b], `Bioseco_Wolf_Fibraco_status (${dmy(today())}).xlsx`, { type: b.type }); }).catch(() => null) : null;
+  const xl = pre.rows ? await loadJs("./js/piotr.js?v=1794330328").then(() => { const b = window.PiotrXlsx.build(pre.rows); return new File([b], `Bioseco_Wolf_Fibraco_status (${dmy(today())}).xlsx`, { type: b.type }); }).catch(() => null) : null;
   const dTxt = nice(new Date(day + "T12:00:00")), mails = [];
   for (let i = 0; i < list.length; i++) {
     const f = list[i], part = list.length > 1 ? ` (part ${i + 1} of ${list.length})` : "";
@@ -3476,7 +3488,7 @@ function liveExtra(pid) {
 }
 // Wanro 30 Oct: Piotr's table, filled in by itself. The office marks extra works. Download his Excel or email it to him.
 const piotrRows = () => { const o = {}; for (const [r, , w] of LiveUI.PIOTR) { const y = liveBoard(w, 0).y; o[r] = LiveUI.PCOLS.map(([k]) => y[k]); } return o; };
-async function piotrFile() { await loadJs("./js/piotr.js?v=1794294866"); const b = window.PiotrXlsx.build(piotrRows()); return new File([b], `Bioseco_Wolf_Fibraco_status (${dmy(today())}).xlsx`, { type: b.type }); }
+async function piotrFile() { await loadJs("./js/piotr.js?v=1794330328"); const b = window.PiotrXlsx.build(piotrRows()); return new File([b], `Bioseco_Wolf_Fibraco_status (${dmy(today())}).xlsx`, { type: b.type }); }
 function vPiotr() {
   const p = S.project, admin = isAdmin(S.user), box = h("div", { class: "lv" });
   const cell = (w, k, v) => { if (k !== "xw" || !admin) return null; const c = bpsOf(w);
@@ -3497,7 +3509,7 @@ function vPiotr() {
     admin && xw.length ? sheet("", h("div", { class: "band" }, "Extra works, a short note each (Bioseco see it)"), h("table", {}, h("tbody", {}, ...xw.map(([, lab, w]) => { const c = bpsOf(w);
       return h("tr", {}, h("td", { class: "lab" }, lab), h("td", {}, inp("text", c.xw.note, v => { c.xw.note = v; persistSoon(); shareSoon(1500); }, "e.g. module replaced on Bioseco's request"))); })))) : null,
     h("div", { class: "row", style: "gap:8px;flex-wrap:wrap" },
-      h("button", { type: "button", class: "btn-w", onclick: async () => { try { const f = await piotrFile(); await loadJs("./js/pdf.js?v=1794294866"); await window.FibPdf.shareFile(f, f.name); } catch (e) { showInfo("Could not make the Excel", `${e.message || e}.`); } } }, "Download the Excel"),
+      h("button", { type: "button", class: "btn-w", onclick: async () => { try { const f = await piotrFile(); await loadJs("./js/pdf.js?v=1794330328"); await window.FibPdf.shareFile(f, f.name); } catch (e) { showInfo("Could not make the Excel", `${e.message || e}.`); } } }, "Download the Excel"),
       admin ? h("button", { type: "button", class: "submit", onclick: send }, "Email it to Piotr now") : null)];
 }
 function vLive() {
@@ -3678,7 +3690,7 @@ async function warnPdf(c, kind) {
   const ov = h("div", { class: "overlay", role: "dialog" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794294866"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794294866"); await loadJs("./js/pdf.js?v=1794294866");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794330328"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794330328"); await loadJs("./js/pdf.js?v=1794330328");
     const esc = x => String(x == null ? "" : x).replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[ch]);
     const p = PEOPLE.find(x => x.name === c.who) || {}, pr = CFG.projects.find(x => x.id === c.pid) || {}, t = c.test || {}, [, catLab, , alc] = wCat(c.cat);
     const head = `<table style="width:100%;border-collapse:collapse;margin-bottom:12px"><tr><td rowspan="3" style="border:0.6pt solid #888;width:38%;text-align:center"><img src="${LOGO}" style="width:180px"></td><td style="border:0.6pt solid #888;font-size:8.5pt"><u>E-mail #</u></td><td style="border:0.6pt solid #888;font-size:8.5pt">info@fibraco.co.za &amp; wanro@fibraco.co.za</td></tr><tr><td style="border:0.6pt solid #888;font-size:8.5pt"><u>Reg #</u></td><td style="border:0.6pt solid #888;font-size:8.5pt">2021 / 770505 / 07</td></tr><tr><td style="border:0.6pt solid #888;font-size:8.5pt"><u>Address #</u></td><td style="border:0.6pt solid #888;font-size:8.5pt">Section 5A, SS Don Dias, Beach Indaba Building, 22 Dias Rd, Jeffreys Bay, South Africa, 6330</td></tr></table>`;
@@ -3713,7 +3725,7 @@ async function bpsReport(email, day = ymd(today())) {
   const ov = h("div", { class: "overlay", role: "dialog" }, h("div", { class: "modal" }, h("h2", {}, email ? "Approving and emailing" : "Making the report"), h("p", {}, "Fetching the photos and building the PDF. Keep the app open on this screen.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794294866"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794294866"); await loadJs("./js/pdf.js?v=1794294866");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794330328"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794330328"); await loadJs("./js/pdf.js?v=1794330328");
     const ws = ["SUBSTATION", ...bpsWtgs()], phs = ws.flatMap(w => Object.values(bpsOf(w).ph).flat());
     await Promise.all(phs.map(p => p.ph && !PHOTO_CACHE.has(p.ph) && !(p.url || "").startsWith("data:") ? Store.photo(p.ph).then(d => { if (d) PHOTO_CACHE.set(p.ph, d); }).catch(() => {}) : 0));
     const d = bpsDoc(S.project, day);
@@ -4246,7 +4258,11 @@ function vReview() {
         h("button", { class: "btn-w", type: "button", style: "flex:1;padding:11px;border-radius:6px;border:0;font-weight:800;background:#1e8e3e", onclick: () => { sec.status = "approved"; render(); } }, "Approve"),
         h("button", { class: "btn-g", type: "button", style: "flex:1;padding:11px;border-radius:6px;font-weight:800", onclick: () => sendBack(p, sec) }, "Send back")) : null);
   };
-  const pending = people.filter(p => (secs[p] || {}).status !== "approved");
+  // Wanro 10 Nov (Hendrik): one man who does not send his section must not hold up the diary. From 18h00 on the day (or any later
+  // day) the site manager signs without the missing sections. The diary names them, and it counts on that man's KPI, not on his.
+  const cutOff = ymd(S.date) < ymd(today()) || (ymd(S.date) === ymd(today()) && hhmm(new Date()) >= KPI_SEC_BY);
+  const missing = cutOff ? people.filter(p => !["submitted", "approved"].includes((secs[p] || {}).status)) : [];
+  const pending = people.filter(p => (secs[p] || {}).status !== "approved" && !missing.includes(p));
   const step = (n, label, done, on) => h("div", { style: `flex:1;text-align:center;padding:8px 4px;border-radius:6px;font-size:12px;font-weight:800;${done ? "background:#1e8e3e;color:#fff" : on ? "background:#0069aa;color:#fff" : "background:#e7ebf0;color:#5b6470"}` }, done ? "✓ " : `${n}. `, label);
   const s1 = !pending.length, s2 = !!S.siteDone[k] || !!final;
   const steps = h("div", { style: "display:flex;gap:6px;margin:10px 0 4px" }, step(1, "Check crew", s1, !s1), step(2, "My part", s2, s1 && !s2), step(3, "Sign", !!final, s1 && s2 && !final));
@@ -4292,12 +4308,15 @@ function vReview() {
         h("div", {}, `Crew sections in: ${sub} of ${people.length}`),
         h("div", {}, `Approved by ${smName()}: ${people.length - pending.length} of ${people.length}`),
         ...diaryWho(k).map((l, i) => h("div", { style: `font-weight:${i ? 800 : 600};color:${/^(Signed|Approved)/.test(l) ? "#1e8e3e" : "#5b6470"}` }, l)),
+        (Store.get("final|" + k) || {}).missing ? h("div", { style: "color:#a00d25;font-weight:700" }, `Signed without a section from ${(Store.get("final|" + k) || {}).missing.join(", ")} (none by 18h00). Internal only, not on the client's copy.`) : null,
+
         h("div", { style: "font-size:12px;color:#5b6470;margin-top:4px" }, isAdmin(S.user) ? "The site manager checks and signs the diary. You check it and sign it off before it goes to the client." : "You only watch here. The site manager checks and signs the diary."))),
       after, ...people.map(personBlock), totals];
   }
   return [topbar("Review diary", `${S.project.short}  |  ${dmy(S.date)}`, true), voidBox(), moveBox(), steps,
     h("p", { class: "form-sub" }, final ? `${diaryWho(k).join(". ")}. Changes now need a new revision.` : !s1 ? "Step 1. Check each person's section. Correct a quantity if needed. Approve it, or send it back with a note." : !s2 ? "Step 2. Everyone is approved. Now fill in your part of the diary below." : "Step 3. Sign the diary at the bottom. Then it is final."),
     projectBar(),
+    !final && missing.length ? h("p", { class: "note", style: "color:#a00d25;font-weight:700" }, `No section by 18h00 from ${missing.join(", ")}. You can sign the diary without them. It counts on their KPI, not on yours.`) : null,
     ...people.map(personBlock), totals,
     final ? after : h("div", {},
       h("button", { class: "mbtn", style: `margin-bottom:12px;${s1 ? "" : "opacity:.45"}`, onclick: () => { if (s1) openCombined(); else showInfo("Not yet", `First check and approve every crew section above. Still waiting: ${pending.join(", ")}.`); } }, s2 ? "✓ My part of the diary (open again)" : "2. My part of the diary", h("small", {}, "Team and work come in from the crew sections. Check the work lines and add any work that is missing.")),
@@ -4311,7 +4330,7 @@ function vReview() {
         const noQty = people.flatMap(pn => (((S.sections[k] || {})[pn] || {}).other || []).filter(o => o.act && (o.qty === undefined || o.qty === "")).map(o => `${pn}: ${nice2(o.act)}, ${o.loc || ""}`));
         if (noQty.length) return showInfo("Quantities missing", "Put the quantity on every Other work line before you sign (0 if two men wrote the same job, so it counts once): " + noQty.join("  |  "));
         const yd = new Date(today()); yd.setDate(yd.getDate() - 1); const old = ymd(S.date) !== ymd(today()) && ymd(S.date) !== ymd(yd);
-        const doSign = () => mySig(v => { if (!v) return; S.final[k] = new Date().toLocaleTimeString("en-ZA", { hour: "2-digit", minute: "2-digit" }).replace(":", "h"); S.done[k] = true; persist(); Store.put("final|" + k, { at: S.final[k], by: S.user, sig: v, date: ymd(S.date), needPM: !isAdmin(S.user) }); people.forEach(pn => putProg(S.project.id, ymd(S.date), pn, myTasks(pn), ((S.sections[k] || {})[pn] || {}).rows || [], ((S.sections[k] || {})[pn] || {}).other || [])); Store.lock(["alloc|" + k, "site|" + k, "final|" + k, ...people.map(p => `sec|${k}|${p}`)]); closeDstis(S.project.id, ymd(S.date), S.user); if (isAdmin(S.user)) queueReports(S.project, S.date); S.form = { type: "diary", project: S.project, date: S.date, user: S.user, photos: [] }; go("done"); });
+        const doSign = () => mySig(v => { if (!v) return; S.final[k] = new Date().toLocaleTimeString("en-ZA", { hour: "2-digit", minute: "2-digit" }).replace(":", "h"); S.done[k] = true; persist(); Store.put("final|" + k, Object.assign({ at: S.final[k], by: S.user, sig: v, date: ymd(S.date), needPM: !isAdmin(S.user) }, missing.length ? { missing } : {})); people.forEach(pn => putProg(S.project.id, ymd(S.date), pn, myTasks(pn), ((S.sections[k] || {})[pn] || {}).rows || [], ((S.sections[k] || {})[pn] || {}).other || [])); Store.lock(["alloc|" + k, "site|" + k, "final|" + k, ...people.map(p => `sec|${k}|${p}`)]); closeDstis(S.project.id, ymd(S.date), S.user); if (isAdmin(S.user)) queueReports(S.project, S.date); S.form = { type: "diary", project: S.project, date: S.date, user: S.user, photos: [] }; go("done"); });
         if (old) askYesNo(`Sign the diary for ${nice(S.date)}?`, `This is not today's or yesterday's diary. You are signing ${S.project.short} for ${nice(S.date)}. Only carry on if that is the day you mean.`, "Yes, sign this day", doSign); else doSign(); } }, "3. Sign and make final"))];
 }
 // ---------- daily diary as PDF (made on the phone, then shared) ----------
@@ -4525,16 +4544,20 @@ function outstanding(force) {
   const add = (who, p, ds, item) => { if (who) items.push({ who, pid: p.id, proj: p.short, ds, item, key: `${p.id}|${ds}|${who}|${item}` }); };
   try {
     for (const p of PROJECTS) {
-      S.project = p; const sm = smName(p);
+      S.project = p;
       for (let i = OUT_DAYS; i >= 1; i--) {
         const d = new Date(now); d.setHours(12, 0, 0, 0); d.setDate(d.getDate() - i); const ds = ymd(d); S.date = d;
         if (p.start && ds < p.start) continue;
+        if (p.end && ds > p.end) continue; // Wanro 10 Nov: a closed project owes nothing after its last day
+        const sm = smOn(p, ds);
         // a man counts as on site that day if he signed the register, has a diary section, or the site manager gave him work.
         // Work that only came from the programme, with nobody on the register, is not counted (the crew may have been elsewhere).
         const k = p.id + "|" + ds, given = Store.get("alloc|" + k), planned = [...new Set((allocOf(k) || []).map(a => a.who).filter(Boolean))];
         const secOf = n => Store.get(`sec|${k}|${n}`) || ((S.sections[k] || {})[n]) || {};
         const att = n => attGet(p, d, n) || {}, onReg = attPeople(p).filter(n => att(n).in);
         const withSec = Store.list(`sec|${k}|`).map(([id]) => id.split("|").slice(3).join("|"));
+        // Wanro 10 Nov: only a day somebody actually worked on this project counts (the Belle River team was at Wolf 25 Oct to 5 Nov)
+        if (!onReg.length && !withSec.length && !Store.get("final|" + k)) continue;
         const there = [...new Set([...onReg, ...withSec, ...(given ? given.map(a => a.who).filter(Boolean) : [])])];
         if (!there.length) continue; // nobody worked that day
         const tasked = there.filter(n => planned.includes(n));
@@ -4567,7 +4590,8 @@ function outstanding(force) {
       // company policies not signed yet (once the director has signed the ones that need it)
       if (p === PROJECTS[0]) for (const pr of staffList()) for (const pol of POLS()) if (pol.sign && polReady(pol) && !polSigOf(pol, pr.id)) add(pr.name, { id: "company", short: "Company" }, "", `Policy not signed: ${pol.no} ${pol.title}`);
       // QC sheets that were worked on but not signed
-      if (p.qcSpots) for (const sh of Object.keys(QC_SHEETS)) for (const sp of qcSpots(sh)) { const c = qcCount(sh, sp); if (c.done && !c.signed) add(sm, p, "", `QC sheet ${QC_SHEETS[sh].title} ${sp}: ${c.done} of ${c.total} checked, not signed`); }
+      const qcOwner = (p.qcBy || []).find(n => p.team[n]) || smName(p);
+      if (p.qcSpots) for (const sh of Object.keys(QC_SHEETS)) for (const sp of qcSpots(sh)) { const c = qcCount(sh, sp); if (c.done && !c.signed) add(qcOwner, p, "", `QC sheet ${QC_SHEETS[sh].title} ${sp}: ${c.done} of ${c.total} checked, not signed`); }
     }
   } catch (e) { window.__outErr = String(e && e.message || e); }
   finally { [S.project, S.date] = keep; }
@@ -4724,7 +4748,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794294866"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794294866"); await loadJs("./js/pdf.js?v=1794294866");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794330328"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794330328"); await loadJs("./js/pdf.js?v=1794330328");
     await fetchDayPhotos(k);
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
@@ -4839,7 +4863,7 @@ async function processMailQ1() {
   let wl = null;
   try {
     wl = await wakeOn();
-    await loadJs("./js/lib/html2canvas.min.js?v=1794294866"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794294866"); await loadJs("./js/pdf.js?v=1794294866");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794330328"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794330328"); await loadJs("./js/pdf.js?v=1794330328");
     for (const j of go) {
       const p = CFG.projects.find(x => x.id === j.pid); if (!p) { j.done = true; continue; }
       if (!j.flash && !j.bpsOnly) { const m0 = Store.get(`mail|${j.pid}|${j.ds}`); if (m0 && m0.jobAt && m0.jobAt >= j.at) { j.done = true; continue; } } // another phone already sent it
@@ -5518,7 +5542,7 @@ Store.on((ids) => {
     const hits = (ids || []).map(String).filter(i => i.startsWith("team|") || i === `resync|${me.id}`);
     for (const i of hits) { const k = i + "|" + ((Store.get(i) || {}).at || ""); if (fullPullSeen.has(k)) continue; fullPullSeen.add(k); setTimeout(() => Store.fullPull().catch(() => {}), 800); } }
   if (CFG && (ids || []).some(i => String(i).startsWith("team|"))) { applyTeams(); const me = PEOPLE.find(x => x.name === S.user) || {};
-  PROJECTS = CFG.projects.filter(p => p.active !== false && (p.team[S.user] || me.admin)); if (S.project) S.project = PROJECTS.find(p => p.id === S.project.id) || S.project; } });
+  PROJECTS = CFG.projects.filter(p => p.active !== false && (me.admin || (p.team[S.user] && projPhase(p) !== "done"))); if (S.project) S.project = PROJECTS.find(p => p.id === S.project.id) || S.project; } });
 Store.on((ids, state) => {
   if (state === "denied" && CFG && Date.now() - deniedAt > 60e3) { deniedAt = Date.now(); Store.whoami().then(me => { if (me.status !== "active") location.reload(); }).catch(e => { if (e.status) location.reload(); }); }
   if (state === "refused" && Date.now() - refusedAt > 30e3) { refusedAt = Date.now(); showInfo("Not saved", "That diary is already signed and locked, or it is not yours to change. The app has put back the signed version."); }
@@ -6149,7 +6173,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794294866"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794294866"); await loadJs("./js/pdf.js?v=1794294866");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794330328"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794330328"); await loadJs("./js/pdf.js?v=1794330328");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
@@ -6504,7 +6528,7 @@ async function startApp() {
   CREW = PEOPLE.map(p => [p.name, p.role]); USERS = CREW.map(c => c[0]); ROLE = Object.fromEntries(CREW); STAFF = USERS;
   S.user = person.name;
   applyTeams();
-  PROJECTS = CFG.projects.filter(p => p.active !== false && (p.team[S.user] || person.admin));
+  PROJECTS = CFG.projects.filter(p => p.active !== false && (person.admin || (p.team[S.user] && projPhase(p) !== "done")));
   for (const p of PROJECTS) if (p.acts) { ACT[p.area] = p.acts; }
   AREAS = Object.keys(ACT);
   for (const [id] of Store.list("form|")) { const x = id.split("|"); S.done[x[1] + "|" + x[2]] = true; }
@@ -6663,6 +6687,6 @@ if ("serviceWorker" in navigator && location.protocol === "https:") {
   setInterval(applyUpdate, 5000);
 }
 // tests only: on a local test server the test scripts can look inside. Never on the live site.
-if (/^(localhost|127\.0\.0\.1)(:|$)/.test(location.host)) window.__T = { ev: src => eval(src), kpiRows, checkAccess, allocOf, scopeItems, scopeState, scopePct, scopeTasks, attGet, ymd, get S() { return S; }, get PROJECTS() { return PROJECTS; } };
+if (/^(localhost|127\.0\.0\.1)(:|$)/.test(location.host)) window.__T = { ev: src => eval(src), smOn, outstanding, kpiRows, checkAccess, allocOf, scopeItems, scopeState, scopePct, scopeTasks, attGet, ymd, get S() { return S; }, get PROJECTS() { return PROJECTS; } };
 boot();
 })();
