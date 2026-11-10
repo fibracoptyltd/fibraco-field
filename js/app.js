@@ -388,7 +388,7 @@ function vProjects() {
         bioSetup(); } }, "Fingerprint")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1794292136";
+const APPV = "1794294866";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -482,7 +482,7 @@ async function sendRegister(p, d, days) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794292136"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794292136"); await loadJs("./js/pdf.js?v=1794292136");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794294866"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794294866"); await loadJs("./js/pdf.js?v=1794294866");
     const { html, title } = attDoc(p, d, days); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
@@ -599,7 +599,7 @@ async function timeZone() {
   try {
     try { Store.kick(); await refreshDevices(true); } catch (e) {}
     await new Promise(r => setTimeout(r, 1800));
-    await loadJs("./js/lib/html2canvas.min.js?v=1794292136"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794292136"); await loadJs("./js/pdf.js?v=1794292136");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794294866"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794294866"); await loadJs("./js/pdf.js?v=1794294866");
     const D = tzData(), stamp = `${dmy(new Date())} ${hhmm()}`, name = `FIBRACO - Time Zone (${stamp})`;
     const pdf = await window.FibPdf.diaryPdf(tzHtml(D), name);
     const json = new File([JSON.stringify(D, null, 1)], name.replace(/[\\/:*?"<>|]+/g, "-") + ".json", { type: "application/json" });
@@ -1619,7 +1619,7 @@ async function recordPdf() {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794292136"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794292136"); await loadJs("./js/pdf.js?v=1794292136");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794294866"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794294866"); await loadJs("./js/pdf.js?v=1794294866");
     const f = S.form, src = [...app.children].filter(k => !k.matches(".bar, .fb-btn, .ro-bar, .psub, .err, .pnav, .addrow"));
     const box = document.createElement("div");
     for (const k of src) {
@@ -1870,7 +1870,7 @@ async function sendOrder(f) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794292136"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794292136"); await loadJs("./js/pdf.js?v=1794292136");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794294866"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794294866"); await loadJs("./js/pdf.js?v=1794294866");
     const { html, title } = orderDoc(f);
     const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
@@ -2866,8 +2866,8 @@ async function bpsMailsFor(p, day) {
   const pre = bpsBorrow(p, () => { const ws = ["SUBSTATION", ...bpsWtgs()]; return { phs: ws.flatMap(w => Object.values(bpsOf(w).ph).flat()), to: bpsTo().filter(x => x.email), log: bpsDayLog(day), rows: SHARE() && SHARE().pid === p.id ? piotrRows() : null, pm: (pmPerson() || {}).email }; });
   await Promise.all(pre.phs.map(q => q && q.ph && !PHOTO_CACHE.has(q.ph) && !(q.url || "").startsWith("data:") ? Store.photo(q.ph).then(d => { if (d) PHOTO_CACHE.set(q.ph, d); }).catch(() => {}) : 0));
   const d = bpsBorrow(p, () => bpsDoc(p, day)), allDone = bpsBorrow(p, () => bpsAllDone());
-  const files = await window.FibPdf.diaryPdf(d.html, d.title, { scale: 1.6, quality: 0.72, maxBytes: 5e6 }), list = Array.isArray(files) ? files : [files];
-  const xl = pre.rows ? await loadJs("./js/piotr.js?v=1794292136").then(() => { const b = window.PiotrXlsx.build(pre.rows); return new File([b], `Bioseco_Wolf_Fibraco_status (${dmy(today())}).xlsx`, { type: b.type }); }).catch(() => null) : null;
+  const files = await window.FibPdf.diaryPdf(d.html, d.title, { scale: 1.6, quality: 0.72, maxBytes: 5e6, header: d.header }), list = Array.isArray(files) ? files : [files];
+  const xl = pre.rows ? await loadJs("./js/piotr.js?v=1794294866").then(() => { const b = window.PiotrXlsx.build(pre.rows); return new File([b], `Bioseco_Wolf_Fibraco_status (${dmy(today())}).xlsx`, { type: b.type }); }).catch(() => null) : null;
   const dTxt = nice(new Date(day + "T12:00:00")), mails = [];
   for (let i = 0; i < list.length; i++) {
     const f = list[i], part = list.length > 1 ? ` (part ${i + 1} of ${list.length})` : "";
@@ -3476,7 +3476,7 @@ function liveExtra(pid) {
 }
 // Wanro 30 Oct: Piotr's table, filled in by itself. The office marks extra works. Download his Excel or email it to him.
 const piotrRows = () => { const o = {}; for (const [r, , w] of LiveUI.PIOTR) { const y = liveBoard(w, 0).y; o[r] = LiveUI.PCOLS.map(([k]) => y[k]); } return o; };
-async function piotrFile() { await loadJs("./js/piotr.js?v=1794292136"); const b = window.PiotrXlsx.build(piotrRows()); return new File([b], `Bioseco_Wolf_Fibraco_status (${dmy(today())}).xlsx`, { type: b.type }); }
+async function piotrFile() { await loadJs("./js/piotr.js?v=1794294866"); const b = window.PiotrXlsx.build(piotrRows()); return new File([b], `Bioseco_Wolf_Fibraco_status (${dmy(today())}).xlsx`, { type: b.type }); }
 function vPiotr() {
   const p = S.project, admin = isAdmin(S.user), box = h("div", { class: "lv" });
   const cell = (w, k, v) => { if (k !== "xw" || !admin) return null; const c = bpsOf(w);
@@ -3497,7 +3497,7 @@ function vPiotr() {
     admin && xw.length ? sheet("", h("div", { class: "band" }, "Extra works, a short note each (Bioseco see it)"), h("table", {}, h("tbody", {}, ...xw.map(([, lab, w]) => { const c = bpsOf(w);
       return h("tr", {}, h("td", { class: "lab" }, lab), h("td", {}, inp("text", c.xw.note, v => { c.xw.note = v; persistSoon(); shareSoon(1500); }, "e.g. module replaced on Bioseco's request"))); })))) : null,
     h("div", { class: "row", style: "gap:8px;flex-wrap:wrap" },
-      h("button", { type: "button", class: "btn-w", onclick: async () => { try { const f = await piotrFile(); await loadJs("./js/pdf.js?v=1794292136"); await window.FibPdf.shareFile(f, f.name); } catch (e) { showInfo("Could not make the Excel", `${e.message || e}.`); } } }, "Download the Excel"),
+      h("button", { type: "button", class: "btn-w", onclick: async () => { try { const f = await piotrFile(); await loadJs("./js/pdf.js?v=1794294866"); await window.FibPdf.shareFile(f, f.name); } catch (e) { showInfo("Could not make the Excel", `${e.message || e}.`); } } }, "Download the Excel"),
       admin ? h("button", { type: "button", class: "submit", onclick: send }, "Email it to Piotr now") : null)];
 }
 function vLive() {
@@ -3678,7 +3678,7 @@ async function warnPdf(c, kind) {
   const ov = h("div", { class: "overlay", role: "dialog" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794292136"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794292136"); await loadJs("./js/pdf.js?v=1794292136");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794294866"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794294866"); await loadJs("./js/pdf.js?v=1794294866");
     const esc = x => String(x == null ? "" : x).replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[ch]);
     const p = PEOPLE.find(x => x.name === c.who) || {}, pr = CFG.projects.find(x => x.id === c.pid) || {}, t = c.test || {}, [, catLab, , alc] = wCat(c.cat);
     const head = `<table style="width:100%;border-collapse:collapse;margin-bottom:12px"><tr><td rowspan="3" style="border:0.6pt solid #888;width:38%;text-align:center"><img src="${LOGO}" style="width:180px"></td><td style="border:0.6pt solid #888;font-size:8.5pt"><u>E-mail #</u></td><td style="border:0.6pt solid #888;font-size:8.5pt">info@fibraco.co.za &amp; wanro@fibraco.co.za</td></tr><tr><td style="border:0.6pt solid #888;font-size:8.5pt"><u>Reg #</u></td><td style="border:0.6pt solid #888;font-size:8.5pt">2021 / 770505 / 07</td></tr><tr><td style="border:0.6pt solid #888;font-size:8.5pt"><u>Address #</u></td><td style="border:0.6pt solid #888;font-size:8.5pt">Section 5A, SS Don Dias, Beach Indaba Building, 22 Dias Rd, Jeffreys Bay, South Africa, 6330</td></tr></table>`;
@@ -3713,12 +3713,12 @@ async function bpsReport(email, day = ymd(today())) {
   const ov = h("div", { class: "overlay", role: "dialog" }, h("div", { class: "modal" }, h("h2", {}, email ? "Approving and emailing" : "Making the report"), h("p", {}, "Fetching the photos and building the PDF. Keep the app open on this screen.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794292136"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794292136"); await loadJs("./js/pdf.js?v=1794292136");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794294866"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794294866"); await loadJs("./js/pdf.js?v=1794294866");
     const ws = ["SUBSTATION", ...bpsWtgs()], phs = ws.flatMap(w => Object.values(bpsOf(w).ph).flat());
     await Promise.all(phs.map(p => p.ph && !PHOTO_CACHE.has(p.ph) && !(p.url || "").startsWith("data:") ? Store.photo(p.ph).then(d => { if (d) PHOTO_CACHE.set(p.ph, d); }).catch(() => {}) : 0));
     const d = bpsDoc(S.project, day);
     // a smaller picture per page and split into parts of at most 5 MB, so every email gets through
-    const files = await window.FibPdf.diaryPdf(d.html, d.title, { scale: 1.6, quality: 0.72, maxBytes: 5e6 });
+    const files = await window.FibPdf.diaryPdf(d.html, d.title, { scale: 1.6, quality: 0.72, maxBytes: 5e6, header: d.header });
     const list = Array.isArray(files) ? files : [files];
     const m = ov.querySelector(".modal");
     if (!email) {
@@ -3753,7 +3753,8 @@ function bpsDoc(p, day) {
   const started = ws.filter(w => bpsState(w) !== "todo"), notYet = ws.filter(w => !started.includes(w));
   const notYetP = notYet.length ? `<p class="bps-miss">Not documented yet: ${esc(notYet.join(", "))}.</p>` : "";
   const done = ws.filter(w => bpsState(w) === "done"), conn = ws.filter(w => bpsOf(w).f.link === "Connected"), notConn = ws.filter(w => bpsOf(w).f.link === "Not connected");
-  const hdr = `<div class="bps-hdr"><img src="./icons/bps/logo.jpg" alt="Bioseco"><span>Post-installation documentation  |  ${esc(p.name)}</span></div>`;
+  // Wanro 10 Nov: Bioseco and Fibraco logos on every page (drawn by the PDF maker), so this in-page header is no longer needed
+  const hdr = "";
   // the day's page, first in the report (Wanro 29 Oct: Bioseco want it daily)
   const nm = w => w === "SUBSTATION" ? "Substation" : w, dayLog = day ? bpsDayLog(day) : [];
   const ptStarted = (w, c, pt) => { const def = (w === "SUBSTATION" ? BPS_SUB : BPS_WTG)[pt]; return def.ph.some(([k]) => (c.ph[k] || []).length) || def.need.some(([k]) => String(c.f[k] || "").trim() && !(k === "fibre" || k === "modules")); };
@@ -3806,7 +3807,8 @@ function bpsDoc(p, day) {
   // fibre network drawn from the table: substation on the left, a line to every turbine, green connected, red not
   const rowH = 26, H = Math.max(120, ws.length * rowH + 40);
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="680" height="${H}" viewBox="0 0 680 ${H}"><rect x="10" y="${H / 2 - 40}" width="150" height="80" rx="6" fill="#0069aa"/><text x="85" y="${H / 2 - 6}" fill="#fff" font-size="14" font-family="Arial" text-anchor="middle" font-weight="700">SUBSTATION</text><text x="85" y="${H / 2 + 14}" fill="#fff" font-size="11" font-family="Arial" text-anchor="middle">BPS RACK, servers</text>${ws.map((w, i) => { const y = 30 + i * rowH, f = bpsOf(w).f, col = f.link === "Connected" ? "#1e8e3e" : f.link === "Not connected" ? "#c8102e" : "#9aa5b1";
-    return `<line x1="160" y1="${H / 2}" x2="470" y2="${y}" stroke="${col}" stroke-width="2"/><rect x="470" y="${y - 10}" width="90" height="20" rx="4" fill="${col}"/><text x="515" y="${y + 4}" fill="#fff" font-size="11" font-family="Arial" text-anchor="middle" font-weight="700">${esc(w)}</text><text x="570" y="${y + 4}" font-size="9.5" font-family="Arial" fill="#333">${esc((f.fibre || "").slice(0, 24))}</text>`; }).join("")}</svg>`;
+    // Wanro 10 Nov: the labels were cut off at the right edge ("Cores 7 and 8, Collector"). Turbines moved left so the full label fits.
+    return `<line x1="160" y1="${H / 2}" x2="380" y2="${y}" stroke="${col}" stroke-width="2"/><rect x="380" y="${y - 10}" width="90" height="20" rx="4" fill="${col}"/><text x="425" y="${y + 4}" fill="#fff" font-size="11" font-family="Arial" text-anchor="middle" font-weight="700">${esc(w)}</text><text x="478" y="${y + 4}" font-size="9" font-family="Arial" fill="#333">${esc((f.fibre || "").slice(0, 40))}</text>`; }).join("")}</svg>`;
   const html = `
   <div class="bps-cover"><img class="bps-logo" src="./icons/bps/logo.jpg" alt="Bioseco"><h1>POST-INSTALLATION DOCUMENTATION</h1><h2 style="margin-top:0">of Bird Protection System (BPS)</h2><img class="bps-cimg" src="./icons/bps/cover.jpg" alt="">
   <table class="kv"><tr><th>BPS Version:</th><td>${X(sf.version)}</td></tr><tr><th>Customer:</th><td>${X(sf.customer)}</td></tr><tr><th>Location:</th><td>${X(sf.location)}</td></tr><tr><th>Substation GPS coordinates:</th><td>${X(sf.gps)}</td></tr><tr><th>Documentation prepared by:</th><td>${esc(prep)}</td></tr><tr><th>Date:</th><td>${esc(dmy(day ? new Date(day + "T12:00:00") : lastDone ? new Date(lastDone + "T12:00:00") : new Date()))}</td></tr></table></div>
@@ -3852,7 +3854,8 @@ function bpsDoc(p, day) {
   <p class="foot">Bioseco S.A., ul. Budowlanych 68, 80-298 Gdańsk, Polska  |  www.bioseco.com  |  info@bioseco.com</p></div>
   ${pmSec}
   <p class="foot">Prepared on site by ${esc(prep)} with the Fibraco Field app. ${done.length} of ${ws.length} turbines and ${bpsState("SUBSTATION") === "done" ? "the substation" : "not yet the substation"} signed off. Electrical and mechanical by ${esc(bpsOwner("el"))}, telecoms by ${esc(bpsOwner("tc"))}.${bpsRep().approved ? ` Approved by ${esc(bpsRep().approved.by)} on ${esc(bpsRep().approved.date)}.` : ""}</p>`;
-  return { html, title: `BIOSECO - ${day ? "Daily Report" : "Post-Installation Documentation"} - ${p.short} (${dmy(day ? new Date(day + "T12:00:00") : new Date())})` };
+  return { html, title: `BIOSECO - ${day ? "Daily Report" : "Post-Installation Documentation"} - ${p.short} (${dmy(day ? new Date(day + "T12:00:00") : new Date())})`,
+    header: { left: "./icons/bps/logo.jpg", right: LOGO, from: 0, text: `Post-installation documentation  |  ${p.name}` } };
 }
 function qcBanner(which) {
   if (!S.qcRO) return null;
@@ -4721,7 +4724,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794292136"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794292136"); await loadJs("./js/pdf.js?v=1794292136");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794294866"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794294866"); await loadJs("./js/pdf.js?v=1794294866");
     await fetchDayPhotos(k);
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
@@ -4836,7 +4839,7 @@ async function processMailQ1() {
   let wl = null;
   try {
     wl = await wakeOn();
-    await loadJs("./js/lib/html2canvas.min.js?v=1794292136"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794292136"); await loadJs("./js/pdf.js?v=1794292136");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794294866"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794294866"); await loadJs("./js/pdf.js?v=1794294866");
     for (const j of go) {
       const p = CFG.projects.find(x => x.id === j.pid); if (!p) { j.done = true; continue; }
       if (!j.flash && !j.bpsOnly) { const m0 = Store.get(`mail|${j.pid}|${j.ds}`); if (m0 && m0.jobAt && m0.jobAt >= j.at) { j.done = true; continue; } } // another phone already sent it
@@ -6146,7 +6149,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794292136"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794292136"); await loadJs("./js/pdf.js?v=1794292136");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794294866"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794294866"); await loadJs("./js/pdf.js?v=1794294866");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),

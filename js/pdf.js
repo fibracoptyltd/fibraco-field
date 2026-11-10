@@ -15,10 +15,12 @@
     });
     return [...pts].sort((a, b) => a - b);
   }
-  function pages(total, pts, forced) {
+  // Wanro 10 Nov: every page carries the letterhead, not only the first page of a section. A page with the band has less room.
+  const HB = 13;                                // letterhead band in mm
+  function pages(total, pts, forced, chOf) {
     const out = []; let start = 0;
     while (start < total - 2) {
-      const lim = start + CH;
+      const lim = start + (chOf ? chOf(out.length) : CH);
       const f = (forced || []).find(p => p > start + 40 && p <= lim); // a new page must start here
       if (f) { out.push([start, f]); start = f; continue; }
       if (lim >= total) { out.push([start, total]); break; }
@@ -51,7 +53,13 @@
       const pts = cutPoints(root), top0 = root.getBoundingClientRect().top;
       const forced = [...root.querySelectorAll(".pbreak")].map(el => Math.floor(el.getBoundingClientRect().top - top0));
       const scale = opts.scale || 2;
-      const list = pages(total, pts, forced);
+      // the letterhead: Fibraco on every page after the first (the first has its own big heading), or the logos the report asks for on every page
+      const hd = opts.header === false ? null : Object.assign({ left: "icons/logo.png", from: 1, text: title }, opts.header || {});
+      const logo = async src => { if (!src) return null; try { const b = await (await fetch(src)).blob(), url = await new Promise((r, j) => { const f = new FileReader(); f.onload = () => r(f.result); f.onerror = j; f.readAsDataURL(b); });
+        const im = new Image(); await new Promise(r => { im.onload = im.onerror = r; im.src = url; }); return im.naturalWidth ? { url, ar: im.naturalWidth / im.naturalHeight, fmt: /png/i.test(b.type) ? "PNG" : "JPEG" } : null; } catch (e) { return null; } };
+      const L = hd ? await logo(hd.left) : null, R = hd ? await logo(hd.right) : null;
+      const bandOn = i => !!hd && i >= hd.from, chOf = i => bandOn(i) ? CH - Math.ceil(HB * MM) : CH;
+      const list = pages(total, pts, forced, chOf);
       // long reports: draw a few pages at a time, a phone cannot hold one huge picture of 50 pages
       const inner = root.firstElementChild, MAXH = Math.floor(9000 / scale);
       const chunks = []; for (const pg of list) { const c = chunks[chunks.length - 1]; if (c && pg[1] - c.a <= MAXH) { c.b = pg[1]; c.pages.push(pg); } else chunks.push({ a: pg[0], b: pg[1], pages: [pg] }); }
@@ -71,8 +79,16 @@
           let d = docs[docs.length - 1];
           if (opts.maxBytes && d.n && d.bytes + sz > opts.maxBytes) { d = { pdf: mk(), n: 0, bytes: 0 }; docs.push(d); }
           if (d.n) d.pdf.addPage("a4");
-          const wmm = PAGE.w - 2 * PAGE.mx, hmm = (b - a) / MM;
-          d.pdf.addImage(jpg, "JPEG", PAGE.mx, PAGE.my, wmm, hmm, undefined, "FAST");
+          const wmm = PAGE.w - 2 * PAGE.mx, hmm = (b - a) / MM, band = bandOn(n);
+          if (band) {
+            const lh = 8, y = PAGE.my - 4;
+            if (L) d.pdf.addImage(L.url, L.fmt, PAGE.mx, y, Math.min(lh * L.ar, 45), Math.min(lh, 45 / L.ar), undefined, "FAST");
+            if (R) { const rw = Math.min(lh * R.ar, 45); d.pdf.addImage(R.url, R.fmt, PAGE.w - PAGE.mx - rw, y, rw, Math.min(lh, 45 / R.ar), undefined, "FAST"); }
+            d.pdf.setFontSize(7.5); d.pdf.setTextColor(90);
+            if (hd.text) d.pdf.text(String(hd.text).slice(0, 90), PAGE.w / 2, y + 5, { align: "center", maxWidth: wmm - 100 });
+            d.pdf.setDrawColor(0, 105, 170); d.pdf.setLineWidth(0.5); d.pdf.line(PAGE.mx, y + lh + 1.5, PAGE.w - PAGE.mx, y + lh + 1.5);
+          }
+          d.pdf.addImage(jpg, "JPEG", PAGE.mx, PAGE.my + (band ? HB - 4 : 0), wmm, hmm, undefined, "FAST");
           d.pdf.setFontSize(7.5); d.pdf.setTextColor(110);
           d.pdf.text(`Page ${n + 1} of ${list.length}`, PAGE.w - PAGE.mx, PAGE.h - 7, { align: "right" });
           d.n++; d.bytes += sz; n++;

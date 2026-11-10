@@ -755,10 +755,10 @@ textarea.vlock{background:#f4f6f8 !important;color:#15191e}
 .bps-ex{display:flex;gap:10px;align-items:center;padding:8px 12px;background:#f4f6f8;border-bottom:1px solid var(--paper-line)}
 .bps-ex img{width:84px;height:84px;object-fit:cover;border-radius:6px;border:2px solid #e1ad01}
 .bps-ex small{font-size:12px;color:#5b6470}
-.pdoc .bps-cover{min-height:1000px;text-align:center}
+.pdoc .bps-cover{text-align:center}
 .pdoc .bps-cover h1{font-size:20pt;margin-top:18px}.pdoc .bps-cover .kv{text-align:left;margin-top:16px}
 .pdoc .bps-logo{width:200px;display:block;margin:0 auto}
-.pdoc .bps-cimg{width:100%;max-height:420px;object-fit:cover;margin:10px 0}
+.pdoc .bps-cimg{width:100%;max-height:360px;object-fit:cover;margin:10px 0}
 .pdoc .bps-hdr{display:flex;align-items:center;gap:12px;border-bottom:1.5pt solid #c8102e;padding-bottom:4px;margin-bottom:8px;font-size:8.5pt;color:#555}
 .pdoc .bps-hdr img{width:110px}
 .pdoc .bps-wide{width:100%;display:block;margin:6px 0}
