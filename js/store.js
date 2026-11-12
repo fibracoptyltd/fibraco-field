@@ -108,7 +108,9 @@ const Store = (() => {
 
   // ---------- server ----------
   async function rpc(fn, body, ms) {
-    // ms: give up after this long (weak signal on site), so the app opens from what the phone already has
+    // ms: give up after this long (weak signal on site), so the app opens from what the phone already has.
+    // Wanro 12 Nov: every call gives up after 2 minutes at most, so one hung call can never block sending for the rest of the day
+    ms = ms || 120000;
     const ac = ms && window.AbortController ? new AbortController() : null, tm = ac ? setTimeout(() => ac.abort(), ms) : 0;
     const r = await fetch(`${CONF.url}/rest/v1/rpc/${fn}`, { method: "POST", signal: ac ? ac.signal : undefined, headers: { "Content-Type": "application/json", apikey: CONF.anon, Authorization: `Bearer ${CONF.anon}` }, body: JSON.stringify(Object.assign({ p_token: TOKEN, p_device: DEV }, body)) }).finally(() => clearTimeout(tm));
     if (!r.ok) { const t = await r.text(); const e = new Error(`${fn} ${r.status}: ${t.slice(0, 200)}`); e.status = r.status; throw e; }
