@@ -107,8 +107,10 @@ const Store = (() => {
   }
 
   // ---------- server ----------
-  async function rpc(fn, body) {
-    const r = await fetch(`${CONF.url}/rest/v1/rpc/${fn}`, { method: "POST", headers: { "Content-Type": "application/json", apikey: CONF.anon, Authorization: `Bearer ${CONF.anon}` }, body: JSON.stringify(Object.assign({ p_token: TOKEN, p_device: DEV }, body)) });
+  async function rpc(fn, body, ms) {
+    // ms: give up after this long (weak signal on site), so the app opens from what the phone already has
+    const ac = ms && window.AbortController ? new AbortController() : null, tm = ac ? setTimeout(() => ac.abort(), ms) : 0;
+    const r = await fetch(`${CONF.url}/rest/v1/rpc/${fn}`, { method: "POST", signal: ac ? ac.signal : undefined, headers: { "Content-Type": "application/json", apikey: CONF.anon, Authorization: `Bearer ${CONF.anon}` }, body: JSON.stringify(Object.assign({ p_token: TOKEN, p_device: DEV }, body)) }).finally(() => clearTimeout(tm));
     if (!r.ok) { const t = await r.text(); const e = new Error(`${fn} ${r.status}: ${t.slice(0, 200)}`); e.status = r.status; throw e; }
     return r.status === 204 ? null : r.json();
   }
@@ -144,9 +146,11 @@ const Store = (() => {
       // cached member info lets the app open with no signal
       const cachedMe = await metaGet("me"); if (cachedMe) ME = await open(cachedMe.iv, cachedMe.data).catch(() => null);
       lastPull = (await metaGet("lastPull")) || lastPull;
-      for (const r of await allRecs()) {
-        try { mem.set(await open(r.idIv, r.idData), await open(r.iv, r.data)); } catch (e) { /* not ours */ }
-      }
+      // Wanro 12 Nov: open the records 300 at a time side by side, not one after the other, so the app opens fast with a full phone
+      const all = await allRecs();
+      for (let i = 0; i < all.length; i += 300) await Promise.all(all.slice(i, i + 300).map(async r => {
+        try { const k = await open(r.idIv, r.idData), v = await open(r.iv, r.data); return [k, v]; } catch (e) { return null; /* not ours */ }
+      })).then(kv => { for (const x of kv) if (x) mem.set(x[0], x[1]); });
       const lk = await metaGet("locks"); if (lk) { try { pendingLocks = (await open(lk.iv, lk.data)).filter(x => x && x.ids); } catch (e) {} }
       return true;
     },
@@ -181,9 +185,11 @@ const Store = (() => {
     },
     async loadSetup(url) {
       // encrypted setup file shipped with the app: projects, teams, documents
-      const r = await fetch(url, { cache: "no-cache" }).catch(() => null);
+      const ac = window.AbortController ? new AbortController() : null, tm = ac ? setTimeout(() => ac.abort(), 6000) : 0;
+      const r = await fetch(url, { cache: "no-cache", signal: ac ? ac.signal : undefined }).catch(() => null);
+      let buf0 = null; if (r && r.ok) buf0 = await r.arrayBuffer().catch(() => null); clearTimeout(tm);
       let buf;
-      if (r && r.ok) { buf = await r.arrayBuffer(); await metaSet("setup", b64(buf)); }
+      if (buf0) { buf = buf0; await metaSet("setup", b64(buf)); }
       else { const s = await metaGet("setup"); if (!s) throw new Error("setup unavailable"); buf = unb64(s).buffer; }
       return JSON.parse(dec.decode(await openBytes(buf)));
     },
@@ -204,8 +210,8 @@ const Store = (() => {
     async cachedCount(urls) { const cache = await caches.open("fibraco-enc").catch(() => null); if (!cache) return 0; let n = 0; for (const u of urls) if (await cache.match(u).catch(() => null)) n++; return n; },
     config(c) { CONF = c; },
     hasFiles: () => !!FK,
-    async whoami() {
-      const r = await rpc("whoami", { p_label: await deviceLabel() });
+    async whoami(ms) {
+      const r = await rpc("whoami", { p_label: await deviceLabel() }, ms);
       const row = Array.isArray(r) ? r[0] : r;
       if (!row) throw new Error("link not active");
       ME = { member: row.member_id, write: row.can_write, admin: row.is_admin, status: row.status };
