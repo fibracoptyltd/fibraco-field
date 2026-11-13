@@ -392,7 +392,7 @@ function vProjects() {
         bioSetup(); } }, "Fingerprint")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1794564382";
+const APPV = "1794564541";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -486,7 +486,7 @@ async function sendRegister(p, d, days) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794564382"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794564382"); await loadJs("./js/pdf.js?v=1794564382");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794564541"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794564541"); await loadJs("./js/pdf.js?v=1794564541");
     const { html, title } = attDoc(p, d, days); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
@@ -603,7 +603,7 @@ async function timeZone() {
   try {
     try { Store.kick(); await refreshDevices(true); } catch (e) {}
     await new Promise(r => setTimeout(r, 1800));
-    await loadJs("./js/lib/html2canvas.min.js?v=1794564382"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794564382"); await loadJs("./js/pdf.js?v=1794564382");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794564541"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794564541"); await loadJs("./js/pdf.js?v=1794564541");
     const D = tzData(), stamp = `${dmy(new Date())} ${hhmm()}`, name = `FIBRACO - Time Zone (${stamp})`;
     const pdf = await window.FibPdf.diaryPdf(tzHtml(D), name);
     const json = new File([JSON.stringify(D, null, 1)], name.replace(/[\\/:*?"<>|]+/g, "-") + ".json", { type: "application/json" });
@@ -622,7 +622,22 @@ async function timeZone() {
 // ---------- CLAUDE, on Wanro's phone only ----------
 // Questions go straight from this phone to Claude with the guide (tools/brain), the setup and the live data.
 // The key is kept on this phone only, scrambled. The server never sees the questions or the answers.
-const CL = { msgs: null, key: null, busy: false, draft: "" }, CL_MODEL = "claude-sonnet-5-5";
+// Wanro 13 Nov: the smartest model, and screenshots like in the main Claude chat
+const CL = { msgs: null, key: null, busy: false, draft: "", imgs: [] }, CL_MODEL = "claude-opus-5-5";
+// What the main Claude chat knows that the setup data does not say. Kept short and factual.
+const CL_EXTRA = `# How Wanro works (follow this)
+- Wanro Hayes is Fibraco's director and project manager, office based in Jeffreys Bay. He talks to you by voice while busy or driving, so his words may be speech-typed and loose. Work out what he means from the app data and the conversation before saying you do not understand. If something is still unclear, ask one short, specific question, and name the two things he might mean.
+- When he sends a screenshot, read it closely: it is usually a screen of this app (register, diary, review, outstanding, KPI, audit) or a WhatsApp from a staff member. Say what it shows and what is wrong or needs doing, using the live data.
+- Answers: plain sentences, short, straight to the point. No em or en dashes, no semicolons. Times like 07h15, dates like 13 November 2026. Rand amounts never go to staff.
+- When he asks for a message to a staff member: give only the message, ready to paste. Afrikaans staff messages never start with "Hallo" or any greeting, start straight with the content.
+- Only the daily diary needs his approval. Internal staff issues never go on client copies.
+- Answers are read out loud to him, so write numbers and dates the way they are said.
+# Site facts
+- Belle River (RenEnergy, Christiana): Hendrik van Rooyen is site manager from 6 November 2026 (Francois Marais before that, and Francois stays on for QC). The team moved back to Belle River on 6 November (establishment day). Only the last 1 percent of the work is left, then it is record and report. The original scope is done. VO 002 holds the SPDs, SFPs and dayworks.
+- Bioseco Wolf ended 5 November 2026 and OPGW CR141 ended 30 October 2026. Both are closed. Nothing is owed after the end date. Francois's own old items stay on Francois, never on Hendrik.
+- Staff KPI: reporting 50 percent, work against targets 30 percent, on time 20 percent (on site by 07h00, section by 18h00, diary by 20h00), every site day since the project start.
+- The hours on the signed diary are the hours that count. The register only fills them in to start with.
+- On 12 November 2026 the server was down from about 07h20 to 07h56. Sign-ins made then were kept on the phones and sent later.`;
 async function clLoad() { if (CL.msgs) return; CL.key = await Store.readLocal("claudeKey"); CL.msgs = (await Store.readLocal("claudeChat")) || []; }
 function clBrief() {
   const strip = t => { const o = Object.assign({}, t); delete o.key; return o; };
@@ -641,20 +656,24 @@ function clCopy(text, btn) {
   try { navigator.clipboard.writeText(text).then(done, fall); } catch (e) { fall(); }
 }
 async function clAsk(text) {
-  text = (text || "").trim(); if (!text || CL.busy) return;
+  text = (text || "").trim(); const imgs = CL.imgs.slice(); if ((!text && !imgs.length) || CL.busy) return;
   if (!Store.online()) return showInfo("No signal", "Claude needs signal. Your question is still in the box, send it again when you are connected.");
-  CL.msgs.push({ role: "user", content: text, at: new Date().toISOString() }); CL.busy = true; CL.draft = ""; render(); clScroll();
+  CL.msgs.push(Object.assign({ role: "user", content: text, at: new Date().toISOString() }, imgs.length ? { imgs } : {})); CL.imgs = []; CL.busy = true; CL.draft = ""; render(); clScroll();
   try {
     await Promise.race([Store.sync().catch(() => {}), new Promise(r => setTimeout(r, 6000))]);
     const now = new Date();
     const system = [
-      { type: "text", text: (CFG.brain || "") + "\n\n# Setup data: people, projects, the full programme, equipment\n" + JSON.stringify(clBrief()), cache_control: { type: "ephemeral" } },
-      { type: "text", text: `# Live data from Wanro's phone, read ${dmy(now)} ${hhmm(now)} (app version ${verLabel()})\n` + JSON.stringify(tzData(7)) }];
-    const messages = CL.msgs.slice(-16).map(m => ({ role: m.role, content: m.content }));
+      { type: "text", text: (CFG.brain || "") + "\n\n" + CL_EXTRA + "\n\n# Setup data: people, projects, the full programme, equipment\n" + JSON.stringify(clBrief()), cache_control: { type: "ephemeral" } },
+      { type: "text", text: `# Live data from Wanro's phone, read ${dmy(now)} ${hhmm(now)} (app version ${verLabel()})\n` + JSON.stringify(tzData(14)) }];
+    // screenshots go with the last few questions only, so the request stays small
+    const recent = CL.msgs.slice(-30), withImg = new Set(recent.filter(m => m.imgs && m.imgs.length).slice(-3));
+    const messages = recent.map(m => ({ role: m.role, content: m.imgs && m.imgs.length && withImg.has(m)
+      ? [...m.imgs.map(u => ({ type: "image", source: { type: "base64", media_type: u.slice(5, u.indexOf(";")), data: u.slice(u.indexOf(",") + 1) } })), { type: "text", text: m.content || "What does this show, and what must I do about it?" }]
+      : (m.content || (m.imgs && m.imgs.length ? "(screenshot sent earlier)" : "")) }));
     while (messages.length && messages[0].role !== "user") messages.shift();
     const r = await fetch("https://api.anthropic.com/v1/messages", { method: "POST",
       headers: { "content-type": "application/json", "x-api-key": CL.key, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
-      body: JSON.stringify({ model: CL_MODEL, max_tokens: 12000, thinking: { type: "between_tools" }, output_config: { effort: "medium" }, system, messages }) });
+      body: JSON.stringify({ model: CL_MODEL, max_tokens: 16000, thinking: { type: "between_tools" }, output_config: { effort: "high" }, system, messages }) });
     const j = await r.json().catch(() => ({}));
     if (!r.ok) { const m = (j.error && j.error.message) || `error ${r.status}`;
       throw new Error(r.status === 401 ? "The key was not accepted. Tap Change key and paste it again." : /credit|balance|billing/i.test(m) ? "There is no credit left on the Claude account. Load credit at console.anthropic.com." : m); }
@@ -666,7 +685,7 @@ async function clAsk(text) {
     }
     { const at = new Date().toISOString(); CL.msgs.push({ role: "assistant", content: ans, at }); if (TALK.auto) setTimeout(() => talkSay(ans, at), 300); }
   } catch (e) {
-    const q = CL.msgs.pop(); CL.draft = q ? q.content : "";
+    const q = CL.msgs.pop(); CL.draft = q ? q.content : ""; if (q && q.imgs) CL.imgs = q.imgs;
     showInfo("Claude did not answer", e && e.message && !/fetch|network/i.test(e.message) ? e.message : "Could not reach Claude. Check your signal and try again.");
   }
   CL.busy = false; Store.keepLocal("claudeChat", CL.msgs.slice(-60)); render(); clScroll();
@@ -722,6 +741,20 @@ function talkSay(text, id) {
     speechSynthesis.speak(u); });
   if (S.view === "claude") render();
 }
+// Wanro 13 Nov: screenshots and photos to Claude, like in the main Claude chat
+function clShrink(file) {
+  return new Promise(res => { const u = URL.createObjectURL(file), im = new Image();
+    im.onload = () => { const max = 1568, r = Math.min(1, max / Math.max(im.width, im.height)), c = document.createElement("canvas");
+      c.width = Math.round(im.width * r); c.height = Math.round(im.height * r); c.getContext("2d").drawImage(im, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(u); res(c.toDataURL("image/jpeg", 0.85)); };
+    im.onerror = () => { URL.revokeObjectURL(u); res(null); }; im.src = u; });
+}
+function clAttach() {
+  const f = h("input", { type: "file", accept: "image/*", multiple: true, style: "display:none", onchange: async e => {
+    for (const file of [...e.target.files].slice(0, 5 - CL.imgs.length)) { const d = await clShrink(file); if (d) CL.imgs.push(d); }
+    render(); } });
+  return h("button", { class: "cl-att", type: "button", "aria-label": "Add a screenshot or photo", onclick: () => { if (CL.imgs.length >= 5) return toast("5 pictures at a time"); f.click(); } }, "+", f);
+}
 function micButton() {
   const lang = h("button", { class: "btn-g cl-lang", type: "button", title: "Language you speak", onclick: () => { MIC.lang = MIC.lang === "en-ZA" ? "af-ZA" : "en-ZA"; try { localStorage.setItem("micLang", MIC.lang); } catch (e) {} if (MIC.on) { micStop(); micStart(); } else render(); } }, MIC.lang === "af-ZA" ? "AF" : "EN");
   const mic = h("button", { class: "cl-mic" + (MIC.on ? " on" : ""), type: "button", "aria-label": MIC.on ? "Stop talking" : "Talk", onclick: () => MIC.on ? micStop() : micStart() },
@@ -752,7 +785,7 @@ function vClaude() {
     el.addEventListener("pointerdown", start); ["pointerup", "pointerleave", "pointercancel", "pointermove"].forEach(ev => el.addEventListener(ev, ev === "pointermove" ? (e => { if (Math.abs(e.movementY) > 6) stop(); }) : stop));
     el.addEventListener("contextmenu", e => e.preventDefault()); return el; };
   const msgs = CL.msgs.map(m => {
-    const b = h("div", { class: "cl-msg " + (m.role === "user" ? "cl-me" : "cl-ai") }, h("div", { class: "cl-txt" }, ...clText(m.content)));
+    const b = h("div", { class: "cl-msg " + (m.role === "user" ? "cl-me" : "cl-ai") }, m.imgs && m.imgs.length ? h("div", { class: "cl-mimgs" }, ...m.imgs.map(u => h("img", { src: u, alt: "Screenshot" }))) : null, h("div", { class: "cl-txt" }, ...clText(m.content || "")));
     if (m.role === "user") { holdable(b, m.content); b.title = "Press and hold to ask again"; }
     else holdable(b, null, () => clSelect(b, m.content));
     if (m.role === "assistant") { const c = h("button", { class: "cl-copy", type: "button" }, "Copy"); c.onclick = () => clCopy(m.content, c);
@@ -766,7 +799,8 @@ function vClaude() {
         ...tips.map(t => h("button", { class: "cl-tip", type: "button", onclick: () => clAsk(t) }, t))),
       ...msgs,
       CL.busy ? h("div", { class: "cl-msg cl-ai cl-wait" }, "Claude is reading the app...") : null),
-    h("div", { class: "cl-bar" }, ask, micButton(), h("button", { class: "btn-w cl-send", type: "button", disabled: CL.busy, onclick: send }, "Send")),
+    CL.imgs.length ? h("div", { class: "cl-thumbs" }, ...CL.imgs.map((u, i) => h("div", { class: "cl-th" }, h("img", { src: u, alt: "Screenshot " + (i + 1) }), h("button", { type: "button", "aria-label": "Remove", onclick: () => { CL.imgs.splice(i, 1); render(); } }, "\u00d7")))) : null,
+    h("div", { class: "cl-bar" }, clAttach(), ask, micButton(), h("button", { class: "btn-w cl-send", type: "button", disabled: CL.busy, onclick: send }, "Send")),
     h("div", { class: "cl-tools" },
       h("button", { class: TALK.auto ? "btn-w" : "btn-g", type: "button", onclick: () => { TALK.auto = !TALK.auto; try { localStorage.setItem("clTalk", TALK.auto ? "1" : "0"); } catch (e) {} if (!TALK.auto) talkStop(); render(); } }, TALK.auto ? "Read every answer out loud: ON" : "Read every answer out loud: OFF"),
       h("button", { class: "btn-g", type: "button", onclick: () => askYesNo("Clear the chat?", "The questions and answers on this screen are removed from this phone.", "Clear", async () => { CL.msgs = []; await Store.keepLocal("claudeChat", []); render(); }, true) }, "Clear chat"),
@@ -1668,7 +1702,7 @@ async function recordPdf() {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794564382"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794564382"); await loadJs("./js/pdf.js?v=1794564382");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794564541"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794564541"); await loadJs("./js/pdf.js?v=1794564541");
     const f = S.form, src = [...app.children].filter(k => !k.matches(".bar, .fb-btn, .ro-bar, .psub, .err, .pnav, .addrow"));
     const box = document.createElement("div");
     for (const k of src) {
@@ -1919,7 +1953,7 @@ async function sendOrder(f) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794564382"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794564382"); await loadJs("./js/pdf.js?v=1794564382");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794564541"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794564541"); await loadJs("./js/pdf.js?v=1794564541");
     const { html, title } = orderDoc(f);
     const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
@@ -2928,7 +2962,7 @@ async function bpsMailsFor(p, day) {
   await Promise.all(pre.phs.map(q => q && q.ph && !PHOTO_CACHE.has(q.ph) && !(q.url || "").startsWith("data:") ? Store.photo(q.ph).then(d => { if (d) PHOTO_CACHE.set(q.ph, d); }).catch(() => {}) : 0));
   const d = bpsBorrow(p, () => bpsDoc(p, day)), allDone = bpsBorrow(p, () => bpsAllDone());
   const files = await window.FibPdf.diaryPdf(d.html, d.title, { scale: 1.6, quality: 0.72, maxBytes: 5e6, header: d.header }), list = Array.isArray(files) ? files : [files];
-  const xl = pre.rows ? await loadJs("./js/piotr.js?v=1794564382").then(() => { const b = window.PiotrXlsx.build(pre.rows); return new File([b], `Bioseco_Wolf_Fibraco_status (${dmy(today())}).xlsx`, { type: b.type }); }).catch(() => null) : null;
+  const xl = pre.rows ? await loadJs("./js/piotr.js?v=1794564541").then(() => { const b = window.PiotrXlsx.build(pre.rows); return new File([b], `Bioseco_Wolf_Fibraco_status (${dmy(today())}).xlsx`, { type: b.type }); }).catch(() => null) : null;
   const dTxt = nice(new Date(day + "T12:00:00")), mails = [];
   for (let i = 0; i < list.length; i++) {
     const f = list[i], part = list.length > 1 ? ` (part ${i + 1} of ${list.length})` : "";
@@ -3537,7 +3571,7 @@ function liveExtra(pid) {
 }
 // Wanro 30 Oct: Piotr's table, filled in by itself. The office marks extra works. Download his Excel or email it to him.
 const piotrRows = () => { const o = {}; for (const [r, , w] of LiveUI.PIOTR) { const y = liveBoard(w, 0).y; o[r] = LiveUI.PCOLS.map(([k]) => y[k]); } return o; };
-async function piotrFile() { await loadJs("./js/piotr.js?v=1794564382"); const b = window.PiotrXlsx.build(piotrRows()); return new File([b], `Bioseco_Wolf_Fibraco_status (${dmy(today())}).xlsx`, { type: b.type }); }
+async function piotrFile() { await loadJs("./js/piotr.js?v=1794564541"); const b = window.PiotrXlsx.build(piotrRows()); return new File([b], `Bioseco_Wolf_Fibraco_status (${dmy(today())}).xlsx`, { type: b.type }); }
 function vPiotr() {
   const p = S.project, admin = isAdmin(S.user), box = h("div", { class: "lv" });
   const cell = (w, k, v) => { if (k !== "xw" || !admin) return null; const c = bpsOf(w);
@@ -3558,7 +3592,7 @@ function vPiotr() {
     admin && xw.length ? sheet("", h("div", { class: "band" }, "Extra works, a short note each (Bioseco see it)"), h("table", {}, h("tbody", {}, ...xw.map(([, lab, w]) => { const c = bpsOf(w);
       return h("tr", {}, h("td", { class: "lab" }, lab), h("td", {}, inp("text", c.xw.note, v => { c.xw.note = v; persistSoon(); shareSoon(1500); }, "e.g. module replaced on Bioseco's request"))); })))) : null,
     h("div", { class: "row", style: "gap:8px;flex-wrap:wrap" },
-      h("button", { type: "button", class: "btn-w", onclick: async () => { try { const f = await piotrFile(); await loadJs("./js/pdf.js?v=1794564382"); await window.FibPdf.shareFile(f, f.name); } catch (e) { showInfo("Could not make the Excel", `${e.message || e}.`); } } }, "Download the Excel"),
+      h("button", { type: "button", class: "btn-w", onclick: async () => { try { const f = await piotrFile(); await loadJs("./js/pdf.js?v=1794564541"); await window.FibPdf.shareFile(f, f.name); } catch (e) { showInfo("Could not make the Excel", `${e.message || e}.`); } } }, "Download the Excel"),
       admin ? h("button", { type: "button", class: "submit", onclick: send }, "Email it to Piotr now") : null)];
 }
 function vLive() {
@@ -3739,7 +3773,7 @@ async function warnPdf(c, kind) {
   const ov = h("div", { class: "overlay", role: "dialog" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794564382"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794564382"); await loadJs("./js/pdf.js?v=1794564382");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794564541"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794564541"); await loadJs("./js/pdf.js?v=1794564541");
     const esc = x => String(x == null ? "" : x).replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[ch]);
     const p = PEOPLE.find(x => x.name === c.who) || {}, pr = CFG.projects.find(x => x.id === c.pid) || {}, t = c.test || {}, [, catLab, , alc] = wCat(c.cat);
     const head = `<table style="width:100%;border-collapse:collapse;margin-bottom:12px"><tr><td rowspan="3" style="border:0.6pt solid #888;width:38%;text-align:center"><img src="${LOGO}" style="width:180px"></td><td style="border:0.6pt solid #888;font-size:8.5pt"><u>E-mail #</u></td><td style="border:0.6pt solid #888;font-size:8.5pt">info@fibraco.co.za &amp; wanro@fibraco.co.za</td></tr><tr><td style="border:0.6pt solid #888;font-size:8.5pt"><u>Reg #</u></td><td style="border:0.6pt solid #888;font-size:8.5pt">2021 / 770505 / 07</td></tr><tr><td style="border:0.6pt solid #888;font-size:8.5pt"><u>Address #</u></td><td style="border:0.6pt solid #888;font-size:8.5pt">Section 5A, SS Don Dias, Beach Indaba Building, 22 Dias Rd, Jeffreys Bay, South Africa, 6330</td></tr></table>`;
@@ -3774,7 +3808,7 @@ async function bpsReport(email, day = ymd(today())) {
   const ov = h("div", { class: "overlay", role: "dialog" }, h("div", { class: "modal" }, h("h2", {}, email ? "Approving and emailing" : "Making the report"), h("p", {}, "Fetching the photos and building the PDF. Keep the app open on this screen.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794564382"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794564382"); await loadJs("./js/pdf.js?v=1794564382");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794564541"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794564541"); await loadJs("./js/pdf.js?v=1794564541");
     const ws = ["SUBSTATION", ...bpsWtgs()], phs = ws.flatMap(w => Object.values(bpsOf(w).ph).flat());
     await Promise.all(phs.map(p => p.ph && !PHOTO_CACHE.has(p.ph) && !(p.url || "").startsWith("data:") ? Store.photo(p.ph).then(d => { if (d) PHOTO_CACHE.set(p.ph, d); }).catch(() => {}) : 0));
     const d = bpsDoc(S.project, day);
@@ -4801,7 +4835,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794564382"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794564382"); await loadJs("./js/pdf.js?v=1794564382");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794564541"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794564541"); await loadJs("./js/pdf.js?v=1794564541");
     await fetchDayPhotos(k);
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
@@ -4916,7 +4950,7 @@ async function processMailQ1() {
   let wl = null;
   try {
     wl = await wakeOn();
-    await loadJs("./js/lib/html2canvas.min.js?v=1794564382"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794564382"); await loadJs("./js/pdf.js?v=1794564382");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794564541"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794564541"); await loadJs("./js/pdf.js?v=1794564541");
     for (const j of go) {
       const p = CFG.projects.find(x => x.id === j.pid); if (!p) { j.done = true; continue; }
       if (!j.flash && !j.bpsOnly) { const m0 = Store.get(`mail|${j.pid}|${j.ds}`); if (m0 && m0.jobAt && m0.jobAt >= j.at) { j.done = true; continue; } } // another phone already sent it
@@ -6261,7 +6295,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794564382"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794564382"); await loadJs("./js/pdf.js?v=1794564382");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794564541"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794564541"); await loadJs("./js/pdf.js?v=1794564541");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
