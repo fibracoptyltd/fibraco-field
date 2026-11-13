@@ -392,7 +392,7 @@ function vProjects() {
         bioSetup(); } }, "Fingerprint")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1794564739";
+const APPV = "1794598482";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -486,7 +486,7 @@ async function sendRegister(p, d, days) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794564739"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794564739"); await loadJs("./js/pdf.js?v=1794564739");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794598482"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794598482"); await loadJs("./js/pdf.js?v=1794598482");
     const { html, title } = attDoc(p, d, days); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
@@ -603,7 +603,7 @@ async function timeZone() {
   try {
     try { Store.kick(); await refreshDevices(true); } catch (e) {}
     await new Promise(r => setTimeout(r, 1800));
-    await loadJs("./js/lib/html2canvas.min.js?v=1794564739"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794564739"); await loadJs("./js/pdf.js?v=1794564739");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794598482"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794598482"); await loadJs("./js/pdf.js?v=1794598482");
     const D = tzData(), stamp = `${dmy(new Date())} ${hhmm()}`, name = `FIBRACO - Time Zone (${stamp})`;
     const pdf = await window.FibPdf.diaryPdf(tzHtml(D), name);
     const json = new File([JSON.stringify(D, null, 1)], name.replace(/[\\/:*?"<>|]+/g, "-") + ".json", { type: "application/json" });
@@ -1705,7 +1705,7 @@ async function recordPdf() {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794564739"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794564739"); await loadJs("./js/pdf.js?v=1794564739");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794598482"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794598482"); await loadJs("./js/pdf.js?v=1794598482");
     const f = S.form, src = [...app.children].filter(k => !k.matches(".bar, .fb-btn, .ro-bar, .psub, .err, .pnav, .addrow"));
     const box = document.createElement("div");
     for (const k of src) {
@@ -1956,7 +1956,7 @@ async function sendOrder(f) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794564739"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794564739"); await loadJs("./js/pdf.js?v=1794564739");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794598482"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794598482"); await loadJs("./js/pdf.js?v=1794598482");
     const { html, title } = orderDoc(f);
     const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
@@ -2965,7 +2965,7 @@ async function bpsMailsFor(p, day) {
   await Promise.all(pre.phs.map(q => q && q.ph && !PHOTO_CACHE.has(q.ph) && !(q.url || "").startsWith("data:") ? Store.photo(q.ph).then(d => { if (d) PHOTO_CACHE.set(q.ph, d); }).catch(() => {}) : 0));
   const d = bpsBorrow(p, () => bpsDoc(p, day)), allDone = bpsBorrow(p, () => bpsAllDone());
   const files = await window.FibPdf.diaryPdf(d.html, d.title, { scale: 1.6, quality: 0.72, maxBytes: 5e6, header: d.header }), list = Array.isArray(files) ? files : [files];
-  const xl = pre.rows ? await loadJs("./js/piotr.js?v=1794564739").then(() => { const b = window.PiotrXlsx.build(pre.rows); return new File([b], `Bioseco_Wolf_Fibraco_status (${dmy(today())}).xlsx`, { type: b.type }); }).catch(() => null) : null;
+  const xl = pre.rows ? await loadJs("./js/piotr.js?v=1794598482").then(() => { const b = window.PiotrXlsx.build(pre.rows); return new File([b], `Bioseco_Wolf_Fibraco_status (${dmy(today())}).xlsx`, { type: b.type }); }).catch(() => null) : null;
   const dTxt = nice(new Date(day + "T12:00:00")), mails = [];
   for (let i = 0; i < list.length; i++) {
     const f = list[i], part = list.length > 1 ? ` (part ${i + 1} of ${list.length})` : "";
@@ -3574,7 +3574,7 @@ function liveExtra(pid) {
 }
 // Wanro 30 Oct: Piotr's table, filled in by itself. The office marks extra works. Download his Excel or email it to him.
 const piotrRows = () => { const o = {}; for (const [r, , w] of LiveUI.PIOTR) { const y = liveBoard(w, 0).y; o[r] = LiveUI.PCOLS.map(([k]) => y[k]); } return o; };
-async function piotrFile() { await loadJs("./js/piotr.js?v=1794564739"); const b = window.PiotrXlsx.build(piotrRows()); return new File([b], `Bioseco_Wolf_Fibraco_status (${dmy(today())}).xlsx`, { type: b.type }); }
+async function piotrFile() { await loadJs("./js/piotr.js?v=1794598482"); const b = window.PiotrXlsx.build(piotrRows()); return new File([b], `Bioseco_Wolf_Fibraco_status (${dmy(today())}).xlsx`, { type: b.type }); }
 function vPiotr() {
   const p = S.project, admin = isAdmin(S.user), box = h("div", { class: "lv" });
   const cell = (w, k, v) => { if (k !== "xw" || !admin) return null; const c = bpsOf(w);
@@ -3595,7 +3595,7 @@ function vPiotr() {
     admin && xw.length ? sheet("", h("div", { class: "band" }, "Extra works, a short note each (Bioseco see it)"), h("table", {}, h("tbody", {}, ...xw.map(([, lab, w]) => { const c = bpsOf(w);
       return h("tr", {}, h("td", { class: "lab" }, lab), h("td", {}, inp("text", c.xw.note, v => { c.xw.note = v; persistSoon(); shareSoon(1500); }, "e.g. module replaced on Bioseco's request"))); })))) : null,
     h("div", { class: "row", style: "gap:8px;flex-wrap:wrap" },
-      h("button", { type: "button", class: "btn-w", onclick: async () => { try { const f = await piotrFile(); await loadJs("./js/pdf.js?v=1794564739"); await window.FibPdf.shareFile(f, f.name); } catch (e) { showInfo("Could not make the Excel", `${e.message || e}.`); } } }, "Download the Excel"),
+      h("button", { type: "button", class: "btn-w", onclick: async () => { try { const f = await piotrFile(); await loadJs("./js/pdf.js?v=1794598482"); await window.FibPdf.shareFile(f, f.name); } catch (e) { showInfo("Could not make the Excel", `${e.message || e}.`); } } }, "Download the Excel"),
       admin ? h("button", { type: "button", class: "submit", onclick: send }, "Email it to Piotr now") : null)];
 }
 function vLive() {
@@ -3613,18 +3613,124 @@ function vLive() {
 // ---------- Company policies (Wanro 30 Oct) ----------
 // Every employee reads each policy on his phone and signs it with his PIN. A policy marked "director first" can only be
 // signed by the crew once Wanro has signed it as director. The office sees who has signed and who still owes it.
-const POLS = () => (CFG && CFG.policies) || [];
+// ---------- Job descriptions and the site reporting rules (Wanro 13 Nov) ----------
+// On every man's own phone: the rules (everyone) and the job description for his own role. Wanro signs each one as
+// director first, which releases it to the crew. Each man then reads it and signs with his PIN. Kept here, not in the
+// setup file, so they can change without a new setup. They become annexures to the new employment contracts.
+const JD_SAFETY = `<h3>Safety</h3><p>Carry out the duties of an employee under section 14 of the Occupational Health and Safety Act. Stop any work that is unsafe, and report every incident and near miss in the app the same day.</p>`;
+const JD_SM = `<h3>Site manager duties, when appointed on a project</h3><ol>
+<li>Set out the work for every man in the app before work starts, against the project schedule and the quote.</li>
+<li>Run the daily toolbox talk and DSTI, and keep the site safety file complete and on site.</li>
+<li>Supervise the crew, check the quality of their work and correct it the same day.</li>
+<li>Check each diary section, then approve it or send it back with the reason.</li>
+<li>Complete and sign the daily diary by 20h00, with the team, hours, work done and photos correct.</li>
+<li>Close out the site before the team leaves: every document done and signed, material and tools back, site clean.</li></ol>`;
+const JD_POLS = [
+  { id: "jd-rules", no: "FIB-HR-001", rev: "0", date: "13-11-2026", sign: true, dirFirst: true, title: "Site Reporting and App Rules",
+    summary: "What every man must do in the app every working day: sign in, DSTI, checks, diary section with photos by 18h00, sign out. What the app records and why.",
+    html: `<p>The Fibraco app is the company's official site record. Clients are billed and Fibraco is paid from it, and it protects every man when something goes wrong. These rules apply to everyone who works on a Fibraco site, every working day.</p>
+<h3>Every man, every working day</h3><ol>
+<li>Sign in on the register on your own phone when you arrive on site, by 07h00 unless the site manager set another start time.</li>
+<li>Sign the DSTI before any work starts.</li>
+<li>Do the daily checks and inspections the app gives you.</li>
+<li>Book your work against your tasks and send your diary section by 18h00.</li>
+<li>Add at least one photo of the work you did that day, taken on site that day. A section without photos is not complete.</li>
+<li>Sign out on the register when you leave site.</li></ol>
+<h3>The site manager, every working day</h3><ol>
+<li>Set out the work for every man in the app before work starts.</li>
+<li>Check each diary section, then approve it or send it back with the reason.</li>
+<li>Complete the daily diary and sign it by 20h00.</li></ol>
+<h3>Photos</h3><p>Photos show that the work was really done, where and when. Every photo must be taken on site, of the work, on the day. A photo from another day, another place or another person's work is a false record.</p>
+<h3>Late work</h3><p>Everything sent or signed after its cut-off is recorded as late, with the real date and time it went in. A late document stays late, even once it is complete.</p>
+<h3>What the app records</h3><p>The app records the time and place (GPS) when you sign in and out, the time and place of each photo, and the time each document is sent, approved and signed. Fibraco uses this for attendance, safety, client reports, hours worked and performance management. Only Fibraco management sees it. Your records are used to measure your daily performance.</p>
+<h3>Your phone and your PIN</h3><p>Use only your own phone and your own PIN. Never sign in, send or sign anything for someone else, and never let anyone use your PIN. Doing so is dishonesty.</p>
+<h3>When the app or your phone does not work</h3><p>The app keeps your work on the phone when there is no signal, and sends it later. If the app or your phone does not work at all, tell the site manager the same day and send your work as soon as it works again. A problem you did not report the same day is not an excuse.</p>
+<h3>Breaking these rules</h3><p>Breaking these rules is misconduct under Fibraco's Disciplinary Code, as failure to comply with company procedures. It is dealt with step by step, from counselling and a verbal warning to a written warning, a final written warning and then a disciplinary hearing. A false record, or signing for someone else, is dishonesty and can lead to dismissal after a fair hearing.</p>` },
+  { id: "jd-opsm", no: "FIB-JD-001", rev: "0", date: "13-11-2026", sign: true, dirFirst: true, for: ["Francois Marais"], title: "Job description: Operations Manager and Site Manager",
+    summary: "Francois Marais. Runs site operations, and is site manager or quality controller on the projects where he is appointed.",
+    html: `<p><b>Name:</b> Francois Marais. <b>Reports to:</b> the Director and Projects Manager, Wanro Hayes.</p>
+<p><b>Purpose:</b> run Fibraco's site operations so that every project is staffed, equipped, safe and reported on correctly. On projects where he is appointed, he is the site manager or the quality controller.</p>
+<h3>Operations duties</h3><ol>
+<li>Plan people, vehicles, tools and test equipment for every project with the Director, before each project starts.</li>
+<li>Keep the splicers, test sets and other equipment in working order, with calibration certificates up to date and recorded.</li>
+<li>Make sure every man on site holds the training, certificates and medicals that the site requires before he goes there.</li>
+<li>Order materials through the app, and check that what arrives matches the order.</li>
+<li>Report to the Director on progress, problems and anything that affects time, cost or the client.</li></ol>
+${JD_SM}
+<h3>Quality control duties, when appointed on a project</h3><ol>
+<li>Check the work and the test results against the client's and Eskom's standards.</li>
+<li>Complete the QC sheets in the app on the same day the work is done.</li>
+<li>Report every failed result to the site manager and the Director the same day, with photos.</li></ol>
+<h3>Daily app duties</h3><p>Everything in the Site Reporting and App Rules, plus the site manager duties above on every project where he is appointed.</p>${JD_SAFETY}` },
+  { id: "jd-asm", no: "FIB-JD-002", rev: "0", date: "13-11-2026", sign: true, dirFirst: true, for: ["Hendrik van Rooyen"], title: "Job description: Fibre and CAT Assistant, appointed Site Manager",
+    summary: "Hendrik van Rooyen. Fibre and CAT assistant, appointed site manager and construction manager (CR 8(1)) where named in his appointment letters.",
+    html: `<p><b>Name:</b> Hendrik van Rooyen. <b>Reports to:</b> the Director and Projects Manager, Wanro Hayes.</p>
+<p><b>Purpose:</b> assist with fibre (FOC) and CAT installation, splicing and testing. Because he holds the certificates for it, he is appointed in writing as site manager, and as construction manager under Construction Regulation 8(1), on the projects named in his appointment letters.</p>
+<h3>Fibre and CAT duties</h3><ol>
+<li>Prepare, install and terminate fibre and CAT cables to the drawings and the client's standards.</li>
+<li>Assist with fusion splicing and testing, and with the test reports.</li>
+<li>Look after the tools and test equipment he uses, and report any fault the same day.</li></ol>
+${JD_SM.replace("<li>Supervise the crew", "<li>Deal with the client's site team on day-to-day work, and report anything that affects time, cost or scope to the Director the same day.</li><li>Supervise the crew")}
+<h3>Construction manager duties, Construction Regulation 8(1), when appointed</h3><p>Manage the construction work on that site and its health and safety compliance, as set out in his appointment letter and the site's safety file.</p>
+<h3>Daily app duties</h3><p>Everything in the Site Reporting and App Rules, plus the site manager duties above on every project where he is appointed.</p>${JD_SAFETY}` },
+  { id: "jd-tech", no: "FIB-JD-003", rev: "0", date: "13-11-2026", sign: true, dirFirst: true, for: ["Marlon Titus", "Morne Ward"], title: "Job description: Splicing and Testing Technician, FOC and CAT",
+    summary: "Marlon Titus and Morne Ward. Splice, terminate and test fibre and CAT cabling, and record every result in the app.",
+    html: `<p><b>Names:</b> Marlon Titus, Morne Ward. <b>Reports to:</b> the site manager on each project, and the Director.</p>
+<p><b>Purpose:</b> splice, terminate and test fibre (FOC) and CAT cabling to the client's and Eskom's standards, and record every result correctly in the app.</p>
+<h3>Duties</h3><ol>
+<li>Prepare and fusion splice fibre cables, and fit closures, joints, patch panels and pigtails to the drawings.</li>
+<li>Terminate CAT cables and patch leads.</li>
+<li>Test fibre with the OTDR, light source and power meter, and certify CAT cabling, with the methods and pass values the project requires.</li>
+<li>Save and label every test result so it matches the drawing and the cable, and hand it in through the app the same day.</li>
+<li>Label cables, cores, ports and panels as the drawings require.</li>
+<li>Guide and check the work of the assistant working with him.</li>
+<li>Look after the splicer and test equipment, keep it clean, and report any fault or damage the same day.</li>
+<li>Do any other reasonable work the site manager gives him, including testing on other parts of the site.</li></ol>
+<h3>Daily app duties</h3><p>Everything in the Site Reporting and App Rules. Every diary section carries photos of the splices, terminations or tests done that day.</p>
+<h3>Safety</h3><p>Carry out the duties of an employee under section 14 of the Occupational Health and Safety Act. Handle fibre offcuts safely, never look into a live fibre or connector, and report every incident and near miss in the app the same day.</p>` },
+  { id: "jd-asst", no: "FIB-JD-004", rev: "0", date: "13-11-2026", sign: true, dirFirst: true, for: ["Hamilton Mabena"], title: "Job description: Splicing and Testing Assistant, FOC and CAT",
+    summary: "Hamilton Mabena. Supports the technicians with fibre and CAT installation, splicing and testing, and learns the work under supervision.",
+    html: `<p><b>Name:</b> Hamilton Mabena. <b>Reports to:</b> the site manager on each project, and the technician he works with.</p>
+<p><b>Purpose:</b> support the technicians with fibre (FOC) and CAT installation, splicing and testing, and learn the work under supervision.</p>
+<h3>Duties</h3><ol>
+<li>Pull, lay and secure cables, and fit trunking, conduit and cable trays to the drawings.</li>
+<li>Prepare cables for splicing and termination, under the technician's direction.</li>
+<li>Help with testing: set up equipment, hold the far end, and record results as the technician instructs.</li>
+<li>Fit labels to cables, cores, ports and panels as the drawings require.</li>
+<li>Keep the work area clean and safe, and collect and dispose of fibre offcuts safely.</li>
+<li>Look after the tools and equipment he uses, and report any fault or damage the same day.</li>
+<li>Do any other reasonable work the site manager gives him.</li></ol>
+<h3>Daily app duties</h3><p>Everything in the Site Reporting and App Rules. Every diary section carries photos of the work he did that day.</p>
+<h3>Safety</h3><p>Carry out the duties of an employee under section 14 of the Occupational Health and Safety Act. Never look into a live fibre or connector, and report every incident and near miss in the app the same day.</p>` },
+  { id: "jd-elec", no: "FIB-JD-005", rev: "0", date: "13-11-2026", sign: true, dirFirst: true, for: ["Marcel Swart"], title: "Job description: Electrical Installer and Testing Technician",
+    summary: "Marcel Swart. Installs, terminates and tests LV, screened and CAT cables, and learns fibre work under supervision.",
+    html: `<p><b>Name:</b> Marcel Swart. <b>Reports to:</b> the site manager on each project, and the Director.</p>
+<p><b>Purpose:</b> install, terminate and test low voltage, screened and CAT cables to the drawings and the client's standards, and learn fibre (FOC) work under supervision.</p>
+<h3>Duties</h3><ol>
+<li>Install, gland and terminate LV cables, and do the continuity and insulation resistance tests the project requires.</li>
+<li>Install and terminate screened cables, with the screens and earthing done to the drawings.</li>
+<li>Install, terminate and test CAT cabling.</li>
+<li>Record every test result in the app, labelled so it matches the drawing and the cable, on the day of the test.</li>
+<li>Learn fibre installation, splicing and testing, and do that work only under a technician's supervision until the Director signs him off as competent.</li>
+<li>Operate the cherry picker only when authorised in writing for that site, and complete its pre-use checklist in the app every day before use.</li>
+<li>Look after the tools, test equipment and machines he uses, and report any fault or damage the same day.</li>
+<li>Do any other reasonable work the site manager gives him.</li></ol>
+<h3>Daily app duties</h3><p>Everything in the Site Reporting and App Rules. Every diary section carries photos of the installations, terminations or tests done that day.</p>
+<h3>Safety</h3><p>Carry out the duties of an employee under section 14 of the Occupational Health and Safety Act. Work on electrical installations only within his competence and authorisation, isolate and lock out before working on any circuit, and report every incident and near miss in the app the same day.</p>` }];
+const polFor = (pol, name) => !pol.for || pol.for.includes(name);
+// the office sees every document, a man sees the company ones plus his own job description
+const POLS = (name) => [...((CFG && CFG.policies) || []), ...JD_POLS.filter(p => name !== undefined ? polFor(p, name) : (isAdmin(S.user) || polFor(p, S.user)))];
 const dirP = () => PEOPLE.find(p => p.admin) || {};
 const polSigOf = (pol, pid) => Store.get(`pol|${pol.id}|${pid}`) || null;
 const polReady = pol => !pol.dirFirst || !!polSigOf(pol, dirP().id);
 const meId = () => (PEOPLE.find(p => p.name === S.user) || {}).id;
-const polOwed = (name = S.user) => { const pid = (PEOPLE.find(p => p.name === name) || {}).id; return POLS().filter(pol => pol.sign && polReady(pol) && !polSigOf(pol, pid)); };
+const polOwed = (name = S.user) => { const pid = (PEOPLE.find(p => p.name === name) || {}).id; return POLS(name).filter(pol => pol.sign && polReady(pol) && !polSigOf(pol, pid)); };
 const staffList = () => PEOPLE.filter(p => !p.admin && CFG.projects.some(pr => pr.active !== false && (pr.team || {})[p.name]));
 function vPolicies() {
   const admin = isAdmin(S.user), mine = meId();
   return [topbar("Company policies", admin ? "Read, sign and see who has signed" : "Read each one and sign it with your PIN", true),
     h("p", { class: "form-sub" }, admin ? "The crew sign each policy on their own phone with their PIN. The two new ones (zero tolerance and the disciplinary code) carry your signature on the document and are open for the crew to sign." : "These are Fibraco's rules. Read each one. Tap the page to make it bigger. Then sign at the bottom with your PIN."),
-    ...POLS().map(pol => { const sg = polSigOf(pol, mine), ready = polReady(pol), all = staffList(), n = all.filter(p => polSigOf(pol, p.id)).length;
+    ...POLS().map(pol => { const sg = polSigOf(pol, mine), ready = polReady(pol), all = staffList().filter(p => polFor(pol, p.name)), n = all.filter(p => polSigOf(pol, p.id)).length;
       const st = admin ? (pol.dirFirst && !sg ? ["must", "Sign it as director first"] : pol.sign ? [n === all.length ? "ok" : "must", `${n} of ${all.length} signed`] : ["", "For reading"])
         : !pol.sign ? ["", "For reading"] : sg ? ["ok", `Signed ${dmy(new Date(sg.at))}`] : ready ? ["must", "Read and sign"] : ["", "Not open for signing yet"];
       return h("button", { type: "button", class: "pol-c " + st[0], onclick: () => { S.pol = pol.id; go("policy"); } },
@@ -3633,7 +3739,7 @@ function vPolicies() {
 function vPolicy() {
   const pol = POLS().find(x => x.id === S.pol); if (!pol) return vPolicies();
   const admin = isAdmin(S.user), mine = meId(), sg = polSigOf(pol, mine), ready = polReady(pol);
-  const pages = pol.pages.map((pg, i) => h("button", { type: "button", class: "pol-pg", onclick: () => { S.dwg = { img: pg.img, hi: pg.hi, title: `${pol.title} page ${i + 1}`, no: pol.no }; S.zoom = 1; dwgFull(true); go("drawing"); } },
+  const pages = pol.html ? [(() => { const d = h("div", { class: "pol-text" }); d.innerHTML = pol.html; return d; })()] : pol.pages.map((pg, i) => h("button", { type: "button", class: "pol-pg", onclick: () => { S.dwg = { img: pg.img, hi: pg.hi, title: `${pol.title} page ${i + 1}`, no: pol.no }; S.zoom = 1; dwgFull(true); go("drawing"); } },
     encImg(pg.img, { alt: `${pol.title}, page ${i + 1}` })));
   let okBox;
   const canSign = pol.sign && !sg && (admin ? true : ready);
@@ -3647,7 +3753,7 @@ function vPolicy() {
         : !canSign ? h("p", { class: "hint", style: "padding:10px" }, "This policy opens for signing once the director has signed it.")
         : h("div", { style: "padding:10px" }, admin ? null : h("label", { class: "pol-ok" }, okBox = h("input", { type: "checkbox" }), h("span", {}, "I have read this policy, or it was explained to me in a language I understand, and I understand it.")),
             h("button", { type: "button", class: "submit", onclick: sign }, admin ? "SIGN AS DIRECTOR" : "SIGN WITH MY PIN"))) : null,
-    admin && pol.sign ? sheet("", h("div", { class: "band" }, "Who has signed"), h("table", {}, h("tbody", {}, ...staffList().map(p => { const s = polSigOf(pol, p.id);
+    admin && pol.sign ? sheet("", h("div", { class: "band" }, "Who has signed"), h("table", {}, h("tbody", {}, ...staffList().filter(p => polFor(pol, p.name)).map(p => { const s = polSigOf(pol, p.id);
       return h("tr", {}, h("td", { class: "lab" }, p.name), h("td", {}, h("div", { class: "ro", style: s ? "color:#1e6b34;font-weight:700" : "color:#a50e0e;font-weight:700" }, s ? `Signed ${dmy(new Date(s.at))} ${hhmm(new Date(s.at))}` : ready ? "Not yet" : "Waits for your signature"))); })))) : null];
 }
 // ---------- Warnings (Wanro 30 Oct, the office only) ----------
@@ -3776,7 +3882,7 @@ async function warnPdf(c, kind) {
   const ov = h("div", { class: "overlay", role: "dialog" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794564739"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794564739"); await loadJs("./js/pdf.js?v=1794564739");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794598482"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794598482"); await loadJs("./js/pdf.js?v=1794598482");
     const esc = x => String(x == null ? "" : x).replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[ch]);
     const p = PEOPLE.find(x => x.name === c.who) || {}, pr = CFG.projects.find(x => x.id === c.pid) || {}, t = c.test || {}, [, catLab, , alc] = wCat(c.cat);
     const head = `<table style="width:100%;border-collapse:collapse;margin-bottom:12px"><tr><td rowspan="3" style="border:0.6pt solid #888;width:38%;text-align:center"><img src="${LOGO}" style="width:180px"></td><td style="border:0.6pt solid #888;font-size:8.5pt"><u>E-mail #</u></td><td style="border:0.6pt solid #888;font-size:8.5pt">info@fibraco.co.za &amp; wanro@fibraco.co.za</td></tr><tr><td style="border:0.6pt solid #888;font-size:8.5pt"><u>Reg #</u></td><td style="border:0.6pt solid #888;font-size:8.5pt">2021 / 770505 / 07</td></tr><tr><td style="border:0.6pt solid #888;font-size:8.5pt"><u>Address #</u></td><td style="border:0.6pt solid #888;font-size:8.5pt">Section 5A, SS Don Dias, Beach Indaba Building, 22 Dias Rd, Jeffreys Bay, South Africa, 6330</td></tr></table>`;
@@ -3811,7 +3917,7 @@ async function bpsReport(email, day = ymd(today())) {
   const ov = h("div", { class: "overlay", role: "dialog" }, h("div", { class: "modal" }, h("h2", {}, email ? "Approving and emailing" : "Making the report"), h("p", {}, "Fetching the photos and building the PDF. Keep the app open on this screen.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794564739"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794564739"); await loadJs("./js/pdf.js?v=1794564739");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794598482"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794598482"); await loadJs("./js/pdf.js?v=1794598482");
     const ws = ["SUBSTATION", ...bpsWtgs()], phs = ws.flatMap(w => Object.values(bpsOf(w).ph).flat());
     await Promise.all(phs.map(p => p.ph && !PHOTO_CACHE.has(p.ph) && !(p.url || "").startsWith("data:") ? Store.photo(p.ph).then(d => { if (d) PHOTO_CACHE.set(p.ph, d); }).catch(() => {}) : 0));
     const d = bpsDoc(S.project, day);
@@ -4678,7 +4784,7 @@ function outstanding(force) {
           const fin = Store.get(`final|${p.id}|${ds}`); if (fin && (!fin.needPM || fin.pmOk) && !diaryVoid(p.id + "|" + ds)) add(pm, p, ds, "Bioseco daily report: diary approved, report not emailed yet (it tries again by itself)"); }
       }
       // company policies not signed yet (once the director has signed the ones that need it)
-      if (p === PROJECTS[0]) for (const pr of staffList()) for (const pol of POLS()) if (pol.sign && polReady(pol) && !polSigOf(pol, pr.id)) add(pr.name, { id: "company", short: "Company" }, "", `Policy not signed: ${pol.no} ${pol.title}`);
+      if (p === PROJECTS[0]) for (const pr of staffList()) for (const pol of POLS(pr.name)) if (pol.sign && polReady(pol) && !polSigOf(pol, pr.id)) add(pr.name, { id: "company", short: "Company" }, "", `Policy not signed: ${pol.no} ${pol.title}`);
       // QC sheets that were worked on but not signed
       const qcOwner = (p.qcBy || []).find(n => p.team[n]) || smName(p);
       if (p.qcSpots) for (const sh of Object.keys(QC_SHEETS)) for (const sp of qcSpots(sh)) { const c = qcCount(sh, sp); if (c.done && !c.signed) add(qcOwner, p, "", `QC sheet ${QC_SHEETS[sh].title} ${sp}: ${c.done} of ${c.total} checked, not signed`); }
@@ -4838,7 +4944,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794564739"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794564739"); await loadJs("./js/pdf.js?v=1794564739");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794598482"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794598482"); await loadJs("./js/pdf.js?v=1794598482");
     await fetchDayPhotos(k);
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
@@ -4953,7 +5059,7 @@ async function processMailQ1() {
   let wl = null;
   try {
     wl = await wakeOn();
-    await loadJs("./js/lib/html2canvas.min.js?v=1794564739"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794564739"); await loadJs("./js/pdf.js?v=1794564739");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794598482"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794598482"); await loadJs("./js/pdf.js?v=1794598482");
     for (const j of go) {
       const p = CFG.projects.find(x => x.id === j.pid); if (!p) { j.done = true; continue; }
       if (!j.flash && !j.bpsOnly) { const m0 = Store.get(`mail|${j.pid}|${j.ds}`); if (m0 && m0.jobAt && m0.jobAt >= j.at) { j.done = true; continue; } } // another phone already sent it
@@ -6298,7 +6404,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794564739"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794564739"); await loadJs("./js/pdf.js?v=1794564739");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794598482"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794598482"); await loadJs("./js/pdf.js?v=1794598482");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),

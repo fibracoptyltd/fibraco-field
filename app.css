@@ -1085,3 +1085,10 @@ body.vhome .tile.tpj.outred .tpj-n{font-size:calc(9px*var(--kf,1));letter-spacin
 .cl-th button{position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;border:0;background:#c8102e;color:#fff;font-weight:800;line-height:1;padding:0}
 .cl-mimgs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}
 .cl-mimgs img{max-height:180px;max-width:100%;border-radius:6px}
+
+/* Wanro 13 Nov: job descriptions and rules as text on the phone */
+.pol-text{background:#fff;border:1px solid #d5dae1;border-radius:10px;padding:14px 16px;font-size:15px;line-height:1.55;color:#1b2430}
+.pol-text h3{color:#0069aa;font-size:16px;margin:16px 0 6px}
+.pol-text ol{margin:4px 0 8px 20px;padding:0}
+.pol-text li{margin:3px 0}
+.pol-text p{margin:6px 0}
