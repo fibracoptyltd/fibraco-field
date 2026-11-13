@@ -1,6 +1,6 @@
 // Fibraco Field: keeps the app on the phone so it opens with no signal.
-const CACHE = "fibraco-field-1794563462";
-const SHELL = ["./", "./index.html", "./app.css?v=1794563462", "./js/store.js?v=1794563462", "./js/app.js?v=1794563462", "./js/live.js?v=1794563462", "./js/pdf.js?v=1794563462", "./js/lib/html2canvas.min.js?v=1794563462", "./js/lib/jspdf.umd.min.js?v=1794563462", "./manifest.webmanifest", "./setup.bin", "./icons/logo.png", "./icons/icon-192.png", "./icons/icon-512.png"];
+const CACHE = "fibraco-field-1794564382";
+const SHELL = ["./", "./index.html", "./app.css?v=1794564382", "./js/store.js?v=1794564382", "./js/app.js?v=1794564382", "./js/live.js?v=1794564382", "./js/pdf.js?v=1794564382", "./js/lib/html2canvas.min.js?v=1794564382", "./js/lib/jspdf.umd.min.js?v=1794564382", "./manifest.webmanifest", "./setup.bin", "./icons/logo.png", "./icons/icon-192.png", "./icons/icon-512.png"];
 // Wanro 29 Oct: Bioseco's example photos and report pictures are kept on the phone too, so they show at a turbine with no signal
 const BPS_PICS = ["cover", "drawA", "drawB", "logo", "wiring", "ex-p1", "ex-p6", "ex-p7", "ex-p8", "ex-p11", "ex-p12", "ex-p15", "ex-p16", "ex-pc", "ex-s1", "ex-s2", "ex-s3", "ex-s4", "ex-s14"].map(n => `./icons/bps/${n}.jpg`);
 // Wanro 8 Nov: an update always takes the app fresh from the server, never the phone's own 10 minute copy. Two updates close

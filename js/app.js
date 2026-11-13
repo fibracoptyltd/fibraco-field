@@ -120,8 +120,8 @@ function topbar(title, sub, back) {
     h("div", { class: "t" }, h("b", {}, title), sub ? h("span", {}, sub) : null),
     syncPill());
 }
-function go(view) { micOff(); S.hist.push(S.view); S.view = view; render(); window.scrollTo(0, 0); }
-function goBack() { micOff(); S.view = S.hist.pop() || "projects"; render(); window.scrollTo(0, 0); }
+function go(view) { micOff(); if (typeof talkStop === "function" && view !== "claude") talkStop(); S.hist.push(S.view); S.view = view; render(); window.scrollTo(0, 0); }
+function goBack() { micOff(); talkStop(); S.view = S.hist.pop() || "projects"; render(); window.scrollTo(0, 0); }
 
 // ---------- the phone's back button ----------
 // Back goes one screen back inside the app. It never drops a man straight out of the app.
@@ -392,7 +392,7 @@ function vProjects() {
         bioSetup(); } }, "Fingerprint")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1794563462";
+const APPV = "1794564382";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -486,7 +486,7 @@ async function sendRegister(p, d, days) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794563462"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794563462"); await loadJs("./js/pdf.js?v=1794563462");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794564382"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794564382"); await loadJs("./js/pdf.js?v=1794564382");
     const { html, title } = attDoc(p, d, days); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
@@ -603,7 +603,7 @@ async function timeZone() {
   try {
     try { Store.kick(); await refreshDevices(true); } catch (e) {}
     await new Promise(r => setTimeout(r, 1800));
-    await loadJs("./js/lib/html2canvas.min.js?v=1794563462"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794563462"); await loadJs("./js/pdf.js?v=1794563462");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794564382"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794564382"); await loadJs("./js/pdf.js?v=1794564382");
     const D = tzData(), stamp = `${dmy(new Date())} ${hhmm()}`, name = `FIBRACO - Time Zone (${stamp})`;
     const pdf = await window.FibPdf.diaryPdf(tzHtml(D), name);
     const json = new File([JSON.stringify(D, null, 1)], name.replace(/[\\/:*?"<>|]+/g, "-") + ".json", { type: "application/json" });
@@ -664,7 +664,7 @@ async function clAsk(text) {
       const kinds = (j.content || []).map(c => c.type).join(", ") || "nothing", u = j.usage || {};
       ans = `Claude sent back no text. Send Claude in the main chat this line: stop ${j.stop_reason || "?"}, blocks ${kinds}, out ${u.output_tokens || "?"}, in ${u.input_tokens || "?"}, model ${j.model || CL_MODEL}.`;
     }
-    CL.msgs.push({ role: "assistant", content: ans, at: new Date().toISOString() });
+    { const at = new Date().toISOString(); CL.msgs.push({ role: "assistant", content: ans, at }); if (TALK.auto) setTimeout(() => talkSay(ans, at), 300); }
   } catch (e) {
     const q = CL.msgs.pop(); CL.draft = q ? q.content : "";
     showInfo("Claude did not answer", e && e.message && !/fetch|network/i.test(e.message) ? e.message : "Could not reach Claude. Check your signal and try again.");
@@ -709,6 +709,19 @@ function micStart() {
 }
 function MIC_ICON() { const s = document.createElementNS("http://www.w3.org/2000/svg", "svg"); s.setAttribute("viewBox", "0 0 24 24"); s.setAttribute("width", "26"); s.setAttribute("height", "26"); s.setAttribute("aria-hidden", "true");
   s.innerHTML = '<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></g>'; return s; }
+// Wanro 13 Nov: Listen. The phone reads Claude's answer out loud in its own English voice (phone settings). Tap again to stop.
+const TALK = { on: null, auto: (() => { try { return localStorage.getItem("clTalk") === "1"; } catch (e) { return false; } })() };
+function talkStop() { try { window.speechSynthesis && speechSynthesis.cancel(); } catch (e) {} TALK.on = null; }
+function talkSay(text, id) {
+  if (!window.speechSynthesis) return showInfo("Listen not available", "This phone's browser cannot read text out loud. Open the app in Chrome.");
+  talkStop();
+  const clean = String(text || "").replace(/https?:\/\/\S+/g, "").replace(/[*_#`>|]/g, " ").replace(/\b(\d{1,2})h(\d{2})\b/g, "$1:$2").replace(/\s+/g, " ").trim();
+  const parts = clean.match(/[^.!?\n]+[.!?]*/g) || [clean];
+  TALK.on = id; parts.forEach((p, i) => { const u = new SpeechSynthesisUtterance(p.trim()); u.rate = 1;
+    if (i === parts.length - 1) u.onend = () => { if (TALK.on === id) { TALK.on = null; if (S.view === "claude") render(); } };
+    speechSynthesis.speak(u); });
+  if (S.view === "claude") render();
+}
 function micButton() {
   const lang = h("button", { class: "btn-g cl-lang", type: "button", title: "Language you speak", onclick: () => { MIC.lang = MIC.lang === "en-ZA" ? "af-ZA" : "en-ZA"; try { localStorage.setItem("micLang", MIC.lang); } catch (e) {} if (MIC.on) { micStop(); micStart(); } else render(); } }, MIC.lang === "af-ZA" ? "AF" : "EN");
   const mic = h("button", { class: "cl-mic" + (MIC.on ? " on" : ""), type: "button", "aria-label": MIC.on ? "Stop talking" : "Talk", onclick: () => MIC.on ? micStop() : micStart() },
@@ -742,7 +755,10 @@ function vClaude() {
     const b = h("div", { class: "cl-msg " + (m.role === "user" ? "cl-me" : "cl-ai") }, h("div", { class: "cl-txt" }, ...clText(m.content)));
     if (m.role === "user") { holdable(b, m.content); b.title = "Press and hold to ask again"; }
     else holdable(b, null, () => clSelect(b, m.content));
-    if (m.role === "assistant") { const c = h("button", { class: "cl-copy", type: "button" }, "Copy"); c.onclick = () => clCopy(m.content, c); b.append(c); }
+    if (m.role === "assistant") { const c = h("button", { class: "cl-copy", type: "button" }, "Copy"); c.onclick = () => clCopy(m.content, c);
+      const lid = m.at || m.content.slice(0, 40), playing = TALK.on === lid;
+      const l = h("button", { class: "cl-copy cl-listen" + (playing ? " on" : ""), type: "button", onclick: () => { if (TALK.on === lid) { talkStop(); render(); } else talkSay(m.content, lid); } }, playing ? "Stop" : "Listen");
+      b.append(h("div", { style: "display:flex;gap:8px" }, l, c)); }
     return b; });
   return [head,
     h("div", { class: "cl-msgs" },
@@ -752,6 +768,7 @@ function vClaude() {
       CL.busy ? h("div", { class: "cl-msg cl-ai cl-wait" }, "Claude is reading the app...") : null),
     h("div", { class: "cl-bar" }, ask, micButton(), h("button", { class: "btn-w cl-send", type: "button", disabled: CL.busy, onclick: send }, "Send")),
     h("div", { class: "cl-tools" },
+      h("button", { class: TALK.auto ? "btn-w" : "btn-g", type: "button", onclick: () => { TALK.auto = !TALK.auto; try { localStorage.setItem("clTalk", TALK.auto ? "1" : "0"); } catch (e) {} if (!TALK.auto) talkStop(); render(); } }, TALK.auto ? "Read every answer out loud: ON" : "Read every answer out loud: OFF"),
       h("button", { class: "btn-g", type: "button", onclick: () => askYesNo("Clear the chat?", "The questions and answers on this screen are removed from this phone.", "Clear", async () => { CL.msgs = []; await Store.keepLocal("claudeChat", []); render(); }, true) }, "Clear chat"),
       h("button", { class: "btn-g", type: "button", onclick: () => askYesNo("Change the Claude key?", "You will paste a new key.", "Change", async () => { CL.key = null; await Store.keepLocal("claudeKey", null); render(); }) }, "Change key"))];
 }
@@ -1651,7 +1668,7 @@ async function recordPdf() {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794563462"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794563462"); await loadJs("./js/pdf.js?v=1794563462");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794564382"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794564382"); await loadJs("./js/pdf.js?v=1794564382");
     const f = S.form, src = [...app.children].filter(k => !k.matches(".bar, .fb-btn, .ro-bar, .psub, .err, .pnav, .addrow"));
     const box = document.createElement("div");
     for (const k of src) {
@@ -1902,7 +1919,7 @@ async function sendOrder(f) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794563462"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794563462"); await loadJs("./js/pdf.js?v=1794563462");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794564382"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794564382"); await loadJs("./js/pdf.js?v=1794564382");
     const { html, title } = orderDoc(f);
     const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
@@ -2911,7 +2928,7 @@ async function bpsMailsFor(p, day) {
   await Promise.all(pre.phs.map(q => q && q.ph && !PHOTO_CACHE.has(q.ph) && !(q.url || "").startsWith("data:") ? Store.photo(q.ph).then(d => { if (d) PHOTO_CACHE.set(q.ph, d); }).catch(() => {}) : 0));
   const d = bpsBorrow(p, () => bpsDoc(p, day)), allDone = bpsBorrow(p, () => bpsAllDone());
   const files = await window.FibPdf.diaryPdf(d.html, d.title, { scale: 1.6, quality: 0.72, maxBytes: 5e6, header: d.header }), list = Array.isArray(files) ? files : [files];
-  const xl = pre.rows ? await loadJs("./js/piotr.js?v=1794563462").then(() => { const b = window.PiotrXlsx.build(pre.rows); return new File([b], `Bioseco_Wolf_Fibraco_status (${dmy(today())}).xlsx`, { type: b.type }); }).catch(() => null) : null;
+  const xl = pre.rows ? await loadJs("./js/piotr.js?v=1794564382").then(() => { const b = window.PiotrXlsx.build(pre.rows); return new File([b], `Bioseco_Wolf_Fibraco_status (${dmy(today())}).xlsx`, { type: b.type }); }).catch(() => null) : null;
   const dTxt = nice(new Date(day + "T12:00:00")), mails = [];
   for (let i = 0; i < list.length; i++) {
     const f = list[i], part = list.length > 1 ? ` (part ${i + 1} of ${list.length})` : "";
@@ -3520,7 +3537,7 @@ function liveExtra(pid) {
 }
 // Wanro 30 Oct: Piotr's table, filled in by itself. The office marks extra works. Download his Excel or email it to him.
 const piotrRows = () => { const o = {}; for (const [r, , w] of LiveUI.PIOTR) { const y = liveBoard(w, 0).y; o[r] = LiveUI.PCOLS.map(([k]) => y[k]); } return o; };
-async function piotrFile() { await loadJs("./js/piotr.js?v=1794563462"); const b = window.PiotrXlsx.build(piotrRows()); return new File([b], `Bioseco_Wolf_Fibraco_status (${dmy(today())}).xlsx`, { type: b.type }); }
+async function piotrFile() { await loadJs("./js/piotr.js?v=1794564382"); const b = window.PiotrXlsx.build(piotrRows()); return new File([b], `Bioseco_Wolf_Fibraco_status (${dmy(today())}).xlsx`, { type: b.type }); }
 function vPiotr() {
   const p = S.project, admin = isAdmin(S.user), box = h("div", { class: "lv" });
   const cell = (w, k, v) => { if (k !== "xw" || !admin) return null; const c = bpsOf(w);
@@ -3541,7 +3558,7 @@ function vPiotr() {
     admin && xw.length ? sheet("", h("div", { class: "band" }, "Extra works, a short note each (Bioseco see it)"), h("table", {}, h("tbody", {}, ...xw.map(([, lab, w]) => { const c = bpsOf(w);
       return h("tr", {}, h("td", { class: "lab" }, lab), h("td", {}, inp("text", c.xw.note, v => { c.xw.note = v; persistSoon(); shareSoon(1500); }, "e.g. module replaced on Bioseco's request"))); })))) : null,
     h("div", { class: "row", style: "gap:8px;flex-wrap:wrap" },
-      h("button", { type: "button", class: "btn-w", onclick: async () => { try { const f = await piotrFile(); await loadJs("./js/pdf.js?v=1794563462"); await window.FibPdf.shareFile(f, f.name); } catch (e) { showInfo("Could not make the Excel", `${e.message || e}.`); } } }, "Download the Excel"),
+      h("button", { type: "button", class: "btn-w", onclick: async () => { try { const f = await piotrFile(); await loadJs("./js/pdf.js?v=1794564382"); await window.FibPdf.shareFile(f, f.name); } catch (e) { showInfo("Could not make the Excel", `${e.message || e}.`); } } }, "Download the Excel"),
       admin ? h("button", { type: "button", class: "submit", onclick: send }, "Email it to Piotr now") : null)];
 }
 function vLive() {
@@ -3722,7 +3739,7 @@ async function warnPdf(c, kind) {
   const ov = h("div", { class: "overlay", role: "dialog" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794563462"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794563462"); await loadJs("./js/pdf.js?v=1794563462");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794564382"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794564382"); await loadJs("./js/pdf.js?v=1794564382");
     const esc = x => String(x == null ? "" : x).replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[ch]);
     const p = PEOPLE.find(x => x.name === c.who) || {}, pr = CFG.projects.find(x => x.id === c.pid) || {}, t = c.test || {}, [, catLab, , alc] = wCat(c.cat);
     const head = `<table style="width:100%;border-collapse:collapse;margin-bottom:12px"><tr><td rowspan="3" style="border:0.6pt solid #888;width:38%;text-align:center"><img src="${LOGO}" style="width:180px"></td><td style="border:0.6pt solid #888;font-size:8.5pt"><u>E-mail #</u></td><td style="border:0.6pt solid #888;font-size:8.5pt">info@fibraco.co.za &amp; wanro@fibraco.co.za</td></tr><tr><td style="border:0.6pt solid #888;font-size:8.5pt"><u>Reg #</u></td><td style="border:0.6pt solid #888;font-size:8.5pt">2021 / 770505 / 07</td></tr><tr><td style="border:0.6pt solid #888;font-size:8.5pt"><u>Address #</u></td><td style="border:0.6pt solid #888;font-size:8.5pt">Section 5A, SS Don Dias, Beach Indaba Building, 22 Dias Rd, Jeffreys Bay, South Africa, 6330</td></tr></table>`;
@@ -3757,7 +3774,7 @@ async function bpsReport(email, day = ymd(today())) {
   const ov = h("div", { class: "overlay", role: "dialog" }, h("div", { class: "modal" }, h("h2", {}, email ? "Approving and emailing" : "Making the report"), h("p", {}, "Fetching the photos and building the PDF. Keep the app open on this screen.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794563462"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794563462"); await loadJs("./js/pdf.js?v=1794563462");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794564382"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794564382"); await loadJs("./js/pdf.js?v=1794564382");
     const ws = ["SUBSTATION", ...bpsWtgs()], phs = ws.flatMap(w => Object.values(bpsOf(w).ph).flat());
     await Promise.all(phs.map(p => p.ph && !PHOTO_CACHE.has(p.ph) && !(p.url || "").startsWith("data:") ? Store.photo(p.ph).then(d => { if (d) PHOTO_CACHE.set(p.ph, d); }).catch(() => {}) : 0));
     const d = bpsDoc(S.project, day);
@@ -4784,7 +4801,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794563462"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794563462"); await loadJs("./js/pdf.js?v=1794563462");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794564382"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794564382"); await loadJs("./js/pdf.js?v=1794564382");
     await fetchDayPhotos(k);
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
@@ -4899,7 +4916,7 @@ async function processMailQ1() {
   let wl = null;
   try {
     wl = await wakeOn();
-    await loadJs("./js/lib/html2canvas.min.js?v=1794563462"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794563462"); await loadJs("./js/pdf.js?v=1794563462");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794564382"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794564382"); await loadJs("./js/pdf.js?v=1794564382");
     for (const j of go) {
       const p = CFG.projects.find(x => x.id === j.pid); if (!p) { j.done = true; continue; }
       if (!j.flash && !j.bpsOnly) { const m0 = Store.get(`mail|${j.pid}|${j.ds}`); if (m0 && m0.jobAt && m0.jobAt >= j.at) { j.done = true; continue; } } // another phone already sent it
@@ -6244,7 +6261,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794563462"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794563462"); await loadJs("./js/pdf.js?v=1794563462");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794564382"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794564382"); await loadJs("./js/pdf.js?v=1794564382");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),

@@ -1072,3 +1072,7 @@ body.vhome .tile.tpj.outred .tpj-n{font-size:calc(9px*var(--kf,1));letter-spacin
 .pin-pad .pin-fp{display:flex;align-items:center;justify-content:center;padding:0;color:#0069aa}
 .pin-pad .pin-fp svg{width:38px;height:38px}
 .lock.dark .pin-pad .pin-fp{color:#ffd200;border-color:#ffd200}
+
+/* Wanro 13 Nov: Listen button on Claude's answers */
+.cl-listen{background:#0069aa;color:#fff;border-color:#0069aa;font-weight:700}
+.cl-listen.on{background:#c8102e;border-color:#c8102e}
