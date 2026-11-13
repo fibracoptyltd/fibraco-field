@@ -392,7 +392,7 @@ function vProjects() {
         bioSetup(); } }, "Fingerprint")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1794561745";
+const APPV = "1794563462";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -486,7 +486,7 @@ async function sendRegister(p, d, days) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794561745"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794561745"); await loadJs("./js/pdf.js?v=1794561745");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794563462"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794563462"); await loadJs("./js/pdf.js?v=1794563462");
     const { html, title } = attDoc(p, d, days); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
@@ -603,7 +603,7 @@ async function timeZone() {
   try {
     try { Store.kick(); await refreshDevices(true); } catch (e) {}
     await new Promise(r => setTimeout(r, 1800));
-    await loadJs("./js/lib/html2canvas.min.js?v=1794561745"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794561745"); await loadJs("./js/pdf.js?v=1794561745");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794563462"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794563462"); await loadJs("./js/pdf.js?v=1794563462");
     const D = tzData(), stamp = `${dmy(new Date())} ${hhmm()}`, name = `FIBRACO - Time Zone (${stamp})`;
     const pdf = await window.FibPdf.diaryPdf(tzHtml(D), name);
     const json = new File([JSON.stringify(D, null, 1)], name.replace(/[\\/:*?"<>|]+/g, "-") + ".json", { type: "application/json" });
@@ -1651,7 +1651,7 @@ async function recordPdf() {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794561745"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794561745"); await loadJs("./js/pdf.js?v=1794561745");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794563462"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794563462"); await loadJs("./js/pdf.js?v=1794563462");
     const f = S.form, src = [...app.children].filter(k => !k.matches(".bar, .fb-btn, .ro-bar, .psub, .err, .pnav, .addrow"));
     const box = document.createElement("div");
     for (const k of src) {
@@ -1902,7 +1902,7 @@ async function sendOrder(f) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794561745"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794561745"); await loadJs("./js/pdf.js?v=1794561745");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794563462"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794563462"); await loadJs("./js/pdf.js?v=1794563462");
     const { html, title } = orderDoc(f);
     const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
@@ -2911,7 +2911,7 @@ async function bpsMailsFor(p, day) {
   await Promise.all(pre.phs.map(q => q && q.ph && !PHOTO_CACHE.has(q.ph) && !(q.url || "").startsWith("data:") ? Store.photo(q.ph).then(d => { if (d) PHOTO_CACHE.set(q.ph, d); }).catch(() => {}) : 0));
   const d = bpsBorrow(p, () => bpsDoc(p, day)), allDone = bpsBorrow(p, () => bpsAllDone());
   const files = await window.FibPdf.diaryPdf(d.html, d.title, { scale: 1.6, quality: 0.72, maxBytes: 5e6, header: d.header }), list = Array.isArray(files) ? files : [files];
-  const xl = pre.rows ? await loadJs("./js/piotr.js?v=1794561745").then(() => { const b = window.PiotrXlsx.build(pre.rows); return new File([b], `Bioseco_Wolf_Fibraco_status (${dmy(today())}).xlsx`, { type: b.type }); }).catch(() => null) : null;
+  const xl = pre.rows ? await loadJs("./js/piotr.js?v=1794563462").then(() => { const b = window.PiotrXlsx.build(pre.rows); return new File([b], `Bioseco_Wolf_Fibraco_status (${dmy(today())}).xlsx`, { type: b.type }); }).catch(() => null) : null;
   const dTxt = nice(new Date(day + "T12:00:00")), mails = [];
   for (let i = 0; i < list.length; i++) {
     const f = list[i], part = list.length > 1 ? ` (part ${i + 1} of ${list.length})` : "";
@@ -3520,7 +3520,7 @@ function liveExtra(pid) {
 }
 // Wanro 30 Oct: Piotr's table, filled in by itself. The office marks extra works. Download his Excel or email it to him.
 const piotrRows = () => { const o = {}; for (const [r, , w] of LiveUI.PIOTR) { const y = liveBoard(w, 0).y; o[r] = LiveUI.PCOLS.map(([k]) => y[k]); } return o; };
-async function piotrFile() { await loadJs("./js/piotr.js?v=1794561745"); const b = window.PiotrXlsx.build(piotrRows()); return new File([b], `Bioseco_Wolf_Fibraco_status (${dmy(today())}).xlsx`, { type: b.type }); }
+async function piotrFile() { await loadJs("./js/piotr.js?v=1794563462"); const b = window.PiotrXlsx.build(piotrRows()); return new File([b], `Bioseco_Wolf_Fibraco_status (${dmy(today())}).xlsx`, { type: b.type }); }
 function vPiotr() {
   const p = S.project, admin = isAdmin(S.user), box = h("div", { class: "lv" });
   const cell = (w, k, v) => { if (k !== "xw" || !admin) return null; const c = bpsOf(w);
@@ -3541,7 +3541,7 @@ function vPiotr() {
     admin && xw.length ? sheet("", h("div", { class: "band" }, "Extra works, a short note each (Bioseco see it)"), h("table", {}, h("tbody", {}, ...xw.map(([, lab, w]) => { const c = bpsOf(w);
       return h("tr", {}, h("td", { class: "lab" }, lab), h("td", {}, inp("text", c.xw.note, v => { c.xw.note = v; persistSoon(); shareSoon(1500); }, "e.g. module replaced on Bioseco's request"))); })))) : null,
     h("div", { class: "row", style: "gap:8px;flex-wrap:wrap" },
-      h("button", { type: "button", class: "btn-w", onclick: async () => { try { const f = await piotrFile(); await loadJs("./js/pdf.js?v=1794561745"); await window.FibPdf.shareFile(f, f.name); } catch (e) { showInfo("Could not make the Excel", `${e.message || e}.`); } } }, "Download the Excel"),
+      h("button", { type: "button", class: "btn-w", onclick: async () => { try { const f = await piotrFile(); await loadJs("./js/pdf.js?v=1794563462"); await window.FibPdf.shareFile(f, f.name); } catch (e) { showInfo("Could not make the Excel", `${e.message || e}.`); } } }, "Download the Excel"),
       admin ? h("button", { type: "button", class: "submit", onclick: send }, "Email it to Piotr now") : null)];
 }
 function vLive() {
@@ -3722,7 +3722,7 @@ async function warnPdf(c, kind) {
   const ov = h("div", { class: "overlay", role: "dialog" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794561745"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794561745"); await loadJs("./js/pdf.js?v=1794561745");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794563462"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794563462"); await loadJs("./js/pdf.js?v=1794563462");
     const esc = x => String(x == null ? "" : x).replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[ch]);
     const p = PEOPLE.find(x => x.name === c.who) || {}, pr = CFG.projects.find(x => x.id === c.pid) || {}, t = c.test || {}, [, catLab, , alc] = wCat(c.cat);
     const head = `<table style="width:100%;border-collapse:collapse;margin-bottom:12px"><tr><td rowspan="3" style="border:0.6pt solid #888;width:38%;text-align:center"><img src="${LOGO}" style="width:180px"></td><td style="border:0.6pt solid #888;font-size:8.5pt"><u>E-mail #</u></td><td style="border:0.6pt solid #888;font-size:8.5pt">info@fibraco.co.za &amp; wanro@fibraco.co.za</td></tr><tr><td style="border:0.6pt solid #888;font-size:8.5pt"><u>Reg #</u></td><td style="border:0.6pt solid #888;font-size:8.5pt">2021 / 770505 / 07</td></tr><tr><td style="border:0.6pt solid #888;font-size:8.5pt"><u>Address #</u></td><td style="border:0.6pt solid #888;font-size:8.5pt">Section 5A, SS Don Dias, Beach Indaba Building, 22 Dias Rd, Jeffreys Bay, South Africa, 6330</td></tr></table>`;
@@ -3757,7 +3757,7 @@ async function bpsReport(email, day = ymd(today())) {
   const ov = h("div", { class: "overlay", role: "dialog" }, h("div", { class: "modal" }, h("h2", {}, email ? "Approving and emailing" : "Making the report"), h("p", {}, "Fetching the photos and building the PDF. Keep the app open on this screen.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794561745"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794561745"); await loadJs("./js/pdf.js?v=1794561745");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794563462"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794563462"); await loadJs("./js/pdf.js?v=1794563462");
     const ws = ["SUBSTATION", ...bpsWtgs()], phs = ws.flatMap(w => Object.values(bpsOf(w).ph).flat());
     await Promise.all(phs.map(p => p.ph && !PHOTO_CACHE.has(p.ph) && !(p.url || "").startsWith("data:") ? Store.photo(p.ph).then(d => { if (d) PHOTO_CACHE.set(p.ph, d); }).catch(() => {}) : 0));
     const d = bpsDoc(S.project, day);
@@ -4784,7 +4784,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794561745"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794561745"); await loadJs("./js/pdf.js?v=1794561745");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794563462"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794563462"); await loadJs("./js/pdf.js?v=1794563462");
     await fetchDayPhotos(k);
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
@@ -4899,7 +4899,7 @@ async function processMailQ1() {
   let wl = null;
   try {
     wl = await wakeOn();
-    await loadJs("./js/lib/html2canvas.min.js?v=1794561745"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794561745"); await loadJs("./js/pdf.js?v=1794561745");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794563462"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794563462"); await loadJs("./js/pdf.js?v=1794563462");
     for (const j of go) {
       const p = CFG.projects.find(x => x.id === j.pid); if (!p) { j.done = true; continue; }
       if (!j.flash && !j.bpsOnly) { const m0 = Store.get(`mail|${j.pid}|${j.ds}`); if (m0 && m0.jobAt && m0.jobAt >= j.at) { j.done = true; continue; } } // another phone already sent it
@@ -6244,7 +6244,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794561745"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794561745"); await loadJs("./js/pdf.js?v=1794561745");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794563462"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794563462"); await loadJs("./js/pdf.js?v=1794563462");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
@@ -6534,14 +6534,14 @@ function introVideo() {
   return h("div", { class: "intro" }, v);
 }
 const screen = (...kids) => { app.replaceChildren(h("div", { class: "lock dark" }, introVideo(), ...kids)); };
-function pinPad(title, sub, onDone, warn, extra) {
+function pinPad(title, sub, onDone, warn, extra, leftKey) {
   let v = ""; const dots = h("div", { class: "pin-dots" }); const msg = h("p", { class: "pin-msg" }, sub || "");
   const draw = () => dots.replaceChildren(...[0, 1, 2, 3].map(i => h("i", { class: i < v.length ? "on" : "" })));
   const press = d => { if (d === "del") v = v.slice(0, -1); else if (v.length < 4) v += d; draw(); if (v.length === 4) { const x = v; v = ""; setTimeout(() => { draw(); onDone(x, m => { msg.textContent = m; }); }, 120); } };
   draw();
   screen(h("h1", { class: "big", style: "text-align:center" }, title), msg, dots,
     warn ? h("div", { class: "pin-warn", role: "note" }, ...[].concat(typeof warn === "function" ? warn() : warn)) : null,
-    h("div", { class: "pin-pad" }, ...["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "del"].map(d => d ? h("button", { type: "button", onclick: () => press(d), "aria-label": d === "del" ? "Delete" : d }, d === "del" ? "⌫" : d) : h("span"))), extra || null);
+    h("div", { class: "pin-pad" }, ...["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "del"].map(d => d ? h("button", { type: "button", onclick: () => press(d), "aria-label": d === "del" ? "Delete" : d }, d === "del" ? "⌫" : d) : (leftKey || h("span")))), extra || null);
 }
 
 // ---------- fingerprint ----------
@@ -6662,11 +6662,12 @@ async function boot() {
     const useBio = async () => { if (busy) return; busy = true; unlocking = true;
       try { if (await Store.bioUnlock()) { busy = false; return startApp(); } } catch (e) { if (e && e.name !== "NotAllowedError") toast("Fingerprint did not work. Type your PIN."); }
       busy = false; unlocking = false; };
-    const fp = bio ? h("button", { class: "bio-btn", type: "button", "aria-label": "Use fingerprint", onclick: useBio }, FP_ICON(), h("span", {}, "Use fingerprint")) : null;
+    // Wanro 13 Nov: the fingerprint key sits next to the 0 on the keypad, never below it where you must scroll to see it
+    const fp = bio ? h("button", { class: "pin-fp", type: "button", "aria-label": "Use fingerprint", onclick: useBio }, FP_ICON()) : null;
     if (bio) setTimeout(useBio, 350);
     // 10 wrong PINs clear the phone, but never while forms are still waiting to send: then it locks for 30 minutes per wrong try instead
     const LOCK = "fib_pin_lock", lockedTill = () => { try { return +localStorage.getItem(LOCK) || 0; } catch (e) { return 0; } };
-    return pinPad("Type your PIN", bio ? "Or touch the fingerprint below." : "", async (pin, say) => {
+    return pinPad("Type your PIN", bio ? "Or touch the fingerprint next to the 0." : "", async (pin, say) => {
       if (lockedTill() > Date.now()) { const n = await Store.unsentLocked(); return say(`Locked until ${new Date(lockedTill()).toTimeString().slice(0, 5)}. Your ${n} unsent form${n === 1 ? " is" : "s are"} kept safe. Phone the office.`); }
       unlocking = true; const ok = await Store.unlock(pin);
       if (ok !== true) unlocking = false;
@@ -6676,7 +6677,7 @@ async function boot() {
         if (n) { try { localStorage.setItem(LOCK, String(Date.now() + 30 * 60e3)); } catch (e) {} return say(`Wrong PIN too many times. Locked for 30 minutes. Your ${n} unsent form${n === 1 ? " is" : "s are"} kept safe. Phone the office.`); }
         await Store.wipe(true); return screen(h("h1", { class: "big", style: "text-align:center" }, "App cleared"), centre("The PIN was wrong 10 times, so the app cleared itself on this phone."), centre("Ask the office to set it up again on this phone.")); }
       say(left <= 3 ? `Wrong PIN. ${left} ${left === 1 ? "try" : "tries"} left before the app clears itself on this phone.` : ok >= 3 ? "Wrong PIN. Forgot it? Ask the office to reset it." : "Wrong PIN. Try again.");
-    }, null, fp);
+    }, null, null, fp);
   }
   screen(h("h1", { class: "big", style: "text-align:center" }, "Fibraco Field"), h("p", { style: "text-align:center;padding:0 20px" }, "Open the app with your personal link from WhatsApp. It only works for you."));
 }
