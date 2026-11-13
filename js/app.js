@@ -392,7 +392,7 @@ function vProjects() {
         bioSetup(); } }, "Fingerprint")),
     h("p", { class: "note", style: "text-align:center;margin-top:10px" }, `App version ${verLabel()}`)];
 }
-const APPV = "1794564739";
+const APPV = "1794589947";
 function verLabel() { const n = +APPV; if (!n) return "test"; const d = new Date(n * 1000); return `${dmy(d)} ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; }
 function changePin() {
   let oldPin = null, first = null;
@@ -486,7 +486,7 @@ async function sendRegister(p, d, days) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794564739"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794564739"); await loadJs("./js/pdf.js?v=1794564739");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794589947"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794589947"); await loadJs("./js/pdf.js?v=1794589947");
     const { html, title } = attDoc(p, d, days); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Register PDF ready"), h("p", {}, file.name),
@@ -603,7 +603,7 @@ async function timeZone() {
   try {
     try { Store.kick(); await refreshDevices(true); } catch (e) {}
     await new Promise(r => setTimeout(r, 1800));
-    await loadJs("./js/lib/html2canvas.min.js?v=1794564739"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794564739"); await loadJs("./js/pdf.js?v=1794564739");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794589947"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794589947"); await loadJs("./js/pdf.js?v=1794589947");
     const D = tzData(), stamp = `${dmy(new Date())} ${hhmm()}`, name = `FIBRACO - Time Zone (${stamp})`;
     const pdf = await window.FibPdf.diaryPdf(tzHtml(D), name);
     const json = new File([JSON.stringify(D, null, 1)], name.replace(/[\\/:*?"<>|]+/g, "-") + ".json", { type: "application/json" });
@@ -1705,7 +1705,7 @@ async function recordPdf() {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794564739"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794564739"); await loadJs("./js/pdf.js?v=1794564739");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794589947"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794589947"); await loadJs("./js/pdf.js?v=1794589947");
     const f = S.form, src = [...app.children].filter(k => !k.matches(".bar, .fb-btn, .ro-bar, .psub, .err, .pnav, .addrow"));
     const box = document.createElement("div");
     for (const k of src) {
@@ -1956,7 +1956,7 @@ async function sendOrder(f) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794564739"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794564739"); await loadJs("./js/pdf.js?v=1794564739");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794589947"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794589947"); await loadJs("./js/pdf.js?v=1794589947");
     const { html, title } = orderDoc(f);
     const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
@@ -2214,6 +2214,50 @@ const allocOf = k => Store.get("alloc|" + k) || planFor(k);
 // A man counts on a day when he signed in, had work given to him, is in that day's diary team or sent a section.
 // A day only counts when the project worked. A part with nothing to measure that day is left out and the others carry its weight.
 const KPI_W = { rep: 50, work: 30, time: 20 }, KPI_START = "07h00", KPI_SEC_BY = "18h00", KPI_DIARY_BY = "20h00";
+// Wanro 13 Nov: every late document is shown with its real date and costs KPI points, back to the start of the app.
+// Due: a man's diary section by 18h00 on the day, the site manager's signed diary by 20h00 on the day.
+// When it really went in: exact from 13 November 2026 (sentOn, signedOn). Before that it is worked out from the records
+// themselves: the diary's own last save, the crew sections he approved just before signing, or the photos in a section,
+// then the first time the signed time of day came round after that. If it cannot be worked out, it is not counted.
+const KPI_NOPHOTO = 10, PHOTO_STRIKES = 3;
+const LATE_EXEMPT = [{ who: "Hendrik van Rooyen", proj: /belle/i, from: "2026-11-06", to: "2026-11-10",
+  why: "Switch from Wolf to Belle River. Hendrik had no access to the crew's records until 10 November 18h50, so he could not do these diaries on time." }];
+function lateExempt(p, ds, who) { return LATE_EXEMPT.find(x => x.who === who && x.proj.test((p.short || "") + " " + (p.name || "")) && ds >= x.from && ds <= x.to) || null; }
+const atTime = (ds, t) => { const m = /^(\d{1,2})h(\d{2})$/.exec(t || ""); return m ? new Date(`${ds}T${m[1].padStart(2, "0")}:${m[2]}:00`) : null; };
+const phTime = id => { const m = /^ph\|([0-9a-z]{8})(?![0-9a-z])/.exec(id || ""); const n = m ? parseInt(m[1], 36) : NaN; return n > 1.7e12 && n < 2.2e12 ? new Date(n) : null; };
+// first moment at or after "after" whose clock reads t (eg "07h04")
+function nextAt(after, t) { if (!after || isNaN(after)) return null; const d = atTime(ymd(after), t); if (!d) return after; if (d < after) d.setDate(d.getDate() + 1); return d; }
+function photosOf(o) { const out = []; const walk = x => { if (!x) return; if (typeof x === "string") { const d = phTime(x); if (d) out.push(d); } else if (Array.isArray(x)) x.forEach(walk); else if (typeof x === "object") { if (x.id) walk(x.id); if (x.ph) walk(x.ph); } }; walk(o && o.photos); return out; }
+function sigWhen(k) {
+  const fin = Store.get("final|" + k); if (!fin || !fin.by) return null;
+  if (fin.signedOn) return { at: new Date(fin.signedOn), sure: true };
+  const site = Store.get("site|" + k) || {}, secs = Store.list(`sec|${k}|`).map(([id, o]) => [id, o || {}]);
+  let base = null;
+  if (site.savedAt && site.savedBy === fin.by && !site.correcting) base = new Date(site.savedAt);
+  for (const [id, o] of secs) if (o.status === "approved") { const a = Store.atOf(id); if (a && (!fin.rev || true)) { const d = new Date(a); if (!base || d > base) base = d; } }
+  if (!base || isNaN(base)) return null;
+  let at = nextAt(base, fin.at);
+  const pm = fin.pmOk && fin.pmDate && fin.pmAt ? atTime(fin.pmDate.split("-").reverse().join("-"), fin.pmAt) : null;
+  if (pm && at > pm) at = pm < base ? null : pm;   // he cannot have signed after you approved it
+  return at ? { at, sure: false } : null;
+}
+function secWhen(k, who) {
+  const sec = Store.get(`sec|${k}|${who}`) || ((S.sections[k] || {})[who]); if (!sec || !["submitted", "approved"].includes(sec.status)) return null;
+  if (sec.sentOn) return { at: new Date(sec.sentOn), sure: true };
+  const ph = photosOf(sec); if (!ph.length) return null;
+  const last = new Date(Math.max(...ph)); return { at: nextAt(last, sec.at) || last, sure: false };
+}
+// how late, in words, and the KPI points it costs: 5 if still that evening, then 10 for every day after, at most 50
+function lateBy(ds, by, w) {
+  if (!w || !w.at || isNaN(w.at)) return null;
+  const due = atTime(ds, by), mins = Math.round((w.at - due) / 60000); if (mins <= 0) return null;
+  const days = Math.round((new Date(ymd(w.at) + "T12:00:00") - new Date(ds + "T12:00:00")) / 864e5);
+  const words = days <= 0 ? `${Math.floor(mins / 60) ? Math.floor(mins / 60) + "h" : ""}${String(mins % 60).padStart(Math.floor(mins / 60) ? 2 : 1, "0")}${Math.floor(mins / 60) ? "" : " min"} late`
+    : `${days} day${days === 1 ? "" : "s"} late`;
+  return { mins, days, pts: days <= 0 ? 5 : Math.min(50, days * 10), when: `${dmy(w.at)} at ${hhmm(w.at)}`, words: (w.sure ? "" : "at least ") + words, sure: w.sure };
+}
+function diaryLate(p, k, ds) { const fin = Store.get("final|" + k); if (!fin) return null; const L = lateBy(ds, KPI_DIARY_BY, sigWhen(k)); if (!L) return null; const ex = lateExempt(p, ds, fin.by); return Object.assign(L, { who: fin.by, ex }); }
+function secLate(p, k, ds, who) { const L = lateBy(ds, KPI_SEC_BY, secWhen(k, who)); if (!L) return null; return Object.assign(L, { who, ex: lateExempt(p, ds, who) }); }
 function kpiDay(p, ds) {
   const k = p.id + "|" + ds, site = Store.get("site|" + k) || {}, fin = Store.get("final|" + k);
   if (Store.get("void|" + k)) return null;
@@ -2227,17 +2271,27 @@ function kpiDay(p, ds) {
   for (const n of team) {
     const a = att[n], tasks = alloc.filter(t => t.who === n), sec = secs[n] || {}, role = n === smOn(p, ds) ? "sm" : (p.team[n] === "sm" ? "worker" : p.team[n]);
     if (!(a.in || tasks.length || inTeam.has(n) || ["submitted", "approved"].includes(sec.status))) continue;
-    const rep = [], time = [], miss = [];
+    const rep = [], time = [], miss = [], late = [], excused = [];
     const R = (ok, label) => { rep.push(ok); if (!ok) miss.push(label); }, T = (ok, label) => { time.push(ok); if (!ok) miss.push(label); };
     R(!!a.in, "Not signed in"); R(!!a.out, "Not signed out"); R(signedDsti.has(n), "DSTI not signed");
     if (a.in) T(a.in <= KPI_START, `On site at ${a.in}`);
     if (role === "sm") {
       const crew = Object.keys(secs).filter(x => x !== n && ["submitted", "approved", "returned"].includes((secs[x] || {}).status));
       R(crew.every(x => secs[x].status === "approved"), "Crew sections not all approved"); R(!!fin, "Diary not signed");
-      if (fin) T((fin.at || "99h99") <= KPI_DIARY_BY, `Diary signed at ${fin.at || "?"}`);
+      if (fin && fin.by === n && !(site.photos || []).length && !Object.values(secs).some(o => (o.photos || []).length) && !lateExempt(p, ds, n))
+        late.push({ what: "Photos", pts: KPI_NOPHOTO, txt: "Diary signed with no photos at all", nophoto: true });
+      if (fin && fin.by === n) { const L = diaryLate(p, k, ds);
+        if (L && !L.ex) { T(false, `Diary signed ${L.when}, ${L.words}`); late.push({ what: "Diary", pts: L.pts, txt: `Diary signed ${L.when}, ${L.words}` }); }
+        else if (L && L.ex) { T(true); excused.push(`Diary signed ${L.when}, ${L.words}, not counted: ${L.ex.why}`); }
+        else if (!sigWhen(k)) T((fin.at || "99h99") <= KPI_DIARY_BY, `Diary signed at ${fin.at || "?"}`); else T(true); }
+      else if (fin) T(true);
     } else {
-      const sent = ["submitted", "approved"].includes(sec.status); R(sent, "Diary section not sent"); R((sec.photos || []).length > 0, "No photo in his section");
-      if (sent) T((sec.at || "99h99") <= KPI_SEC_BY, `Section sent at ${sec.at || "?"}`);
+      const sent = ["submitted", "approved"].includes(sec.status); R(sent, "Diary section not sent"); R(!sent || (sec.photos || []).length > 0, "No photo in his section");
+      if (sent && !(sec.photos || []).length && !lateExempt(p, ds, n)) { late.push({ what: "Photos", pts: KPI_NOPHOTO, txt: "Section sent with no photos", nophoto: true }); }
+      if (sent) { const L = secLate(p, k, ds, n);
+        if (L && !L.ex) { T(false, `Section sent ${L.when}, ${L.words}`); late.push({ what: "Section", pts: L.pts, txt: `Section sent ${L.when}, ${L.words}` }); }
+        else if (L && L.ex) { T(true); excused.push(`Section sent ${L.when}, ${L.words}, not counted: ${L.ex.why}`); }
+        else if (!secWhen(k, n)) T((sec.at || "99h99") <= KPI_SEC_BY, `Section sent at ${sec.at || "?"}`); else T(true); }
     }
     try { for (const c of myChecks(p, n, ds)) if (c.often === "daily" && c.k !== "dsti" && !c.watch && !c.ref && c.st !== "later") R(c.st === "done", `${c.title} not done`); } catch (e) {}
     // work: what he booked against each task, each capped at its target
@@ -2246,7 +2300,9 @@ function kpiDay(p, ds) {
     const avg = xs => xs.length ? xs.reduce((s, x) => s + (x === true ? 1 : x === false ? 0 : x), 0) / xs.length : null;
     const parts = { rep: avg(rep), work: avg(work), time: avg(time) };
     let w = 0, sc = 0; for (const [kk, v] of Object.entries(parts)) if (v != null) { w += KPI_W[kk]; sc += KPI_W[kk] * v; }
-    out[n] = { in: a.in || "", out: a.out || "", parts, score: w ? sc / w : null, miss };
+    // late documents cost points on top, so a day can go below zero
+    const pen = late.reduce((t, x) => t + x.pts, 0);
+    out[n] = { in: a.in || "", out: a.out || "", parts, score: w ? sc / w - pen / 100 : null, miss, late, pen, excused };
   }
   return out;
 }
@@ -2262,26 +2318,44 @@ function kpiRows(days, pid) {
     }
   } finally { [S.project, S.date] = keep; }
   const mean = xs => { const v = xs.filter(x => x != null); return v.length ? Math.round(v.reduce((a, b) => a + b, 0) / v.length * 100) : null; };
-  return Object.values(per).map(P => Object.assign(P, { pct: mean(P.days.map(d => d.score)), rep: mean(P.days.map(d => d.parts.rep)), work: mean(P.days.map(d => d.parts.work)), time: mean(P.days.map(d => d.parts.time)) }))
+  return Object.values(per).map(P => Object.assign(P, { pen: P.days.reduce((t, d) => t + (d.pen || 0), 0), nLate: P.days.reduce((t, d) => t + (d.late || []).filter(x => !x.nophoto).length, 0),
+    noPhoto: P.days.filter(d => (d.late || []).some(x => x.nophoto)).map(d => d.ds).sort(), pct: mean(P.days.map(d => d.score)), rep: mean(P.days.map(d => d.parts.rep)), work: mean(P.days.map(d => d.parts.work)), time: mean(P.days.map(d => d.parts.time)) }))
     .sort((a, b) => (a.pct ?? 101) - (b.pct ?? 101));
+}
+// Wanro 13 Nov: "warnings must be given out after the third". Every third day a man sends his work with no photos, a case
+// is opened under Warnings (the office only), with the dates. The office still gives the notice and hears his side.
+function photoWarnings(rows) {
+  if (!isAdmin(S.user)) return;
+  for (const P of rows) for (let i = PHOTO_STRIKES; i <= P.noPhoto.length; i += PHOTO_STRIKES) {
+    const id = "photo-" + P.name.toLowerCase().replace(/[^a-z]+/g, "-") + "-" + i; if (Store.get("warn|" + id)) continue;
+    const dates = P.noPhoto.slice(i - PHOTO_STRIKES, i), last = P.days.find(d => d.ds === dates[dates.length - 1]) || {};
+    wSave({ id, who: P.name, pid: (last.p || PROJECTS[0] || {}).id || "", date: dates[dates.length - 1], cat: "paper", test: {}, photos: [], by: "The app", at: new Date().toISOString(),
+      what: `Daily diary work sent in without any photos on ${dates.map(d => dmy(new Date(d + "T12:00:00"))).join(", ")}. Photos are required every day, because they show the work was really done, where and when. This is number ${i / PHOTO_STRIKES} for no photos.` });
+  }
 }
 function vStaffKpi() {
   // today is still running, so it counts from tomorrow (like the outstanding list)
   const F = S.kpiF || (S.kpiF = { span: 0, pid: "", who: "" }), end = (() => { const d = today(); d.setDate(d.getDate() - 1); return d; })(), first = PROJECTS.map(p => p.start).filter(Boolean).sort()[0] || ymd(end), days = [];
   const from = F.span ? (() => { const d = new Date(end); d.setDate(d.getDate() - F.span + 1); return ymd(d); })() : first;
   for (const d = new Date(end); ymd(d) >= from; d.setDate(d.getDate() - 1)) days.push(ymd(d));
-  const rows = kpiRows(days, F.pid), col = v => v == null ? "void" : v >= 90 ? "ok" : v >= 70 ? "wait" : "bad", pc = v => v == null ? "-" : v + "%";
+  const rows = kpiRows(days, F.pid); if (!F.pid && !F.span) photoWarnings(rows);
+  const col = v => v == null ? "void" : v >= 90 ? "ok" : v >= 70 ? "wait" : "bad", pc = v => v == null ? "-" : v + "%";
   const sel = h("select", { class: "rec-sel", onchange: e => { F.pid = e.target.value; render(); } }, h("option", { value: "" }, "All projects"), ...PROJECTS.map(p => h("option", { value: p.id }, p.short))); sel.value = F.pid;
   const spans = h("div", { class: "aud-bar" }, ...[[0, "Since the start"], [7, "7 days"], [31, "31 days"]].map(([n, l]) => h("button", { type: "button", class: "btn-g" + (F.span === n ? " on" : ""), onclick: () => { F.span = n; render(); } }, l)));
   const detail = P => P.days.sort((a, b) => b.ds.localeCompare(a.ds)).map(d => h("div", { class: d.miss.length ? "aud-x" : "aud-i", style: "border-top:1px solid var(--line);padding:6px 0;font-weight:400" },
     h("b", {}, `${dmy(new Date(d.ds + "T12:00:00")).slice(0, 5)} ${d.p.short}  ${d.score == null ? "" : Math.round(d.score * 100) + "%"}`), ` | in ${d.in || "-"} | out ${d.out || "-"}`,
-    d.miss.length ? h("div", {}, d.miss.join(". ") + ".") : h("div", {}, "Everything done, on time.")));
+    d.miss.length ? h("div", {}, d.miss.join(". ") + ".") : h("div", {}, "Everything done, on time."),
+    (d.late || []).length ? h("div", { style: "color:#a50e0e;font-weight:700" }, (d.late || []).map(x => `${x.txt}: minus ${x.pts} points`).join(". ") + ".") : null,
+    (d.excused || []).length ? h("div", { style: "color:#5b6470" }, d.excused.join(". ")) : null));
   const card = P => h("button", { type: "button", class: "aud-card " + col(P.pct), onclick: () => { F.who = F.who === P.name ? "" : P.name; render(); } },
     h("div", { class: "aud-t" }, `${P.name}  ${pc(P.pct)}`), h("div", { class: "aud-st" }, `${P.days.length} site day${P.days.length === 1 ? "" : "s"}`),
     h("div", { class: "aud-i" }, `Reporting ${pc(P.rep)}  |  Work ${pc(P.work)}  |  On time ${pc(P.time)}`),
     h("div", { class: "aud-i" }, `Days with something missed: ${P.days.filter(d => d.miss.length).length} of ${P.days.length}`),
+    P.nLate || P.noPhoto.length ? h("div", { class: "aud-i", style: "color:#a50e0e;font-weight:700" }, `Late documents: ${P.nLate}  |  Days with no photos: ${P.noPhoto.length}  |  Minus ${P.pen} points in total`) : null,
+    P.noPhoto.length >= PHOTO_STRIKES ? h("div", { class: "aud-i", style: "color:#a50e0e;font-weight:800" }, `Warning due for no photos (${Math.floor(P.noPhoto.length / PHOTO_STRIKES)} so far). The case is open under Warnings.`) : null,
     F.who === P.name ? h("div", {}, ...detail(P)) : h("div", { class: "aud-i", style: "margin-top:4px" }, "Tap for every day"));
   return [topbar("Staff KPIs", F.pid ? (PROJECTS.find(p => p.id === F.pid) || {}).short : "All projects", true),
+    h("p", { class: "form-sub" }, `Late: a section after 18h00 or a signed diary after 20h00 on the day costs 5 points that evening and 10 points for every day after, at most 50 per document. Work sent with no photos costs ${KPI_NOPHOTO} points, and every ${PHOTO_STRIKES} such days open a warning case. `),
     h("p", { class: "form-sub" }, `Every site day since the start, up to yesterday. Reporting ${KPI_W.rep}%: register, DSTI, diary section with a photo, daily checks and inspections, and for the site manager approvals and the signed diary. Work ${KPI_W.work}%: what he booked against his targets. On time ${KPI_W.time}%: on site by ${KPI_START}, section by ${KPI_SEC_BY}, diary signed by ${KPI_DIARY_BY}. Lowest score first.`),
     h("div", { class: "aud-bar" }, sel), spans,
     rows.length ? h("div", { class: "stack" }, ...rows.map(card)) : h("p", { class: "note" }, "No site days in this period.")];
@@ -2965,7 +3039,7 @@ async function bpsMailsFor(p, day) {
   await Promise.all(pre.phs.map(q => q && q.ph && !PHOTO_CACHE.has(q.ph) && !(q.url || "").startsWith("data:") ? Store.photo(q.ph).then(d => { if (d) PHOTO_CACHE.set(q.ph, d); }).catch(() => {}) : 0));
   const d = bpsBorrow(p, () => bpsDoc(p, day)), allDone = bpsBorrow(p, () => bpsAllDone());
   const files = await window.FibPdf.diaryPdf(d.html, d.title, { scale: 1.6, quality: 0.72, maxBytes: 5e6, header: d.header }), list = Array.isArray(files) ? files : [files];
-  const xl = pre.rows ? await loadJs("./js/piotr.js?v=1794564739").then(() => { const b = window.PiotrXlsx.build(pre.rows); return new File([b], `Bioseco_Wolf_Fibraco_status (${dmy(today())}).xlsx`, { type: b.type }); }).catch(() => null) : null;
+  const xl = pre.rows ? await loadJs("./js/piotr.js?v=1794589947").then(() => { const b = window.PiotrXlsx.build(pre.rows); return new File([b], `Bioseco_Wolf_Fibraco_status (${dmy(today())}).xlsx`, { type: b.type }); }).catch(() => null) : null;
   const dTxt = nice(new Date(day + "T12:00:00")), mails = [];
   for (let i = 0; i < list.length; i++) {
     const f = list[i], part = list.length > 1 ? ` (part ${i + 1} of ${list.length})` : "";
@@ -3574,7 +3648,7 @@ function liveExtra(pid) {
 }
 // Wanro 30 Oct: Piotr's table, filled in by itself. The office marks extra works. Download his Excel or email it to him.
 const piotrRows = () => { const o = {}; for (const [r, , w] of LiveUI.PIOTR) { const y = liveBoard(w, 0).y; o[r] = LiveUI.PCOLS.map(([k]) => y[k]); } return o; };
-async function piotrFile() { await loadJs("./js/piotr.js?v=1794564739"); const b = window.PiotrXlsx.build(piotrRows()); return new File([b], `Bioseco_Wolf_Fibraco_status (${dmy(today())}).xlsx`, { type: b.type }); }
+async function piotrFile() { await loadJs("./js/piotr.js?v=1794589947"); const b = window.PiotrXlsx.build(piotrRows()); return new File([b], `Bioseco_Wolf_Fibraco_status (${dmy(today())}).xlsx`, { type: b.type }); }
 function vPiotr() {
   const p = S.project, admin = isAdmin(S.user), box = h("div", { class: "lv" });
   const cell = (w, k, v) => { if (k !== "xw" || !admin) return null; const c = bpsOf(w);
@@ -3595,7 +3669,7 @@ function vPiotr() {
     admin && xw.length ? sheet("", h("div", { class: "band" }, "Extra works, a short note each (Bioseco see it)"), h("table", {}, h("tbody", {}, ...xw.map(([, lab, w]) => { const c = bpsOf(w);
       return h("tr", {}, h("td", { class: "lab" }, lab), h("td", {}, inp("text", c.xw.note, v => { c.xw.note = v; persistSoon(); shareSoon(1500); }, "e.g. module replaced on Bioseco's request"))); })))) : null,
     h("div", { class: "row", style: "gap:8px;flex-wrap:wrap" },
-      h("button", { type: "button", class: "btn-w", onclick: async () => { try { const f = await piotrFile(); await loadJs("./js/pdf.js?v=1794564739"); await window.FibPdf.shareFile(f, f.name); } catch (e) { showInfo("Could not make the Excel", `${e.message || e}.`); } } }, "Download the Excel"),
+      h("button", { type: "button", class: "btn-w", onclick: async () => { try { const f = await piotrFile(); await loadJs("./js/pdf.js?v=1794589947"); await window.FibPdf.shareFile(f, f.name); } catch (e) { showInfo("Could not make the Excel", `${e.message || e}.`); } } }, "Download the Excel"),
       admin ? h("button", { type: "button", class: "submit", onclick: send }, "Email it to Piotr now") : null)];
 }
 function vLive() {
@@ -3776,7 +3850,7 @@ async function warnPdf(c, kind) {
   const ov = h("div", { class: "overlay", role: "dialog" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794564739"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794564739"); await loadJs("./js/pdf.js?v=1794564739");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794589947"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794589947"); await loadJs("./js/pdf.js?v=1794589947");
     const esc = x => String(x == null ? "" : x).replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[ch]);
     const p = PEOPLE.find(x => x.name === c.who) || {}, pr = CFG.projects.find(x => x.id === c.pid) || {}, t = c.test || {}, [, catLab, , alc] = wCat(c.cat);
     const head = `<table style="width:100%;border-collapse:collapse;margin-bottom:12px"><tr><td rowspan="3" style="border:0.6pt solid #888;width:38%;text-align:center"><img src="${LOGO}" style="width:180px"></td><td style="border:0.6pt solid #888;font-size:8.5pt"><u>E-mail #</u></td><td style="border:0.6pt solid #888;font-size:8.5pt">info@fibraco.co.za &amp; wanro@fibraco.co.za</td></tr><tr><td style="border:0.6pt solid #888;font-size:8.5pt"><u>Reg #</u></td><td style="border:0.6pt solid #888;font-size:8.5pt">2021 / 770505 / 07</td></tr><tr><td style="border:0.6pt solid #888;font-size:8.5pt"><u>Address #</u></td><td style="border:0.6pt solid #888;font-size:8.5pt">Section 5A, SS Don Dias, Beach Indaba Building, 22 Dias Rd, Jeffreys Bay, South Africa, 6330</td></tr></table>`;
@@ -3811,7 +3885,7 @@ async function bpsReport(email, day = ymd(today())) {
   const ov = h("div", { class: "overlay", role: "dialog" }, h("div", { class: "modal" }, h("h2", {}, email ? "Approving and emailing" : "Making the report"), h("p", {}, "Fetching the photos and building the PDF. Keep the app open on this screen.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794564739"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794564739"); await loadJs("./js/pdf.js?v=1794564739");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794589947"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794589947"); await loadJs("./js/pdf.js?v=1794589947");
     const ws = ["SUBSTATION", ...bpsWtgs()], phs = ws.flatMap(w => Object.values(bpsOf(w).ph).flat());
     await Promise.all(phs.map(p => p.ph && !PHOTO_CACHE.has(p.ph) && !(p.url || "").startsWith("data:") ? Store.photo(p.ph).then(d => { if (d) PHOTO_CACHE.set(p.ph, d); }).catch(() => {}) : 0));
     const d = bpsDoc(S.project, day);
@@ -4311,8 +4385,10 @@ function vMySection() {
         { const rh = regHours(S.project, S.date, S.user), a = attGet(S.project, S.date, S.user) || {};
           if (rh) sec.hrs = rh.hrs; else if (a.in) e.push("Sign out on the register first. Your hours come from the register.");
           else if (!sec.hrs || !(sec.hrsWhy || "").trim()) e.push("You are not on the register for this day. Choose your hours and say why."); }
+        // Wanro 13 Nov: photos prove the work was done, there and then. No photos, no section.
+        if (!(sec.photos || []).length && tasks.some(t => !/TRAVEL|STANDBY|STAND BY/i.test(t.act || ""))) e.push("Add at least one photo of your work today. Photos prove the work was done.");
         if (!sec.sig) e.push("Sign your section."); return e; },
-        { label: "Submit my section", onDone: () => { putProg(S.project.id, ymd(S.date), S.user, tasks, sec.rows, sec.other); postDelays(S.project, S.date, S.user, tasks, sec); sec.status = "submitted"; sec.at = new Date().toLocaleTimeString("en-ZA", { hour: "2-digit", minute: "2-digit" }).replace(":", "h"); showInfo("Submitted", "Your section is with the site manager for review."); goBack(); } })];
+        { label: "Submit my section", onDone: () => { putProg(S.project.id, ymd(S.date), S.user, tasks, sec.rows, sec.other); postDelays(S.project, S.date, S.user, tasks, sec); sec.status = "submitted"; sec.at = new Date().toLocaleTimeString("en-ZA", { hour: "2-digit", minute: "2-digit" }).replace(":", "h"); sec.sentOn = new Date().toISOString(); showInfo("Submitted", "Your section is with the site manager for review."); goBack(); } })];
 }
 
 function vReview() {
@@ -4342,7 +4418,8 @@ function vReview() {
           h("td", { style: "width:84px" }, sec.status === "draft" || final || viewOnly ? h("div", { style: "text-align:center;font-weight:800;padding:8px" }, o.qty !== undefined && o.qty !== "" ? `${o.qty} ${o.unit || ""}` : "-")
             : h("div", {}, inp("number", o.qty, v => { o.qty = v; o.smQty = true; }, "Qty"), h("div", { style: "font-size:10.5px;text-align:center;color:#5b6470" }, o.unit || ""))))),
         h("tr", {}, h("td", { colspan: 3, style: "padding:0" }, (() => { const sc = ["submitted", "approved"].includes(sec.status) && schedFor(p); return sc ? hbar("Total on project to date", sc.done, sc.plan, { unit: sc.unit, perDay: sc.perDay }) : ""; })())),
-        h("tr", {}, h("td", { colspan: 3, style: "padding:8px;font-size:12.5px;color:#5b6470" }, `Hours ${dHrs(p) || sec.hrs || "-"}${dHrs(p) && sec.hrs && +dHrs(p) !== +sec.hrs ? ` on the diary (register ${sec.hrs})` : ""}${delayText(sec) ? "  |  Delay: " + delayText(sec) : ""}${sec.at ? "  |  Submitted " + sec.at : ""}`)))),
+        h("tr", {}, h("td", { colspan: 3, style: "padding:8px;font-size:12.5px;color:#5b6470" }, `Hours ${dHrs(p) || sec.hrs || "-"}${dHrs(p) && sec.hrs && +dHrs(p) !== +sec.hrs ? ` on the diary (register ${sec.hrs})` : ""}${delayText(sec) ? "  |  Delay: " + delayText(sec) : ""}${(() => { const w = secWhen(k, p), L = secLate(S.project, k, ymd(S.date), p);
+          return w ? `  |  Submitted ${dmy(w.at)} at ${hhmm(w.at)}${L ? (L.ex ? `, ${L.words} (not counted)` : `, LATE: ${L.words}`) : ""}` : sec.at ? "  |  Submitted " + sec.at : ""; })()}`)))),
       sec.status === "submitted" && !final && !viewOnly ? h("div", { style: "display:flex;gap:8px;padding:10px 12px" },
         h("button", { class: "btn-w", type: "button", style: "flex:1;padding:11px;border-radius:6px;border:0;font-weight:800;background:#1e8e3e", onclick: () => { sec.status = "approved"; render(); } }, "Approve"),
         h("button", { class: "btn-g", type: "button", style: "flex:1;padding:11px;border-radius:6px;font-weight:800", onclick: () => sendBack(p, sec) }, "Send back")) : null);
@@ -4359,7 +4436,10 @@ function vReview() {
     h("div", {}, `People on site: ${people.length}`), h("div", {}, `Total hours${dTeam.length ? " on the diary" : ""}: ${totalHrs}`),
     h("div", {}, `Tasks on target: ${rows.filter(x => x.r.done !== undefined && x.r.done !== "" && +x.r.done >= +x.t.target).length} of ${rows.length}`)));
   // Wanro 28 Oct: the office and the site manager see on this screen whether the day went to the client, and can send it again
+  const lateD = S.final[k] ? diaryLate(S.project, k, ymd(S.date)) : null;
   const after = h("div", { class: "stack" },
+    lateD ? h("div", { class: "note", style: `border:2px solid ${lateD.ex ? "#9aa3ad" : "#c8102e"};border-radius:10px;padding:10px 12px;font-weight:700;color:${lateD.ex ? "#3d4651" : "#a50e0e"}` },
+      `${lateD.ex ? "Late, not counted" : "LATE"}: ${lateD.who} signed this diary on ${lateD.when}, ${lateD.words}. It was due on ${dmy(S.date)} at ${KPI_DIARY_BY}.${lateD.ex ? " " + lateD.ex.why : ` That costs him ${lateD.pts} KPI points.`}`) : null,
     (isAdmin(S.user) || roleIn(S.user) === "sm") && !blank ? changeLog(k) : null,
     final && (isAdmin(S.user) || roleIn(S.user) === "sm") ? reportStatus(S.project, ymd(S.date)) : null,
     final || viewOnly ? h("button", { class: "mbtn", onclick: () => go("client") }, S.client[k] ? "Client signed. View the client copy" : "What the client sees", h("small", {}, S.client[k] ? `Signed by ${S.client[k].name} at ${S.client[k].at}` : "The page the client gets with the diary")) : null,
@@ -4420,7 +4500,7 @@ function vReview() {
         const noQty = people.flatMap(pn => (((S.sections[k] || {})[pn] || {}).other || []).filter(o => o.act && (o.qty === undefined || o.qty === "")).map(o => `${pn}: ${nice2(o.act)}, ${o.loc || ""}`));
         if (noQty.length) return showInfo("Quantities missing", "Put the quantity on every Other work line before you sign (0 if two men wrote the same job, so it counts once): " + noQty.join("  |  "));
         const yd = new Date(today()); yd.setDate(yd.getDate() - 1); const old = ymd(S.date) !== ymd(today()) && ymd(S.date) !== ymd(yd);
-        const doSign = () => mySig(v => { if (!v) return; S.final[k] = new Date().toLocaleTimeString("en-ZA", { hour: "2-digit", minute: "2-digit" }).replace(":", "h"); S.done[k] = true; persist(); Store.put("final|" + k, Object.assign({ at: S.final[k], by: S.user, sig: v, date: ymd(S.date), needPM: !isAdmin(S.user) }, missing.length ? { missing } : {})); people.forEach(pn => putProg(S.project.id, ymd(S.date), pn, myTasks(pn), ((S.sections[k] || {})[pn] || {}).rows || [], ((S.sections[k] || {})[pn] || {}).other || [])); Store.lock(["alloc|" + k, "site|" + k, "final|" + k, ...people.map(p => `sec|${k}|${p}`)]); closeDstis(S.project.id, ymd(S.date), S.user); if (isAdmin(S.user)) queueReports(S.project, S.date); S.form = { type: "diary", project: S.project, date: S.date, user: S.user, photos: [] }; go("done"); });
+        const doSign = () => mySig(v => { if (!v) return; S.final[k] = new Date().toLocaleTimeString("en-ZA", { hour: "2-digit", minute: "2-digit" }).replace(":", "h"); S.done[k] = true; persist(); Store.put("final|" + k, Object.assign({ at: S.final[k], signedOn: new Date().toISOString(), by: S.user, sig: v, date: ymd(S.date), needPM: !isAdmin(S.user) }, missing.length ? { missing } : {})); people.forEach(pn => putProg(S.project.id, ymd(S.date), pn, myTasks(pn), ((S.sections[k] || {})[pn] || {}).rows || [], ((S.sections[k] || {})[pn] || {}).other || [])); Store.lock(["alloc|" + k, "site|" + k, "final|" + k, ...people.map(p => `sec|${k}|${p}`)]); closeDstis(S.project.id, ymd(S.date), S.user); if (isAdmin(S.user)) queueReports(S.project, S.date); S.form = { type: "diary", project: S.project, date: S.date, user: S.user, photos: [] }; go("done"); });
         if (old) askYesNo(`Sign the diary for ${nice(S.date)}?`, `This is not today's or yesterday's diary. You are signing ${S.project.short} for ${nice(S.date)}. Only carry on if that is the day you mean.`, "Yes, sign this day", doSign); else doSign(); } }, "3. Sign and make final"))];
 }
 // ---------- daily diary as PDF (made on the phone, then shared) ----------
@@ -4838,7 +4918,7 @@ async function sendDiary(k, project, date) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment. The share menu opens by itself.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794564739"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794564739"); await loadJs("./js/pdf.js?v=1794564739");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794589947"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794589947"); await loadJs("./js/pdf.js?v=1794589947");
     await fetchDayPhotos(k);
     const { html, title } = diaryDoc(k, project, date);
     const file = await window.FibPdf.diaryPdf(html, title);
@@ -4953,7 +5033,7 @@ async function processMailQ1() {
   let wl = null;
   try {
     wl = await wakeOn();
-    await loadJs("./js/lib/html2canvas.min.js?v=1794564739"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794564739"); await loadJs("./js/pdf.js?v=1794564739");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794589947"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794589947"); await loadJs("./js/pdf.js?v=1794589947");
     for (const j of go) {
       const p = CFG.projects.find(x => x.id === j.pid); if (!p) { j.done = true; continue; }
       if (!j.flash && !j.bpsOnly) { const m0 = Store.get(`mail|${j.pid}|${j.ds}`); if (m0 && m0.jobAt && m0.jobAt >= j.at) { j.done = true; continue; } } // another phone already sent it
@@ -5043,7 +5123,8 @@ function diariesWaiting() {
 function waitingBar() {
   const list = diariesWaiting(); if (!list.length) return null;
   return h("div", { class: "stack" }, ...list.map(x => h("button", { type: "button", class: "mbtn today-bar", onclick: () => { S.project = x.p; S.date = new Date(x.ds + "T12:00:00"); S.month = S.date; S.hist = ["projects"]; S.view = "review"; render(); window.scrollTo(0, 0); } },
-    `Diary waiting for you: ${x.p.short}, ${dmy(new Date(x.ds + "T12:00:00"))}`, h("small", {}, `Signed by ${x.o.by} at ${x.o.at}. Check it, then approve or correct it. Nothing goes to the client before you do.`))));
+    `Diary waiting for you: ${x.p.short}, ${dmy(new Date(x.ds + "T12:00:00"))}`, h("small", {}, (() => { const L = diaryLate(x.p, x.k || (x.p.id + "|" + x.ds), x.ds), w = sigWhen(x.k || (x.p.id + "|" + x.ds));
+      return `Signed by ${x.o.by} ${w ? "on " + dmy(w.at) + " " : ""}at ${x.o.at}${L ? (L.ex ? `, ${L.words} (not counted)` : `. LATE: ${L.words}`) : ""}. Check it, then approve or correct it. Nothing goes to the client before you do.`; })()))));
 }
 function approveDiary(k) {
   if (!((Store.get("site|" + k) || {}).acts || []).some(r => r && r.act)) return showInfo("No work on this diary", "This diary has no line of work. Press Correct it first, add the work that was done, then sign the correction.");
@@ -5086,7 +5167,10 @@ function auditRows() {
           else if (bp.sent) info.push(`Bioseco daily report emailed at ${bp.sent.at} on ${bp.sent.date}`);
         }
       }
-      if (fin) info.unshift(`Signed by ${fin.by || "?"} at ${fin.at || "?"}`);
+      if (fin) { const w = sigWhen(k), L = diaryLate(p, k, ds);
+        info.unshift(`Signed by ${fin.by || "?"} ${w ? "on " + dmy(w.at) + " " : ""}at ${fin.at || "?"}${w && !w.sure ? " (date worked out from the records)" : ""}`);
+        if (L && !L.ex) issues.push(`Signed ${L.words}`); else if (L) info.push(`Signed ${L.words}, not counted: ${L.ex.why}`);
+        for (const [id, o] of Store.list(`sec|${k}|`)) { const who = id.slice(`sec|${k}|`.length), SL = secLate(p, k, ds, who); if (SL && !SL.ex) issues.push(`${who}'s section ${SL.words}`); } }
       if (fin && fin.pmOk) info.push(`Approved by ${fin.pmBy} at ${fin.pmAt}${fin.pmDate ? " on " + fin.pmDate : ""}`);
       if (fin && fin.rev) info.push(`Corrected ${fin.rev} time${fin.rev === 1 ? "" : "s"}, last by ${fin.revBy} on ${fin.revDate}${fin.revWhy ? ": " + fin.revWhy : ""}`);
       if (m) { let d = ""; try { d = m.jobAt ? " on " + dmy(new Date(m.jobAt)) : ""; } catch (e) {}
@@ -6298,7 +6382,7 @@ async function tsSendPdf(r) {
   const ov = h("div", { class: "overlay", role: "dialog", "aria-label": "Making the PDF" }, h("div", { class: "modal" }, h("h2", {}, "Making the PDF"), h("p", {}, "One moment.")));
   document.body.append(ov);
   try {
-    await loadJs("./js/lib/html2canvas.min.js?v=1794564739"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794564739"); await loadJs("./js/pdf.js?v=1794564739");
+    await loadJs("./js/lib/html2canvas.min.js?v=1794589947"); await loadJs("./js/lib/jspdf.umd.min.js?v=1794589947"); await loadJs("./js/pdf.js?v=1794589947");
     const { html, title } = tsPdfHtml(r); const file = await window.FibPdf.diaryPdf(html, title);
     const m = ov.querySelector(".modal"); m.innerHTML = "";
     m.append(h("h2", {}, "Report ready"), h("p", {}, file.name), h("div", { class: "row" }, h("button", { class: "btn-g", type: "button", onclick: () => ov.remove() }, "Close"),
