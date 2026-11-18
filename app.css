@@ -1092,3 +1092,9 @@ body.vhome .tile.tpj.outred .tpj-n{font-size:calc(9px*var(--kf,1));letter-spacin
 .pol-text ol{margin:4px 0 8px 20px;padding:0}
 .pol-text li{margin:3px 0}
 .pol-text p{margin:6px 0}
+/* Wanro 18 Nov: days worked */
+.dw-t{width:100%;border-collapse:collapse;font-size:14px}
+.dw-t th{background:#0069aa;color:#fff;text-align:left;padding:6px 8px;font-size:12px}
+.dw-t td{border-bottom:1px solid #e1e5ea;padding:6px 8px;vertical-align:top}
+.dw-t tr.dw-warn td{background:#fff4f4}
+.dw-s{font-size:11.5px;color:#5b6470}
